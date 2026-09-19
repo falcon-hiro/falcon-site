@@ -3,24 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>株式会社ファルコン | Falcon Co., Ltd. — 三次元測量の未来へ</title>
+<title>株式会社ファルコン | Falcon Co., Ltd. — 現場の「今」を、そのままデータに</title>
+<meta name="description" content="株式会社ファルコン（仙台市）。SLAM・点群データ計測、3Dガウシアンスプラッティング、AI活用・業務効率化、動画制作を、ひとつの窓口でご相談いただけます。東北を中心に、ご相談は全国から承ります。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --green-deep:   #1a3a2a;
-  --green-mid:    #2d5a3d;
-  --green-light:  #4a8c5c;
-  --green-pale:   #a8d5b5;
-  --green-mist:   #e8f5ec;
+  /* 2026-09 C案で紺と金に統一（変数名は旧名のまま。green-* ＝ブランドの基調色） */
+  --green-deep:   #1f3a5f;
+  --green-mid:    #2c4a70;
+  --green-light:  #4f75a3;
+  --green-pale:   #bfd0e6;
+  --green-mist:   #edf1f7;
   --gold:         #c9a84c;
   --gold-light:   #e8d5a0;
   --sky:          #c8dfe8;
-  --white:        #f9faf8;
-  --dark:         #0e1f16;
-  --text-main:    #1c2e22;
-  --text-sub:     #4a6356;
-  --text-light:   #7a9a88;
+  --white:        #f8f6f1;
+  --dark:         #0b1626;
+  --text-main:    #1a2838;
+  --text-sub:     #4a5a6e;
+  --text-light:   #6f7f95;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,22 +36,25 @@ body {
   overflow-x: hidden;
 }
 
-/* ── NAVBAR ── */
+/* ── NAVBAR（2026-09 C案：白地・紺と金） ── */
 nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 76px;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 1.2rem 4rem;
-  background: rgba(14, 31, 22, 0.88);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(201,168,76,0.2);
+  padding: 0 4rem;
+  background: rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(227, 221, 204, 0.9);
 }
 
 .nav-logo {
-  display: flex; align-items: center; gap: 0.8rem;
+  display: flex; align-items: center; gap: 0.75rem;
+  text-decoration: none;
 }
 
 .nav-logo .falcon-icon {
-  width: 38px; height: 38px;
+  width: 38px; height: 38px; flex-shrink: 0;
 }
 
 .nav-logo-text {
@@ -59,234 +64,238 @@ nav {
 .nav-logo-text .ja {
   font-family: 'Noto Sans JP', sans-serif;
   font-size: 0.85rem; font-weight: 500;
-  color: var(--green-pale); letter-spacing: 0.08em;
+  color: #1f3a5f; letter-spacing: 0.08em;
 }
 
 .nav-logo-text .en {
   font-family: 'Cormorant Garamond', serif;
   font-size: 1.1rem; font-weight: 600;
-  color: var(--white); letter-spacing: 0.12em;
+  color: #1f3a5f; letter-spacing: 0.12em;
+}
+
+.nav-menu {
+  display: flex; align-items: center; gap: 2.25rem;
 }
 
 .nav-links {
-  display: flex; gap: 2.5rem; list-style: none;
+  display: flex; gap: 1.9rem; list-style: none;
 }
 
 .nav-links a {
   text-decoration: none;
-  font-size: 0.88rem; font-weight: 400;
-  color: rgba(249,250,248,0.75);
+  font-size: 0.8125rem; font-weight: 400;
+  color: #33404f;
   letter-spacing: 0.1em;
   transition: color 0.3s;
   text-transform: uppercase;
 }
 
-.nav-links a:hover { color: var(--gold); }
+.nav-links a:hover { color: #9a7a2c; }
 
-/* ── HERO ── */
+.nav-cta {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 0 1.4rem;
+  background: #1f3a5f; color: #ffffff;
+  text-decoration: none;
+  font-size: 0.875rem; font-weight: 700; letter-spacing: 0.08em;
+  border-radius: 2px;
+  transition: background 0.3s;
+}
+
+.nav-cta:hover { background: #2c4a70; }
+
+.nav-toggle {
+  display: none;
+  width: 44px; height: 44px;
+  align-items: center; justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: 1px solid #1f3a5f; border-radius: 2px;
+  color: #1f3a5f;
+  cursor: pointer;
+}
+
+.nav-toggle svg { width: 22px; height: 22px; }
+
+/* ── HERO（2026-09 C案：紺と金。背景は生成AIによるイメージ） ── */
 .hero {
-  min-height: 100vh;
   position: relative;
+  min-height: 100vh;
   display: flex; align-items: center;
   overflow: hidden;
-  background: var(--dark);
+  padding: 0;
+  background: #f7f5ef;
 }
 
-.hero-bg {
+.hero-photo {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center 42%;
+}
+
+.hero-veil {
   position: absolute; inset: 0;
-  background:
-    radial-gradient(ellipse at 70% 30%, rgba(74,140,92,0.18) 0%, transparent 60%),
-    radial-gradient(ellipse at 20% 80%, rgba(201,168,76,0.08) 0%, transparent 50%),
-    linear-gradient(160deg, #0e1f16 0%, #1a3a2a 50%, #0e2018 100%);
+  background: linear-gradient(180deg, rgba(247,245,239,0.42) 0%, rgba(247,245,239,0.16) 32%, rgba(247,245,239,0) 50%);
 }
 
-/* Animated grid lines */
-.hero-grid {
-  position: absolute; inset: 0; opacity: 0.06;
-  background-image:
-    linear-gradient(rgba(168,213,181,0.8) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(168,213,181,0.8) 1px, transparent 1px);
-  background-size: 80px 80px;
-  animation: gridDrift 20s linear infinite;
-}
-
-@keyframes gridDrift {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(80px); }
-}
-
-/* Point cloud dots */
-.hero-dots {
-  position: absolute; inset: 0; overflow: hidden;
-}
-
-.hero-dots::before {
-  content: '';
-  position: absolute;
-  width: 600px; height: 600px;
-  right: -100px; top: 50%;
-  transform: translateY(-50%);
-  background: radial-gradient(circle, rgba(74,140,92,0.15) 1px, transparent 1px),
-              radial-gradient(circle, rgba(201,168,76,0.1) 1px, transparent 1px);
-  background-size: 24px 24px, 48px 48px;
-  background-position: 0 0, 12px 12px;
-  border-radius: 50%;
-  animation: rotateDots 40s linear infinite;
-}
-
-@keyframes rotateDots {
-  0% { transform: translateY(-50%) rotate(0deg); }
-  100% { transform: translateY(-50%) rotate(360deg); }
+.hero-inner {
+  position: relative; z-index: 2;
+  width: 100%; max-width: 1440px; margin: 0 auto;
+  padding: 116px 120px 72px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 480px;
+  column-gap: 72px; align-items: center;
 }
 
 .hero-content {
-  position: relative; z-index: 2;
-  max-width: 1200px; margin: 0 auto;
-  padding: 8rem 4rem 4rem;
+  display: flex; flex-direction: column; align-items: flex-start;
 }
 
+/* 写真の上でも読めるよう、地図の注記と同じ白い縁取り（ハロー）を付ける */
 .hero-tag {
-  display: inline-flex; align-items: center; gap: 0.6rem;
+  display: flex; align-items: center; gap: 0.6rem;
   font-family: 'Space Mono', monospace;
-  font-size: 0.80rem; color: var(--gold);
-  letter-spacing: 0.2em; text-transform: uppercase;
-  margin-bottom: 2rem;
-  padding: 0.4rem 1rem;
-  border: 1px solid rgba(201,168,76,0.3);
-  border-radius: 2px;
+  font-size: 0.75rem; font-weight: 700;
+  color: #1f3a5f; letter-spacing: 0.2em; text-transform: uppercase;
+  text-shadow: 0 0 3px #ffffff, 0 0 10px rgba(255,255,255,0.9);
 }
 
 .hero-tag::before {
   content: '';
-  width: 6px; height: 6px;
-  background: var(--gold);
-  border-radius: 50%;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.6); }
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #b8923a;
 }
 
 .hero-title {
+  margin-top: 1.4rem;
+  font-size: clamp(2.2rem, 4.2vw, 3.75rem);
+  font-weight: 700; line-height: 1.35; letter-spacing: 0.03em;
+  color: #1f3a5f;
+  text-shadow: 0 0 2px rgba(255,255,255,0.95), 0 0 14px rgba(255,255,255,0.85), 0 0 34px rgba(255,255,255,0.55);
+}
+
+.hero-sub {
+  margin-top: 0.5rem;
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(3rem, 7vw, 6.5rem);
-  font-weight: 300;
-  color: var(--white);
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-  margin-bottom: 0.5rem;
-}
-
-.hero-title span {
-  color: var(--green-pale);
-  font-style: italic;
-}
-
-.hero-title-ja {
-  font-family: 'Noto Sans JP', sans-serif;
-  font-size: clamp(1rem, 2.5vw, 1.6rem);
-  font-weight: 300;
-  color: var(--green-pale);
-  letter-spacing: 0.3em;
-  margin-bottom: 2.5rem;
-  opacity: 0.8;
+  font-size: 1.35rem; font-style: italic; font-weight: 600; line-height: 1.3;
+  color: #1f3a5f;
+  text-shadow: 0 0 2px #ffffff, 0 0 8px rgba(255,255,255,0.9), 0 0 18px rgba(255,255,255,0.6);
 }
 
 .hero-desc {
-  max-width: 560px;
-  font-size: 1.05rem; line-height: 2;
-  color: rgba(249,250,248,0.65);
-  margin-bottom: 3rem;
-  font-weight: 300;
-  letter-spacing: 0.04em;
+  margin-top: 1.5rem; max-width: 600px;
+  font-size: 1rem; font-weight: 500; line-height: 2; letter-spacing: 0.02em;
+  color: #15243a;
+  text-shadow: 0 0 2px #ffffff, 0 0 4px #ffffff, 0 0 10px rgba(255,255,255,0.95), 0 0 20px rgba(255,255,255,0.7);
 }
 
 .hero-cta {
-  display: flex; gap: 1.2rem; flex-wrap: wrap;
+  margin-top: 2rem;
+  display: flex; gap: 0.9rem; flex-wrap: wrap;
 }
 
-.btn-primary {
-  display: inline-flex; align-items: center; gap: 0.6rem;
-  padding: 0.9rem 2.2rem;
-  background: var(--gold);
-  color: var(--dark);
+.hero-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 52px; padding: 0 1.9rem;
   text-decoration: none;
-  font-size: 0.82rem; font-weight: 700;
-  letter-spacing: 0.15em; text-transform: uppercase;
+  font-size: 0.95rem; letter-spacing: 0.08em;
   border-radius: 2px;
   transition: all 0.3s;
 }
 
-.btn-primary:hover {
-  background: var(--gold-light);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(201,168,76,0.3);
+.hero-btn-primary { background: #1f3a5f; color: #ffffff; font-weight: 700; }
+.hero-btn-primary:hover { background: #2c4a70; transform: translateY(-2px); }
+.hero-btn-secondary { background: #ffffff; border: 1px solid #1f3a5f; color: #1f3a5f; font-weight: 500; }
+.hero-btn-secondary:hover { background: #f4efe2; transform: translateY(-2px); }
+
+.hero-trust {
+  margin-top: 1.75rem;
+  display: flex; flex-wrap: wrap; gap: 0.5rem 0.6rem;
+  list-style: none;
 }
 
-.btn-secondary {
-  display: inline-flex; align-items: center; gap: 0.6rem;
-  padding: 0.9rem 2.2rem;
-  background: transparent;
-  color: var(--white);
-  text-decoration: none;
-  font-size: 0.82rem; font-weight: 400;
-  letter-spacing: 0.15em; text-transform: uppercase;
-  border: 1px solid rgba(249,250,248,0.3);
+.hero-trust li {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.3rem 0.7rem;
+  background: rgba(255,255,255,0.82);
   border-radius: 2px;
-  transition: all 0.3s;
+  font-size: 0.85rem; font-weight: 600; color: #15243a;
 }
 
-.btn-secondary:hover {
-  border-color: var(--green-pale);
-  color: var(--green-pale);
-  transform: translateY(-2px);
+.hero-trust svg {
+  width: 16px; height: 16px; flex-shrink: 0;
+  filter: drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 4px #ffffff);
 }
 
-.hero-stats {
-  position: absolute; bottom: 3rem; right: 4rem;
-  display: flex; gap: 3rem;
+.hero-note {
+  margin-top: 1.6rem; max-width: 620px;
+  padding: 0.8rem 1.05rem;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid #ddd5c1; border-radius: 2px;
 }
 
-.stat {
-  text-align: right;
+.hero-note p { font-size: 0.8125rem; line-height: 1.8; color: #33404f; }
+.hero-note p[lang="en"] { margin-top: 0.4rem; font-size: 0.72rem; line-height: 1.6; color: #5b6777; }
+
+/* 右のサービス枠（背景が透けて見える紺） */
+.hero-panel {
+  padding: 30px 32px 18px;
+  background: rgba(31,58,95,0.72);
+  border: 1px solid rgba(243,223,174,0.45); border-radius: 4px;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #f4efe2;
 }
 
-.stat-num {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 2.5rem; font-weight: 600;
-  color: var(--gold);
-  line-height: 1;
+.hero-panel-head {
+  display: flex; align-items: center; gap: 18px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(217,185,110,0.4);
 }
 
-.stat-label {
-  font-size: 0.75rem; color: rgba(249,250,248,0.5);
-  letter-spacing: 0.15em; text-transform: uppercase;
-  margin-top: 0.3rem;
+.hero-panel-head img {
+  width: 88px; height: 88px; flex-shrink: 0;
+  border-radius: 50%; background: #ffffff; object-fit: cover;
 }
 
-/* Scroll indicator */
-.scroll-hint {
-  position: absolute; bottom: 3rem; left: 50%;
-  transform: translateX(-50%);
-  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
-  color: rgba(249,250,248,0.3);
-  font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase;
+.hero-panel-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.2em;
+  color: #f6e6c2;
 }
 
-.scroll-line {
-  width: 1px; height: 50px;
-  background: linear-gradient(to bottom, rgba(249,250,248,0.3), transparent);
-  animation: scrollLine 2s ease-in-out infinite;
+.hero-panel-lead {
+  margin-top: 0.4rem;
+  font-size: 1.3rem; font-weight: 500; line-height: 1.6;
+  color: #f4efe2;
 }
 
-@keyframes scrollLine {
-  0% { transform: scaleY(0); transform-origin: top; }
-  50% { transform: scaleY(1); transform-origin: top; }
-  51% { transform: scaleY(1); transform-origin: bottom; }
-  100% { transform: scaleY(0); transform-origin: bottom; }
+.hero-panel-list { margin-top: 4px; list-style: none; }
+.hero-panel-list li { border-bottom: 1px solid rgba(217,185,110,0.22); }
+
+.hero-panel-list a {
+  display: flex; align-items: center; gap: 16px;
+  padding: 13px 2px;
+  color: #f4efe2; text-decoration: none;
 }
+
+.hero-panel-list a:hover .ja { text-decoration: underline; text-underline-offset: 4px; }
+.hero-panel-list .num { font-family: 'Space Mono', monospace; font-size: 0.75rem; color: #f0dcaa; }
+.hero-panel-list .txt { display: flex; flex-direction: column; flex-grow: 1; }
+.hero-panel-list .ja { font-size: 0.97rem; font-weight: 500; line-height: 1.5; }
+.hero-panel-list .en { font-family: 'Space Mono', monospace; font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(244,239,226,0.86); }
+.hero-panel-list .sub { margin-top: 3px; font-size: 0.72rem; line-height: 1.5; color: #f0dcaa; }
+.hero-panel-list svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+.hero-caption {
+  position: absolute; right: 24px; bottom: 14px; z-index: 2;
+  max-width: calc(100% - 48px);
+  padding: 4px 10px; border-radius: 2px;
+  background: rgba(247,245,239,0.9);
+  font-size: 0.69rem; line-height: 1.5; color: #33404f;
+}
+
+.hero-caption span { display: block; }
 
 /* ── SECTION COMMON ── */
 section { padding: 7rem 4rem; }
@@ -329,8 +338,8 @@ section { padding: 7rem 4rem; }
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5px;
-  background: rgba(45,90,61,0.12);
-  border: 1.5px solid rgba(45,90,61,0.12);
+  background: rgba(44,74,112,0.12);
+  border: 1.5px solid rgba(44,74,112,0.12);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -490,7 +499,7 @@ section { padding: 7rem 4rem; }
 
 .why-visual-label {
   font-family: 'Space Mono', monospace;
-  font-size: 0.75rem; color: rgba(168,213,181,0.6);
+  font-size: 0.75rem; color: rgba(191,208,230,0.6);
   letter-spacing: 0.2em; text-transform: uppercase;
 }
 
@@ -507,14 +516,14 @@ section { padding: 7rem 4rem; }
   background: var(--white);
   padding: 2.2rem 1.8rem;
   border-radius: 4px;
-  border: 1px solid rgba(45,90,61,0.1);
+  border: 1px solid rgba(44,74,112,0.1);
   transition: all 0.35s;
   cursor: default;
 }
 
 .target-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 20px 50px rgba(26,58,42,0.12);
+  box-shadow: 0 20px 50px rgba(31,58,95,0.12);
   border-color: var(--green-light);
 }
 
@@ -557,7 +566,7 @@ section { padding: 7rem 4rem; }
 .emblem-circle {
   width: 200px; height: 200px;
   border-radius: 50%;
-  border: 2px solid rgba(45,90,61,0.2);
+  border: 2px solid rgba(44,74,112,0.2);
   display: flex; align-items: center; justify-content: center;
   position: relative;
   background: radial-gradient(circle at 40% 35%, var(--green-mist), var(--white));
@@ -634,7 +643,7 @@ section { padding: 7rem 4rem; }
 
 .work-card {
   background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(168,213,181,0.1);
+  border: 1px solid rgba(191,208,230,0.1);
   border-radius: 4px;
   overflow: hidden;
   transition: all 0.35s;
@@ -657,7 +666,7 @@ section { padding: 7rem 4rem; }
 .work-thumb::after {
   content: '';
   position: absolute; inset: 0;
-  background: linear-gradient(to bottom, transparent 50%, rgba(14,31,22,0.6));
+  background: linear-gradient(to bottom, transparent 50%, rgba(11,22,38,0.6));
 }
 
 .work-body { padding: 1.5rem; }
@@ -686,7 +695,7 @@ section { padding: 7rem 4rem; }
 .news-list {
   display: flex; flex-direction: column;
   gap: 0;
-  border: 1px solid rgba(45,90,61,0.15);
+  border: 1px solid rgba(44,74,112,0.15);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -698,7 +707,7 @@ section { padding: 7rem 4rem; }
   align-items: center;
   padding: 1.4rem 2rem;
   background: var(--white);
-  border-bottom: 1px solid rgba(45,90,61,0.08);
+  border-bottom: 1px solid rgba(44,74,112,0.08);
   transition: background 0.3s;
   text-decoration: none;
   color: inherit;
@@ -721,7 +730,7 @@ section { padding: 7rem 4rem; }
   border-radius: 2px;
   text-align: center;
   letter-spacing: 0.05em;
-  border: 1px solid rgba(74,140,92,0.2);
+  border: 1px solid rgba(79,117,163,0.2);
 }
 
 .news-title {
@@ -742,7 +751,7 @@ section { padding: 7rem 4rem; }
   content: '';
   position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse at 30% 50%, rgba(74,140,92,0.2) 0%, transparent 60%),
+    radial-gradient(ellipse at 30% 50%, rgba(79,117,163,0.2) 0%, transparent 60%),
     radial-gradient(ellipse at 70% 50%, rgba(201,168,76,0.08) 0%, transparent 50%);
 }
 
@@ -799,7 +808,7 @@ footer {
   background: var(--dark);
   padding: 3rem 4rem;
   display: flex; align-items: center; justify-content: space-between;
-  border-top: 1px solid rgba(168,213,181,0.08);
+  border-top: 1px solid rgba(191,208,230,0.08);
 }
 
 .footer-logo {
@@ -825,8 +834,13 @@ footer {
 }
 
 .footer-copy {
-  font-size: 0.78rem; color: rgba(168,213,181,0.3);
+  font-size: 0.78rem; color: rgba(191,208,230,0.3);
   letter-spacing: 0.1em;
+}
+
+.footer-note {
+  font-size: 0.72rem; color: var(--text-light);
+  letter-spacing: 0.05em; margin-bottom: 0.4rem;
 }
 
 /* ── ANIMATIONS ── */
@@ -851,10 +865,7 @@ footer {
 
 /* ── RESPONSIVE ── */
 @media (max-width: 1024px) {
-  nav { padding: 1rem 2rem; }
-  .nav-links { gap: 1.5rem; }
   section { padding: 5rem 2rem; }
-  .hero-content { padding: 7rem 2rem 4rem; }
   .services-grid { grid-template-columns: repeat(2, 1fr); }
   .targets-grid { grid-template-columns: repeat(2, 1fr); }
   .why-grid { grid-template-columns: 1fr; }
@@ -865,101 +876,158 @@ footer {
   .news-item { grid-template-columns: 110px 70px 1fr; }
   footer { flex-direction: column; gap: 1.5rem; text-align: center; }
   .footer-info { text-align: center; }
-  .hero-stats { right: 2rem; gap: 2rem; }
 }
 
 @media (max-width: 640px) {
-  nav { padding: 1rem 1.2rem; }
-  .nav-links { display: none; }
   section { padding: 4rem 1.2rem; }
-  .hero-content { padding: 6rem 1.2rem 3rem; }
-  .hero-stats { display: none; }
   .services-grid { grid-template-columns: 1fr; }
   .targets-grid { grid-template-columns: 1fr; }
   .works-grid { grid-template-columns: 1fr; }
   .news-item { grid-template-columns: 1fr; gap: 0.3rem; }
   .message-emblem { flex-direction: column; }
 }
+
+/* ── RESPONSIVE：ナビとトップ（2026-09 C案） ── */
+html { scroll-padding-top: 76px; }
+
+@media (max-width: 1100px) {
+  nav { padding: 0 1.2rem 0 1.5rem; }
+  .nav-toggle { display: flex; }
+  .nav-menu {
+    display: none;
+    position: absolute; top: 100%; left: 0; right: 0;
+    flex-direction: column; align-items: stretch; gap: 0;
+    padding: 0.5rem 1.5rem 1.25rem;
+    background: rgba(255,255,255,0.98);
+    border-bottom: 1px solid #e3ddcc;
+    box-shadow: 0 12px 24px rgba(20,38,61,0.12);
+  }
+  nav.is-open .nav-menu { display: flex; }
+  .nav-links { flex-direction: column; gap: 0; }
+  .nav-links a { display: block; padding: 0.8rem 0; border-bottom: 1px solid #eee7d8; font-size: 0.9rem; }
+  .nav-cta { margin-top: 1rem; }
+  .hero-inner { grid-template-columns: 1fr; row-gap: 2.5rem; padding: 116px 2rem 72px; }
+  .hero-panel { max-width: 640px; }
+  /* 登録の注記を説明文のすぐ下へ（「測量カンパニー」と同じ画面に入れる：法務F 2026-09-10） */
+  .hero-note { order: 1; }
+  .hero-cta { order: 2; }
+  .hero-trust { order: 3; }
+}
+
+@media (max-width: 640px) {
+  html { scroll-padding-top: 60px; }
+  nav { height: 60px; padding: 0 12px 0 16px; }
+  .nav-logo .falcon-icon { width: 32px; height: 32px; }
+  .nav-logo-text .ja { font-size: 0.72rem; }
+  .nav-logo-text .en { font-size: 0.94rem; }
+  .hero { display: block; min-height: 0; }
+  .hero-photo { height: 470px; object-position: 72% 50%; }
+  .hero-veil { bottom: auto; height: 470px; background: linear-gradient(180deg, rgba(247,245,239,0.10) 0%, rgba(247,245,239,0) 26%, rgba(247,245,239,0) 50%, rgba(247,245,239,0.82) 86%, #f7f5ef 100%); }
+  .hero-inner { padding: 232px 20px 0; row-gap: 0; }
+  .hero-tag { font-size: 0.66rem; }
+  .hero-title { margin-top: 1rem; font-size: 2.2rem; line-height: 1.38; letter-spacing: 0.01em; }
+  .hero-desc { margin-top: 1rem; font-size: 0.875rem; line-height: 1.9; }
+  .hero-cta { margin-top: 1.4rem; flex-direction: column; gap: 10px; }
+  .hero-btn { width: 100%; min-height: 50px; }
+  .hero-trust { margin-top: 1.25rem; flex-direction: column; gap: 8px; }
+  .hero-trust li { font-size: 0.8125rem; }
+  .hero-note { margin-top: 1.25rem; }
+  .hero-note p { font-size: 0.78rem; }
+  .hero-note p[lang="en"] { font-size: 0.66rem; }
+  .hero-panel {
+    max-width: none; margin: 26px -20px 0; padding: 22px 20px 8px;
+    border: 0; border-top: 1px solid rgba(217,185,110,0.4); border-radius: 0;
+    background: #22406a;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  .hero-panel-head { gap: 14px; padding-bottom: 14px; }
+  .hero-panel-head img { width: 60px; height: 60px; }
+  .hero-panel-label { font-size: 0.66rem; }
+  .hero-panel-lead { font-size: 0.9rem; }
+  .hero-panel-list .ja { font-size: 0.9rem; }
+  .hero-sub { font-size: 1.05rem; }
+  .hero-caption { top: 70px; right: 10px; bottom: auto; max-width: 250px; }
+}
 </style>
 </head>
 <body>
 
-<!-- NAVBAR -->
-<nav>
-  <div class="nav-logo">
-    <svg class="falcon-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M20 4 C20 4 8 10 6 20 C4 30 10 36 20 36 C30 36 36 30 34 20 C32 10 20 4 20 4Z" fill="rgba(74,140,92,0.15)" stroke="rgba(201,168,76,0.5)" stroke-width="0.8"/>
-      <path d="M20 8 L14 24 L20 20 L26 24 Z" fill="rgba(201,168,76,0.7)"/>
-      <path d="M20 8 L26 18 L20 20 Z" fill="rgba(168,213,181,0.5)"/>
-      <circle cx="23" cy="13" r="1.5" fill="var(--gold)"/>
+<!-- NAVBAR（2026-09 C案） -->
+<nav id="site-nav" aria-label="メインメニュー">
+  <a class="nav-logo" href="#top">
+    <svg class="falcon-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M20 4 C20 4 8 10 6 20 C4 30 10 36 20 36 C30 36 36 30 34 20 C32 10 20 4 20 4Z" fill="rgba(31,58,95,0.06)" stroke="#b8923a" stroke-width="0.8"/>
+      <path d="M20 8 L14 24 L20 20 L26 24 Z" fill="#b8923a"/>
+      <path d="M20 8 L26 18 L20 20 Z" fill="rgba(31,58,95,0.55)"/>
+      <circle cx="23" cy="13" r="1.5" fill="#1f3a5f"/>
     </svg>
-    <div class="nav-logo-text">
+    <span class="nav-logo-text">
       <span class="ja">株式会社ファルコン</span>
       <span class="en">Falcon Co., Ltd.</span>
-    </div>
+    </span>
+  </a>
+  <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="メニューを開く">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+  </button>
+  <div class="nav-menu" id="nav-menu">
+    <ul class="nav-links">
+      <li><a href="#services">Services</a></li>
+      <li><a href="#why">Why Falcon</a></li>
+      <li><a href="#targets">Clients</a></li>
+      <li><a href="#message">Message</a></li>
+      <li><a href="#works">Works</a></li>
+      <li><a href="#news">News</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <a class="nav-cta" href="#contact">お問い合わせ</a>
   </div>
-  <ul class="nav-links">
-    <li><a href="#services">Services</a></li>
-    <li><a href="#why">Why Falcon</a></li>
-    <li><a href="#targets">Clients</a></li>
-    <li><a href="#message">Message</a></li>
-    <li><a href="#works">Works</a></li>
-    <li><a href="#news">News</a></li>
-    <li><a href="#contact">Contact</a></li>
-  </ul>
 </nav>
 
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-bg"></div>
-  <div class="hero-grid"></div>
-  <div class="hero-dots"></div>
+<!-- HERO（2026-09 C案。背景は生成AIによるイメージ：資料\10_広報\HPトップ改修_20260919\AIGEN_生成記録_20260919.md） -->
+<section class="hero" id="top">
+  <img class="hero-photo" src="images/AIGEN_hero_day_20260919.webp" srcset="images/AIGEN_hero_day_20260919_960.webp 960w, images/AIGEN_hero_day_20260919.webp 1920w" sizes="100vw" width="1920" height="1086" alt="" aria-hidden="true" loading="eager" fetchpriority="high">
+  <div class="hero-veil" aria-hidden="true"></div>
 
-  <div class="hero-content">
-    <div class="hero-tag">Surveying Technology for the Future</div>
-    <h1 class="hero-title">
-      Seeing the World<br>
-      in <span>Three Dimensions</span>
-    </h1>
-    <p class="hero-title-ja">三次元の視点で、空間の真実を測る</p>
-    <p class="hero-desc">
-      SLAM・3Dガウシアンスプラッティング・AI活用など<br>
-      新しい空間把握技術で、さまざまな現場の「今」をそのままデータ化。<br>
-      東北発の次世代測量カンパニー。東北を中心に、ご相談は全国から。
-      <span style="display:block; margin-top:1.1rem; font-size:0.85rem; line-height:1.85; letter-spacing:0.05em; color:var(--green-pale); opacity:1;">
-        ※ 測量法に基づく測量業者登録は申請中です。測量業務は、測量業者登録の完了後にお引き受けいたします。<br>
-        Our application for registration as a surveying business under the Survey Act has been filed and is pending. Surveying work under the Survey Act, which includes the preparation of maps, will be offered once the registration is complete.
-      </span>
-    </p>
-    <div class="hero-cta">
-      <a href="#services" class="btn-primary">
-        <span>▶</span> Our Services
-      </a>
-      <a href="#contact" class="btn-secondary">
-        Contact Us →
-      </a>
+  <div class="hero-inner">
+    <div class="hero-content">
+      <p class="hero-tag">Surveying Technology for the Future</p>
+      <h1 class="hero-title">現場の「今」を、<br>そのままデータに。</h1>
+      <p class="hero-sub" lang="en">The site as it is today, captured as data.</p>
+      <p class="hero-desc">SLAM・3Dガウシアンスプラッティング・AIなどの新しい空間把握技術を活かす、東北発の次世代測量カンパニーです。東北を中心に、ご相談は全国から承ります。</p>
+      <div class="hero-cta">
+        <a href="#contact" class="hero-btn hero-btn-primary">ご相談・お問い合わせ</a>
+        <a href="#services" class="hero-btn hero-btn-secondary">サービスを見る</a>
+      </div>
+      <ul class="hero-trust">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="#9a7a2c" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.4-6-10a6 6 0 0 1 12 0c0 4.6-6 10-6 10z"/><path d="M12 13.2a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4z"/></svg>本店 仙台市青葉区</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="#9a7a2c" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5"/><path d="M15 6.5V20"/></svg>東北を中心に対応</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="#9a7a2c" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 14a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"/><path d="M8.6 12.7L7 21l5-2.8 5 2.8-1.6-8.3"/></svg>測量士（国家資格）を持つ代表者</li>
+      </ul>
+      <div class="hero-note">
+        <p>※ 測量法に基づく測量業者登録は申請中です。測量業務は、測量業者登録の完了後にお引き受けいたします。</p>
+        <p lang="en">Our application for registration as a surveying business under the Survey Act has been filed and is pending. Surveying work under the Survey Act, which includes the preparation of maps, will be offered once the registration is complete.</p>
+      </div>
     </div>
+
+    <aside class="hero-panel" aria-label="サービス一覧">
+      <div class="hero-panel-head">
+        <img src="images/message-emblem-01.jpg" alt="株式会社ファルコンのエンブレム" width="88" height="88" loading="lazy">
+        <div>
+          <p class="hero-panel-label">OUR SERVICES</p>
+          <p class="hero-panel-lead">3次元計測・測量・AI・映像を、<br>ひとつの窓口でご相談いただけます。</p>
+        </div>
+      </div>
+      <ul class="hero-panel-list">
+        <li><a href="#services"><span class="num">01</span><span class="txt"><span class="ja">SLAM・点群データ計測</span><span class="en">SLAM 3D Scanning</span><span class="sub">ハンディ型SLAMを導入。計測のご相談・お見積りを承ります</span></span><svg viewBox="0 0 24 24" fill="none" stroke="#f0dcaa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a></li>
+        <li><a href="#services"><span class="num">02</span><span class="txt"><span class="ja">3DGS・フォトリアル空間再現</span><span class="en">3D Gaussian Splatting</span></span><svg viewBox="0 0 24 24" fill="none" stroke="#f0dcaa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a></li>
+        <li><a href="#services"><span class="num">03</span><span class="txt"><span class="ja">土地・建物の測量</span><span class="en">Land &amp; Building Survey</span><span class="sub">測量業者登録の完了後にお引き受けします</span></span><svg viewBox="0 0 24 24" fill="none" stroke="#f0dcaa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a></li>
+        <li><a href="#services"><span class="num">04</span><span class="txt"><span class="ja">AI活用・業務効率化提案</span><span class="en">AI-Driven Workflow</span></span><svg viewBox="0 0 24 24" fill="none" stroke="#f0dcaa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a></li>
+        <li><a href="#services"><span class="num">05</span><span class="txt"><span class="ja">動画制作・Instagram運用代行</span><span class="en">Video &amp; Social Media</span></span><svg viewBox="0 0 24 24" fill="none" stroke="#f0dcaa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a></li>
+      </ul>
+    </aside>
   </div>
 
-  <div class="hero-stats">
-    <div class="stat">
-      <div class="stat-num">3D</div>
-      <div class="stat-label">Point Cloud</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num">GS</div>
-      <div class="stat-label">Gaussian Splatting</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num">AI</div>
-      <div class="stat-label">Workflow Design</div>
-    </div>
-  </div>
-
-  <div class="scroll-hint">
-    <div class="scroll-line"></div>
-    Scroll
-  </div>
+  <p class="hero-caption">背景は生成AIで作成したイメージです（当社の計測データではありません）。<span lang="en">Background: AI-generated image, not our measurement data.</span></p>
 </section>
 
 <!-- SERVICES -->
@@ -971,8 +1039,8 @@ footer {
 
     <!-- 2026-08 追加: 和英リード -->
     <p class="service-desc" style="max-width:44rem;margin:0 auto 3rem;text-align:center;">
-      測量・3次元計測・映像・AIを、ひとつの窓口でご相談いただけます。<br>
-      <span style="letter-spacing:0.04em;">Surveying, 3D measurement, video and AI &mdash; all from a single point of contact. Surveying work under the Survey Act, which includes the preparation of maps, will be offered once our registration as a surveying business is complete.</span>
+      3次元計測・測量・AI・映像を、ひとつの窓口でご相談いただけます。<br>
+      <span style="letter-spacing:0.04em;">3D measurement, surveying, AI and video &mdash; all from a single point of contact. Surveying work under the Survey Act, which includes the preparation of maps, will be offered once our registration as a surveying business is complete.</span>
     </p>
 
     <div class="services-grid">
@@ -983,21 +1051,21 @@ footer {
         <div class="service-icon" style="font-size:0; line-height:0;">
           <svg width="52" height="52" viewBox="0 0 68 120" xmlns="http://www.w3.org/2000/svg">
             <!-- グリップ -->
-            <rect x="27" y="78" width="14" height="38" rx="5" fill="#1a3a2a"/>
-            <line x1="30" y1="89" x2="38" y2="89" stroke="#2d5a3d" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="30" y1="97" x2="38" y2="97" stroke="#2d5a3d" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="30" y1="105" x2="38" y2="105" stroke="#2d5a3d" stroke-width="1.5" stroke-linecap="round"/>
+            <rect x="27" y="78" width="14" height="38" rx="5" fill="#1f3a5f"/>
+            <line x1="30" y1="89" x2="38" y2="89" stroke="#2c4a70" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="30" y1="97" x2="38" y2="97" stroke="#2c4a70" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="30" y1="105" x2="38" y2="105" stroke="#2c4a70" stroke-width="1.5" stroke-linecap="round"/>
             <!-- ネック -->
-            <rect x="29" y="62" width="10" height="18" rx="2" fill="#2d5a3d"/>
+            <rect x="29" y="62" width="10" height="18" rx="2" fill="#2c4a70"/>
             <!-- 本体 -->
-            <rect x="10" y="14" width="48" height="50" rx="7" fill="#1a3a2a"/>
-            <rect x="13" y="17" width="42" height="44" rx="5" fill="none" stroke="#4a8c5c" stroke-width="0.7" opacity="0.6"/>
+            <rect x="10" y="14" width="48" height="50" rx="7" fill="#1f3a5f"/>
+            <rect x="13" y="17" width="42" height="44" rx="5" fill="none" stroke="#4f75a3" stroke-width="0.7" opacity="0.6"/>
             <!-- レンズ -->
-            <circle cx="34" cy="39" r="16" fill="#0e1f16"/>
-            <circle cx="34" cy="39" r="13" fill="#1a3a2a" stroke="#c9a84c" stroke-width="1.5"/>
-            <circle cx="34" cy="39" r="8" fill="#0e1f16"/>
-            <circle cx="34" cy="39" r="4" fill="#1a3a2a" opacity="0.8"/>
-            <circle cx="29" cy="34" r="2.5" fill="#a8d5b5" opacity="0.4"/>
+            <circle cx="34" cy="39" r="16" fill="#0b1626"/>
+            <circle cx="34" cy="39" r="13" fill="#1f3a5f" stroke="#c9a84c" stroke-width="1.5"/>
+            <circle cx="34" cy="39" r="8" fill="#0b1626"/>
+            <circle cx="34" cy="39" r="4" fill="#1f3a5f" opacity="0.8"/>
+            <circle cx="29" cy="34" r="2.5" fill="#bfd0e6" opacity="0.4"/>
             <!-- スキャンライン -->
             <line x1="34" y1="25" x2="5" y2="2" stroke="#c9a84c" stroke-width="0.9" stroke-dasharray="2.5,2.5" opacity="0.75"/>
             <line x1="34" y1="25" x2="34" y2="0" stroke="#c9a84c" stroke-width="0.9" stroke-dasharray="2.5,2.5" opacity="0.75"/>
@@ -1005,17 +1073,17 @@ footer {
             <path d="M 5,2 A 40,40 0 0,1 63,2" fill="none" stroke="#c9a84c" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
             <!-- ボタン・LED -->
             <rect x="57" y="28" width="5" height="9" rx="2" fill="#c9a84c"/>
-            <circle cx="44" cy="18" r="2.5" fill="#a8d5b5" opacity="0.9"/>
+            <circle cx="44" cy="18" r="2.5" fill="#bfd0e6" opacity="0.9"/>
             <circle cx="24" cy="18" r="2.5" fill="#c9a84c" opacity="0.9"/>
           </svg>
         </div>
         <div class="service-title-en">SLAM 3D Scanning</div>
         <div class="service-title-ja">SLAM・点群データ計測</div>
-        <p class="service-desc">歩きながら周囲を3D点群（空間を無数の点の集まりとして記録したデータ）として取得する計測手法です。衛星測位（GPS）が届かない屋内・地下・トンネルなど、据置型（三脚に据えて1点ずつ測る機器）では手間のかかる空間を対象としています。歩いて記録する方式は時間を短くできる一方、点の位置の確からしさは据置型に及びません。目的に合うほうをご提案します。<strong>当社はハンディ型の計測機器の導入を決定し、納品の手続を進めております。現在は、ご相談と仕様のご検討をお受けしております。</strong></p>
+        <p class="service-desc">歩きながら周囲を3D点群（空間を無数の点の集まりとして記録したデータ）として取得する計測手法です。衛星測位（GPSなど）が届かない屋内・地下空間など、据置型（三脚に据え、場所を移しながら1か所ずつ計測する機器）では手間のかかる空間を対象としています。歩いて記録する方式は時間を短くできる一方、点の位置の確からしさは据置型に及びません。用途に合うかどうかを事前にご説明します。<strong>当社は2026年9月にハンディ型のSLAM計測機器を導入しました。計測のご相談・お見積りを承ります。まずは、計測したい場所とデータの使い道をお聞かせください。</strong></p>
         <div class="service-tag-list">
-          <span class="stag">屋内・地下</span>
+          <span class="stag">屋内・地下空間</span>
           <span class="stag">点群データ</span>
-          <span class="stag">導入決定</span>
+          <span class="stag">ご相談受付中</span>
         </div>
       </div>
 
@@ -1144,7 +1212,7 @@ footer {
           <div class="why-point-num">01</div>
           <div class="why-point-content">
             <h4>三次元計測を、外に投げずに回す体制</h4>
-            <p>SLAM（歩きながら周囲を三次元で記録していく計測方式）・3DGS（写真から実写のような三次元空間を再構成する技術）について、機材の導入から現場での運用、データ処理までを、外部に委託せず、代表者が一人で行います（ハンディ型の計測機器は、導入を決定し納品の手続を進めております）。</p>
+            <p>SLAM（歩きながら周囲を三次元で記録していく計測方式）・3DGS（写真から実写のような三次元空間を再構成する技術）について、機材の導入から現場での運用、データ処理までを、外部に委託せず、代表者が一人で行います（ハンディ型の計測機器は、2026年9月に導入しました）。</p>
           </div>
         </div>
         <div class="why-point fade-up">
@@ -1189,9 +1257,9 @@ footer {
       </div>
       <div style="flex:1 1 320px;min-width:260px;">
         <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:#e8d5a0;margin:0 0 0.5rem;">Drone Compliance Advisory</h4>
-        <p style="margin:0;font-size:0.9rem;line-height:1.9;">ドローンの飛行許可・承認の申請や運用ルールについては、許認可申請を専門とする<a href="https://boundary.or.jp/" target="_blank" rel="noopener noreferrer" style="color:#a8d5b5;text-decoration:underline;text-underline-offset:3px;">バウンダリ行政書士法人</a>（東京・仙台・名古屋／代表社員 佐々木慎太郎）と顧問契約（ライトプラン）を締結し、専門家に相談できる体制を整えています。<span style="font-family:'Space Mono',monospace;font-size:0.78rem;color:#a8d5b5;white-space:nowrap;">2026.08</span></p>
-        <p style="margin:0.8rem 0 0;font-size:0.82rem;line-height:1.85;color:#a8d5b5;">For flight permissions and operating rules, we work under an advisory agreement (Light Plan) with Boundary Gyoseishoshi Lawyer Corporation (Tokyo / Sendai / Nagoya), a firm specialising in drone-related permit filings in Japan.</p>
-        <p style="margin:0.8rem 0 0;font-size:0.75rem;line-height:1.8;color:#a8d5b5;">※ 上記バッジは、同法人が顧問サービスのご利用者に交付している認証バッジです。／ The badge above is issued by the firm to users of its advisory service.</p>
+        <p style="margin:0;font-size:0.9rem;line-height:1.9;">ドローンの飛行許可・承認の申請や運用ルールについては、許認可申請を専門とする<a href="https://boundary.or.jp/" target="_blank" rel="noopener noreferrer" style="color:#bfd0e6;text-decoration:underline;text-underline-offset:3px;">バウンダリ行政書士法人</a>（東京・仙台・名古屋／代表社員 佐々木慎太郎）と顧問契約（ライトプラン）を締結し、専門家に相談できる体制を整えています。<span style="font-family:'Space Mono',monospace;font-size:0.78rem;color:#bfd0e6;white-space:nowrap;">2026.08</span></p>
+        <p style="margin:0.8rem 0 0;font-size:0.82rem;line-height:1.85;color:#bfd0e6;">For flight permissions and operating rules, we work under an advisory agreement (Light Plan) with Boundary Gyoseishoshi Lawyer Corporation (Tokyo / Sendai / Nagoya), a firm specialising in drone-related permit filings in Japan.</p>
+        <p style="margin:0.8rem 0 0;font-size:0.75rem;line-height:1.8;color:#bfd0e6;">※ 上記バッジは、同法人が顧問サービスのご利用者に交付している認証バッジです。／ The badge above is issued by the firm to users of its advisory service.</p>
       </div>
     </div>
   </div>
@@ -1354,9 +1422,9 @@ footer {
           <div class="work-cat">Step 03</div>
           <div class="work-title">計測・撮影<span style="display:block; font-weight:300; color:var(--green-pale); opacity:0.8; margin-top:0.25rem;">Field Work</span></div>
           <p class="work-desc">
-            現地で計測・撮影を行います。建物の内部や設備は、歩きながら記録する三次元計測で対応します（機器の導入を決定し、納品の手続を進めております）。土地の測量を伴う業務は、測量業者登録の完了後にお引き受けいたします。
+            現地で計測・撮影を行います。建物の内部や設備は、歩きながら記録する三次元計測で対応します（機器は2026年9月に導入しました）。土地の測量を伴う業務は、測量業者登録の完了後にお引き受けいたします。
             <span style="display:block; margin-top:0.7rem; font-size:0.8rem; line-height:1.85; color:var(--green-pale); opacity:0.75;">
-              Indoors we will use handheld 3D scanning (the equipment is on order and not yet delivered). Surveying work under the Survey Act, which includes the preparation of maps, will be offered once our registration as a surveying business is complete.
+              Indoors we use handheld 3D scanning (the equipment was introduced in September 2026). Surveying work under the Survey Act, which includes the preparation of maps, will be offered once our registration as a surveying business is complete.
             </span>
           </p>
         </div>
@@ -1463,6 +1531,11 @@ footer {
     <p class="section-title-ja">最新情報・お知らせ</p>
 
     <div class="news-list">
+      <div class="news-item">
+        <div class="news-date">2026.09.19</div>
+        <div class="news-cat">サービス</div>
+        <div class="news-title">ハンディ型のSLAM計測機器（歩きながら周囲を3次元で記録する機器）を導入しました。屋内・地下空間などの点群データ（空間を無数の点の集まりとして記録したデータ）の取得について、ご相談・お見積りを承ります。<span style="display:block; margin-top:0.5rem; font-size:0.85rem; opacity:0.7;">We have introduced a handheld SLAM scanner, a device that records its surroundings in 3D as the operator walks. We welcome enquiries and quotation requests for capturing point-cloud data (a record of a space as a dense set of points) in indoor and underground spaces.</span></div>
+      </div>
       <div class="news-item">
         <div class="news-date">2026.09.10</div>
         <div class="news-cat">訂正</div>
@@ -1574,6 +1647,7 @@ footer {
   </div>
   <div class="footer-info">
     <div class="footer-area">📍 仙台市・東北中心 / Sendai, Tohoku — Inquiries welcome from all over Japan</div>
+    <div class="footer-note">一部の画像は生成AIにより作成したイメージです。<span lang="en"> Some images on this site are AI-generated illustrations.</span></div>
     <div class="footer-copy">© 2026 Falcon Co., Ltd. All Rights Reserved.</div>
   </div>
 </footer>
@@ -1599,7 +1673,7 @@ for (let i = 0; i < N; i++) {
     theta, phi,
     speed: (Math.random() - 0.5) * 0.003,
     size: Math.random() * 2 + 0.8,
-    hue: 140 + Math.random() * 40,
+    hue: 205 + Math.random() * 25,
     bright: 0.4 + Math.random() * 0.6,
   });
 }
@@ -1629,8 +1703,8 @@ function draw() {
 
   // bg gradient
   const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 120);
-  grad.addColorStop(0, 'rgba(26,58,42,0.4)');
-  grad.addColorStop(1, 'rgba(14,31,22,0)');
+  grad.addColorStop(0, 'rgba(31,58,95,0.4)');
+  grad.addColorStop(1, 'rgba(11,22,38,0)');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
@@ -1682,6 +1756,21 @@ const observer = new IntersectionObserver(entries => {
 }, { threshold: 0.15 });
 
 document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// ── スマホ・タブレットのメニュー開閉（2026-09 C案） ──
+(function () {
+  const nav = document.getElementById('site-nav');
+  const btn = nav && nav.querySelector('.nav-toggle');
+  if (!btn) return;
+  const setOpen = open => {
+    nav.classList.toggle('is-open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'メニューを閉じる' : 'メニューを開く');
+  };
+  btn.addEventListener('click', () => setOpen(!nav.classList.contains('is-open')));
+  nav.querySelectorAll('.nav-menu a').forEach(a => a.addEventListener('click', () => setOpen(false)));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setOpen(false); });
+})();
 </script>
 </body>
 </html>
