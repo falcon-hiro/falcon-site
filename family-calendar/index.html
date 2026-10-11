@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>あいてる？ — 家族の空き時間カレンダー</title>
+<meta name="description" content="夫婦・家族の少人数向け。Google カレンダーの予定から「みんなが空いている時間」を見つけて、散歩・デート・待ち合わせの予定をサッと作れます。">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#e8735a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e8735a'/%3E%3Crect x='12' y='16' width='40' height='36' rx='6' fill='%23fff'/%3E%3Crect x='12' y='16' width='40' height='10' rx='6' fill='%23c95b44'/%3E%3Cpath d='M32 47l-8.5-8.2a4.8 4.8 0 0 1 8.5-4.6a4.8 4.8 0 0 1 8.5 4.6z' fill='%23e8735a'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#fbf6f0; --card:#ffffff; --ink:#2a2622; --muted:#7d746b; --line:#ece3d8; --track:#f4efe8;
+  --accent:#e8735a; --accent-dark:#c95b44; --accent-soft:#fde9e3;
+  --free:#cdeedb; --free-strong:#2f9e63; --free-ink:#1d6b42;
+  --warn-bg:#fff6dc; --warn-ink:#7a5a00; --err-bg:#fde7e7; --err-ink:#9b2c2c; --info-bg:#e8f1fb; --info-ink:#1f4e79;
+  --sat:#2f6fcf; --sun:#d8483b;
+  --radius:14px; --shadow:0 2px 10px rgba(60,40,20,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#151517; --card:#212125; --ink:#f1ede8; --muted:#a39b92; --line:#36363c; --track:#2b2b30;
+    --accent-soft:#3a2823; --free:#1f4a33; --free-strong:#3fbf78; --free-ink:#bfeed2;
+    --warn-bg:#3a3214; --warn-ink:#f1d67a; --err-bg:#3d2020; --err-ink:#f3a6a6; --info-bg:#1d2b3d; --info-ink:#a9cdf5;
+    --sat:#7fb0ff; --sun:#ff8a7a; --shadow:0 2px 10px rgba(0,0,0,.3); }
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+a{color:var(--accent-dark)}
+.hidden{display:none!important}
+i.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+
+/* ヘッダー */
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));background:color-mix(in srgb,var(--card) 88%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);min-width:0}
+.brand .logo{font-size:1.5rem;line-height:1}
+.brand strong{display:block;font-size:1.05rem;letter-spacing:.02em}
+.brand small{display:block;font-size:.7rem;color:var(--muted);white-space:nowrap}
+.top-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.icon-btn{width:40px;height:40px;border-radius:10px;font-size:1.25rem;color:var(--muted);display:inline-flex;align-items:center;justify-content:center}
+.icon-btn:hover{background:var(--track);color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border-radius:12px;font-weight:600;border:1px solid transparent;transition:background .15s,opacity .15s}
+.btn.sm{min-height:36px;padding:0 12px;font-size:.85rem;border-radius:10px}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-dark)}
+.btn.ghost{background:var(--card);border-color:var(--line);color:var(--ink)}
+.btn.ghost:hover{background:var(--track)}
+.btn.green{background:var(--free-strong);color:#fff}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.link{color:var(--accent-dark);text-decoration:underline;padding:0}
+
+main{max-width:960px;margin:0 auto;padding:12px 12px 90px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px;border:1px solid var(--line)}
+.user-line{font-size:.78rem;color:var(--muted);margin:2px 4px 10px;display:flex;flex-wrap:wrap;gap:4px 12px}
+
+/* ようこそ */
+.onboard h2{font-size:1.25rem;margin-bottom:6px}
+.onboard p{color:var(--muted);margin-bottom:10px}
+.steps{margin:8px 0 14px 1.3em}
+.steps li{margin:4px 0}
+.actions{display:flex;gap:8px;margin-top:12px}
+.actions.wrap{flex-wrap:wrap}
+.actions.end{justify-content:flex-end}
+
+/* 条件 */
+.controls{padding:12px 14px}
+.ctrl-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctrl-row + .ctrl-row{margin-top:10px}
+.ctrl-label{font-size:.8rem;color:var(--muted);flex-shrink:0}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border-radius:999px;padding:7px 12px;border:1px solid var(--line);background:var(--card);font-size:.9rem;min-height:36px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ctrl-row.grid label{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted)}
+.ctrl-row.grid select{min-height:36px;padding:0 8px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:.9rem}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+
+/* お知らせ */
+.alert{border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:.92rem;display:flex;gap:10px;align-items:flex-start}
+.alert .ic{font-size:1.2rem;line-height:1.3}
+.alert .body{flex:1;min-width:0}
+.alert .body p{margin:0}
+.alert .body .sub{font-size:.82rem;opacity:.85;margin-top:4px}
+.alert .actions{margin-top:8px}
+.alert.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.alert.err{background:var(--err-bg);color:var(--err-ink)}
+.alert.info{background:var(--info-bg);color:var(--info-ink)}
+.alert .btn.sm{background:rgba(255,255,255,.7);color:inherit;border-color:currentColor}
+@media (prefers-color-scheme:dark){.alert .btn.sm{background:rgba(0,0,0,.25)}}
+
+/* まとめ */
+.summary{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin:4px 4px 12px;font-size:.9rem;color:var(--muted)}
+.summary b{color:var(--ink);font-size:1.05rem}
+.summary .big{color:var(--free-ink);font-size:1.25rem}
+
+/* 日ごとのカード */
+.day{padding:12px 14px 14px}
+.day.today{border-color:var(--accent)}
+.day-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.day-head .d{font-size:1.15rem;font-weight:700}
+.day-head .dow{font-weight:700}
+.day-head .dow.sat{color:var(--sat)}
+.day-head .dow.sun,.day.off .dow{color:var(--sun)}
+.day.off .dow.sat{color:var(--sat)}
+.badge{font-size:.72rem;border-radius:999px;padding:2px 8px;background:var(--track);color:var(--muted)}
+.badge.hol{background:var(--err-bg);color:var(--err-ink)}
+.badge.today{background:var(--accent-soft);color:var(--accent-dark)}
+.day-head .spacer{flex:1}
+.day-head .count{font-size:.8rem;color:var(--muted)}
+.day-head .count.ok{color:var(--free-ink);font-weight:700}
+.tl{margin-top:8px}
+.lane{display:grid;grid-template-columns:84px 1fr;gap:6px;align-items:center;margin-top:4px}
+.lane-name{font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lane-free .lane-name{color:var(--free-ink);font-weight:700}
+.hours{position:relative;height:14px;font-size:.65rem;color:var(--muted)}
+.hours span{position:absolute;top:0;transform:translateX(-50%)}
+.track{position:relative;height:20px;border-radius:5px;overflow:hidden;background-color:var(--track);background-image:linear-gradient(to right,var(--line) 1px,transparent 1px);background-size:var(--tick) 100%}
+.lane-free .track{height:26px}
+.block{position:absolute;top:2px;bottom:2px;border-radius:4px;min-width:2px}
+.block.busy{opacity:.78;cursor:pointer}
+.block.free{background:var(--free-strong);cursor:pointer}
+.block.free:hover{filter:brightness(1.08)}
+.track-msg{position:absolute;inset:0;display:flex;align-items:center;padding-left:8px;font-size:.7rem;color:var(--muted)}
+.now{position:absolute;top:0;bottom:0;width:2px;background:var(--sun);opacity:.8}
+.slots{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.slot{display:inline-flex;align-items:center;gap:8px;background:var(--free);color:var(--free-ink);border-radius:999px;padding:5px 5px 5px 12px;font-size:.92rem;font-weight:600}
+.slot .dur{font-weight:400;font-size:.8rem;opacity:.85}
+.slot button{border-radius:999px;background:var(--card);border:1px solid var(--free-strong);color:var(--free-ink);padding:5px 10px;font-size:.82rem;min-height:32px;font-weight:600}
+.slot button:hover{background:var(--free-strong);color:#fff}
+.none{font-size:.85rem;color:var(--muted);margin-top:8px}
+.demo-note{text-align:center;font-size:.8rem;color:var(--muted);margin-top:8px}
+
+/* モーダル（画面の上にかぶせる小さな窓） */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(20,10,5,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{position:relative;background:var(--card);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -4px 30px rgba(0,0,0,.2)}
+@media (min-width:640px){.modal{align-items:center;padding:20px}.sheet{border-radius:18px;max-height:88vh}}
+.sheet h2{font-size:1.2rem;margin-bottom:10px;padding-right:40px}
+.sheet h3{font-size:.95rem;margin:16px 0 6px;color:var(--ink)}
+.sheet section + section{border-top:1px solid var(--line);margin-top:6px}
+.close{position:absolute;top:8px;right:8px;width:40px;height:40px;border-radius:10px;font-size:1.4rem;color:var(--muted)}
+.close:hover{background:var(--track)}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
+.field input,.field textarea,.field select{width:100%;min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:16px}
+.field textarea{min-height:60px;resize:vertical}
+.field .static{font-weight:700;font-size:1.05rem}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:.8rem;color:var(--muted);margin:6px 0}
+.checks{display:flex;flex-direction:column;gap:6px}
+.check{display:flex;align-items:center;gap:6px;font-size:.95rem;min-height:36px}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+.check small{color:var(--muted);font-size:.75rem;overflow:hidden;text-overflow:ellipsis}
+.mrow{display:grid;grid-template-columns:40px 1fr 1.4fr 36px;gap:6px;align-items:center;margin-bottom:6px}
+.mrow input[type=color]{width:40px;height:40px;padding:2px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.mrow input[type=text],.mrow input[type=email]{min-height:40px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:16px;min-width:0}
+.mrow .m-del{width:36px;height:36px;border-radius:10px;color:var(--muted);font-size:1.2rem}
+.mrow .m-del:hover{background:var(--err-bg);color:var(--err-ink)}
+@media (max-width:420px){.mrow{grid-template-columns:36px 1fr 36px;grid-template-rows:auto auto;padding-bottom:8px;border-bottom:1px dashed var(--line)}.mrow .m-color{grid-row:1;grid-column:1}.mrow .m-name{grid-row:1;grid-column:2}.mrow .m-del{grid-row:1;grid-column:3}.mrow .m-email{grid-row:2;grid-column:1/-1}}
+.inline-selects{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.9rem}
+.inline-selects select{min-height:40px;padding:0 8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:16px}
+.help ol{margin-left:1.3em}
+.help ol ol{margin:4px 0 8px 1.2em;font-size:.92rem}
+.help li{margin:6px 0}
+.help code{background:var(--track);padding:1px 6px;border-radius:6px;font-size:.9em;word-break:break-all}
+.help .note{background:var(--info-bg);color:var(--info-ink);border-radius:10px;padding:10px 12px;font-size:.85rem;margin:10px 0}
+.danger{margin-top:14px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;background:#2a2622;color:#fff;padding:10px 16px;border-radius:12px;font-size:.9rem;max-width:min(92vw,520px);box-shadow:0 6px 20px rgba(0,0,0,.25);text-align:center}
+@media (max-width:600px){.brand small{display:none}.top{padding:8px 10px}.top-actions .btn.sm{padding:0 10px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./">
+    <span class="logo" aria-hidden="true">🗓️</span>
+    <span class="brand-text"><strong>あいてる？</strong><small>家族の空き時間カレンダー</small></span>
+  </a>
+  <div class="top-actions">
+    <button id="btnRefresh" class="icon-btn hidden" title="予定を読み直す" aria-label="更新">⟳</button>
+    <button id="btnSettings" class="icon-btn" title="設定" aria-label="設定">⚙</button>
+    <button id="btnSignIn" class="btn primary sm">Googleでログイン</button>
+    <button id="btnSignOut" class="btn ghost sm hidden">ログアウト</button>
+  </div>
+</header>
+
+<main>
+  <noscript><div class="alert err"><span class="ic">⚠️</span><div class="body"><p>このアプリは JavaScript が必要です。</p></div></div></noscript>
+  <div id="userLine" class="user-line hidden"></div>
+  <section id="onboard" class="card onboard hidden"></section>
+
+  <section id="controls" class="card controls hidden">
+    <div class="ctrl-row">
+      <span class="ctrl-label">何をする？</span>
+      <div class="chips" id="presetChips"></div>
+    </div>
+    <div class="ctrl-row grid">
+      <label>最短 <select id="selMin"></select></label>
+      <label>期間 <select id="selDays"></select></label>
+      <label>時間帯 <select id="selStart"></select>〜<select id="selEnd"></select></label>
+      <label class="switch"><input type="checkbox" id="chkWeekend"> 週末・祝日だけ</label>
+    </div>
+  </section>
+
+  <section id="alerts"></section>
+  <section id="summary" class="summary hidden"></section>
+  <section id="days"></section>
+  <p id="demoNote" class="demo-note hidden">デモ表示中：予定はサンプルです。<button class="link" id="btnDemoExit">デモを終了する</button></p>
+</main>
+
+<!-- 予定を作る -->
+<div id="modalEvent" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="evTitleH">
+  <form class="sheet" id="formEvent" autocomplete="off">
+    <button type="button" class="close" data-close aria-label="閉じる">×</button>
+    <h2 id="evTitleH">予定を作る</h2>
+    <div class="field"><label>日付</label><div class="static" id="evDate"></div></div>
+    <p class="hint" id="evHint"></p>
+    <div class="chips" id="evPresets" style="margin-bottom:10px"></div>
+    <div class="field"><label for="evTitle">タイトル</label><input id="evTitle" type="text" maxlength="60" placeholder="例：公園を散歩"></div>
+    <div class="row">
+      <div class="field"><label for="evStart">開始</label><input id="evStart" type="time" step="300" required></div>
+      <div class="field"><label for="evEnd">終了</label><input id="evEnd" type="time" step="300" required></div>
+    </div>
+    <div class="field"><label for="evPlace">場所（待ち合わせ場所など）</label><input id="evPlace" type="text" maxlength="80" placeholder="例：駅の東口"></div>
+    <div class="field"><label for="evNote">メモ</label><textarea id="evNote" rows="2" maxlength="300" placeholder="例：帰りにパン屋に寄ろう"></textarea></div>
+    <div class="field"><label>招待する人（Google カレンダーに招待が届きます）</label><div class="checks" id="evInvite"></div></div>
+    <div class="actions wrap">
+      <button type="button" class="btn ghost" id="evShare">💬 文章で送る（LINEなど）</button>
+      <button type="submit" class="btn primary" id="evSubmit">📅 カレンダーに登録して招待</button>
+    </div>
+  </form>
+</div>
+
+<!-- 設定 -->
+<div id="modalSettings" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="stH">
+  <div class="sheet">
+    <button type="button" class="close" data-close aria-label="閉じる">×</button>
+    <h2 id="stH">設定</h2>
+    <section>
+      <h3>1. Google のクライアントID</h3>
+      <div class="field"><input id="stClientId" type="text" placeholder="xxxxxxxx.apps.googleusercontent.com" autocapitalize="off" spellcheck="false"></div>
+      <p class="hint">取得のしかたは <button type="button" class="link" id="stHelp">かんたん手順</button> を見てください。このサイトのアドレス（<code id="stOrigin"></code>）を「承認済みの JavaScript 生成元」に登録します。</p>
+    </section>
+    <section>
+      <h3>2. 家族メンバー</h3>
+      <div id="stMembers"></div>
+      <button type="button" class="btn ghost sm" id="stAdd">＋ 追加する</button>
+      <p class="hint">メールアドレスは、その人の Google アカウントです。自分は、ログインすると自動で登録されます。家族には「カレンダーの共有（予定の時間枠のみ表示）」をしてもらうと空き状況が見えます。</p>
+    </section>
+    <section>
+      <h3>3. 表示</h3>
+      <div class="inline-selects">
+        <span>時間帯</span><select id="stStart"></select><span>〜</span><select id="stEnd"></select>
+      </div>
+      <div class="inline-selects" style="margin-top:8px">
+        <span>空きの最短</span><select id="stMin"></select>
+        <span>期間</span><select id="stDays"></select>
+      </div>
+    </section>
+    <section>
+      <h3>家族に設定を送る</h3>
+      <button type="button" class="btn ghost sm" id="stShare">🔗 共有リンクをコピー</button>
+      <p class="hint">このリンクを家族（妻など）に送ると、同じクライアントIDとメンバーで、相手のスマホでもすぐ使えます。相手は自分の Google でログインします。</p>
+    </section>
+    <section class="danger">
+      <button type="button" class="link" id="stReset">この端末の設定をすべて消す</button>
+    </section>
+    <div class="actions end">
+      <button type="button" class="btn ghost" data-close>閉じる</button>
+      <button type="button" class="btn primary" id="stSave">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 手順 -->
+<div id="modalHelp" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="hpH">
+  <div class="sheet help">
+    <button type="button" class="close" data-close aria-label="閉じる">×</button>
+    <h2 id="hpH">はじめかた（かんたん手順）</h2>
+    <div class="note">このアプリはサーバーを持たず、あなたのブラウザから直接 Google カレンダーを読みます。予定のデータはどこにも保存されません。</div>
+    <div class="note">
+      <b>ことばの説明</b><br>
+      ・<b>クライアントID</b>（Client ID／クライアント アイディー）：Google がこのアプリに発行する「名札」のような長い文字列。これがあると Google がアプリを見分けられます。<br>
+      ・<b>OAuth</b>（オーオース）：「このアプリに、わたしのカレンダーを見る許可をあげる」仕組み。パスワードを渡さずに許可だけ出せます。<br>
+      ・<b>API</b>（エーピーアイ）：アプリ同士が会話するための窓口。「Google Calendar API を有効にする」＝カレンダーの窓口を開ける、という意味です。<br>
+      ・<b>承認済みの JavaScript 生成元</b>（Authorized JavaScript origins／オーソライズド ジャバスクリプト オリジンズ）：「このアドレスのサイトからなら使ってよい」という許可リスト。
+    </div>
+    <ol>
+      <li><b>Google にアプリを登録して「クライアントID」をもらう</b>（無料・10分ほど・パソコン推奨）
+        <ol type="a">
+          <li><a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a> を開き、プロジェクトを新しく作る（名前は自由。例：aiteru）</li>
+          <li>左メニュー「APIとサービス」→「ライブラリ」で <b>Google Calendar API</b> を探して「有効にする」</li>
+          <li>「OAuth 同意画面」（または「Google Auth Platform」）→ ユーザーの種類は「<b>外部</b>」→ アプリ名と自分のメールを入力 → 「<b>テストユーザー</b>」に自分と家族の Gmail を追加</li>
+          <li>「認証情報」→「認証情報を作成」→「<b>OAuth クライアント ID</b>」→ 種類「<b>ウェブ アプリケーション</b>」→「承認済みの JavaScript 生成元」に <code class="origin"></code> を追加 → 作成</li>
+          <li>表示された <b>クライアント ID</b>（…apps.googleusercontent.com）をコピーして、このアプリの「設定」に貼る</li>
+        </ol>
+      </li>
+      <li><b>家族にカレンダーを共有してもらう</b>
+        <ol type="a">
+          <li>家族が、パソコンで <a href="https://calendar.google.com/" target="_blank" rel="noopener">Google カレンダー</a> を開く → 右上の歯車「設定」</li>
+          <li>左の「マイカレンダーの設定」で自分のカレンダー名を選ぶ → 「特定のユーザーまたはグループと共有する」→「ユーザーやグループを追加」</li>
+          <li>あなたのメールアドレスを入れ、権限は「<b>予定の時間枠のみを表示（詳細は非表示）</b>」でOK（予定の中身は見えず、空き・埋まりだけ分かります）</li>
+        </ol>
+      </li>
+      <li><b>「Googleでログイン」を押す</b>。「このアプリは Google で確認されていません」と出たら「続行」で進めます（自分で作ったアプリなので大丈夫です）。</li>
+      <li><b>家族のスマホでも使う</b>：設定の「共有リンクをコピー」を家族に送ると、同じ設定で使い始められます。家族はあなたのカレンダーを見るので、あなたも家族に共有してあげてください。</li>
+    </ol>
+    <div class="actions end"><button type="button" class="btn primary" data-close>閉じる</button></div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+(() => {
+'use strict';
+
+/* ───────── 定数 ───────── */
+const LS_KEY = 'aiteru.settings.v1';
+const SS_TOKEN = 'aiteru.token.v1';
+const API = 'https://www.googleapis.com/calendar/v3/';
+const SCOPE_READ = 'https://www.googleapis.com/auth/calendar.readonly';
+const SCOPE_WRITE = 'https://www.googleapis.com/auth/calendar.events';
+const HOLIDAY_CAL = 'ja.japanese#holiday@group.v.calendar.google.com';
+const TZ = (Intl.DateTimeFormat().resolvedOptions().timeZone) || 'Asia/Tokyo';
+const PALETTE = ['#e8735a', '#3b82c4', '#8e5fc4', '#2a9d8f', '#d9a21b', '#d94f8a', '#5f8f3a', '#7b6f63'];
+const YOUBI = ['日', '月', '火', '水', '木', '金', '土'];
+const PRESETS = [
+  { key: 'walk', emoji: '🚶', label: '散歩', minutes: 60 },
+  { key: 'tea', emoji: '☕', label: 'お茶', minutes: 60 },
+  { key: 'meal', emoji: '🍽️', label: 'ごはん', minutes: 90 },
+  { key: 'date', emoji: '💑', label: 'デート', minutes: 180 },
+  { key: 'meet', emoji: '📍', label: '待ち合わせ', minutes: 30 },
+  { key: 'other', emoji: '✏️', label: 'その他', minutes: 60 },
+];
+const MIN_OPTIONS = [15, 30, 45, 60, 90, 120, 180, 240];
+const DAY_OPTIONS = [7, 14, 21, 28];
+const DEMO_MEMBERS = [
+  { id: 'demo-me', name: 'わたし', email: 'me@example.com', color: PALETTE[0] },
+  { id: 'demo-partner', name: 'パートナー', email: 'partner@example.com', color: PALETTE[1] },
+];
+
+/* ───────── 小さな道具 ───────── */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const pad2 = (n) => String(n).padStart(2, '0');
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+const ymd = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const fmtTime = (d) => `${d.getHours()}:${pad2(d.getMinutes())}`;
+const timeVal = (d) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+const fmtDateJP = (d) => `${d.getMonth() + 1}/${d.getDate()}(${YOUBI[d.getDay()]})`;
+const fmtDur = (ms) => { const m = Math.round(ms / 60000); const h = Math.floor(m / 60), r = m % 60; return ((h ? `${h}時間` : '') + (r ? `${r}分` : '')) || '0分'; };
+const uid = () => Math.random().toString(36).slice(2, 10);
+const ceilTo = (d, min) => { const ms = min * 60000; return new Date(Math.ceil(d.getTime() / ms) * ms); };
+const clampInt = (v, lo, hi, dflt) => { const n = parseInt(v, 10); return Number.isFinite(n) && n >= lo && n <= hi ? n : dflt; };
+const toLocalISO = (d) => { const off = -d.getTimezoneOffset(); const a = Math.abs(off); return `${ymd(d)}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:00${off >= 0 ? '+' : '-'}${pad2(Math.floor(a / 60))}:${pad2(a % 60)}`; };
+const toB64url = (s) => btoa(Array.from(new TextEncoder().encode(s), (b) => String.fromCharCode(b)).join('')).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const fromB64url = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)));
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
+  const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+  ta.remove(); return ok;
+}
+let toastTimer = null;
+function toast(msg, ms = 3600) {
+  const t = $('#toast'); t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add('hidden'), ms);
+}
+
+/* ───────── 設定（この端末の localStorage に保存） ───────── */
+function defaultSettings() {
+  return { clientId: '', members: [], dayStart: 7, dayEnd: 22, minMinutes: 60, days: 14, weekendOnly: false, preset: 'walk' };
+}
+function normalizeMember(m, i) {
+  m = m || {};
+  return {
+    id: m.id || uid(),
+    name: String(m.name || '').trim().slice(0, 20) || `メンバー${i + 1}`,
+    email: String(m.email || '').trim().toLowerCase(),
+    color: /^#[0-9a-f]{6}$/i.test(m.color || '') ? m.color : PALETTE[i % PALETTE.length],
+  };
+}
+function loadSettings() {
+  const s = defaultSettings();
+  try { const raw = localStorage.getItem(LS_KEY); if (raw) Object.assign(s, JSON.parse(raw)); } catch (e) {}
+  s.clientId = String(s.clientId || '').trim();
+  s.members = (Array.isArray(s.members) ? s.members : []).map(normalizeMember);
+  s.dayStart = clampInt(s.dayStart, 0, 23, 7); s.dayEnd = clampInt(s.dayEnd, 1, 24, 22);
+  if (s.dayEnd <= s.dayStart) { s.dayStart = 7; s.dayEnd = 22; }
+  s.minMinutes = clampInt(s.minMinutes, 15, 600, 60); s.days = clampInt(s.days, 1, 60, 14);
+  s.weekendOnly = !!s.weekendOnly;
+  if (!PRESETS.some((p) => p.key === s.preset)) s.preset = 'walk';
+  return s;
+}
+function saveSettings() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {} }
+
+/* ───────── 状態 ───────── */
+const S = loadSettings();
+const st = { gisReady: false, tokenClient: null, token: null, me: null, demo: false, loading: false, data: null, holidays: {}, lastError: null, slotMap: new Map() };
+let pendingReject = null;
+let refreshing = null;
+try { const t = JSON.parse(sessionStorage.getItem(SS_TOKEN) || 'null'); if (t && t.access_token && t.expires_at > Date.now()) st.token = t; } catch (e) {}
+
+/* ───────── Google ログイン（Google Identity Services） ───────── */
+function describeAuthError(x) {
+  const code = (x && (x.error || x.type)) || '';
+  switch (code) {
+    case 'access_denied': return 'Google へのアクセスが許可されませんでした。';
+    case 'popup_closed': return 'ログイン画面が閉じられました。エラーが出ていた場合は、クライアントIDと「承認済みの JavaScript 生成元」の設定を確認してください。';
+    case 'popup_failed_to_open': return 'ログイン画面（ポップアップ）を開けませんでした。ブラウザのポップアップ許可を確認して、もう一度ボタンを押してください。';
+    case 'invalid_client': case 'unauthorized_client': case 'invalid_request': return 'クライアントIDが正しくないようです。設定を確認してください。';
+    default: return 'ログインに失敗しました' + (code ? `（${code}）` : '') + '。';
+  }
+}
+function initGis() {
+  if (!(window.google && google.accounts && google.accounts.oauth2)) { setTimeout(initGis, 150); return; }
+  st.gisReady = true;
+  if (S.clientId) createTokenClient();
+  render();
+}
+function createTokenClient() {
+  st.tokenClient = null;
+  if (!S.clientId) return;
+  try {
+    st.tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: S.clientId,
+      scope: SCOPE_READ,
+      callback: () => {},
+      error_callback: (err) => { const r = pendingReject; pendingReject = null; if (r) r(new Error(describeAuthError(err))); },
+    });
+  } catch (e) { st.tokenClient = null; }
+}
+function requestToken(opts = {}) {
+  return new Promise((resolve, reject) => {
+    if (!st.gisReady) return reject(new Error('Google の部品を読み込み中です。少し待ってからもう一度お試しください。'));
+    if (!st.tokenClient) createTokenClient();
+    if (!st.tokenClient) return reject(new Error('先に「設定」でクライアントIDを入れてください。'));
+    pendingReject = reject;
+    st.tokenClient.callback = (resp) => {
+      pendingReject = null;
+      if (!resp || resp.error) return reject(new Error(describeAuthError(resp)));
+      st.token = { access_token: resp.access_token, expires_at: Date.now() + (Number(resp.expires_in || 3600) - 60) * 1000, scope: resp.scope || '' };
+      try { sessionStorage.setItem(SS_TOKEN, JSON.stringify(st.token)); } catch (e) {}
+      resolve(st.token);
+    };
+    st.tokenClient.requestAccessToken(Object.assign({ prompt: '' }, opts));
+  });
+}
+const hasScope = (sc) => !!(st.token && st.token.scope.split(/\s+/).includes(sc));
+function ensureToken() {
+  if (st.token && st.token.expires_at > Date.now()) return Promise.resolve(st.token);
+  if (!refreshing) refreshing = requestToken({ prompt: '', hint: st.me ? st.me.email : undefined }).finally(() => { refreshing = null; });
+  return refreshing;
+}
+async function ensureWriteScope() {
+  if (hasScope(SCOPE_WRITE)) return;
+  await requestToken({ scope: SCOPE_READ + ' ' + SCOPE_WRITE, include_granted_scopes: true, prompt: 'consent', hint: st.me ? st.me.email : undefined });
+  if (!hasScope(SCOPE_WRITE)) throw new Error('カレンダーへの登録が許可されませんでした。');
+}
+async function signIn() {
+  if (!S.clientId) { toast('先に「設定」でクライアントIDを入れてください。'); openSettings(); return; }
+  try {
+    await requestToken({ prompt: 'select_account' });
+    st.demo = false; st.me = null; st.data = null;
+    await refresh();
+  } catch (e) { showError(e); }
+}
+function signOut() {
+  st.token = null; st.me = null; st.data = null; st.lastError = null;
+  try { sessionStorage.removeItem(SS_TOKEN); } catch (e) {}
+  render();
+}
+function showError(e) {
+  const msg = (e && e.message) || String(e);
+  if (e && e.status === 401) { st.token = null; try { sessionStorage.removeItem(SS_TOKEN); } catch (x) {} }
+  toast(msg, 5000);
+  render();
+}
+
+/* ───────── Google カレンダー API ───────── */
+class ApiError extends Error { constructor(status, msg, reason) { super(msg); this.status = status; this.reason = reason; } }
+async function api(path, { method = 'GET', query = null, body = null } = {}, retry = true) {
+  if (!st.token) throw new ApiError(401, 'ログインしてください。');
+  await ensureToken();
+  const url = new URL(API + path);
+  if (query) for (const [k, v] of Object.entries(query)) if (v != null && v !== '') url.searchParams.set(k, v);
+  const headers = { Authorization: 'Bearer ' + st.token.access_token };
+  if (body) headers['Content-Type'] = 'application/json';
+  const res = await fetch(url.toString(), { method, headers, body: body ? JSON.stringify(body) : undefined });
+  if (res.status === 401 && retry) {
+    st.token = null; try { sessionStorage.removeItem(SS_TOKEN); } catch (e) {}
+    await ensureToken();
+    return api(path, { method, query, body }, false);
+  }
+  if (!res.ok) {
+    let msg = `Google との通信でエラーが起きました（${res.status}）`, reason = '';
+    try { const j = await res.json(); msg = (j.error && j.error.message) || msg; reason = (j.error && j.error.errors && j.error.errors[0] && j.error.errors[0].reason) || ''; } catch (e) {}
+    throw new ApiError(res.status, msg, reason);
+  }
+  return res.status === 204 ? null : res.json();
+}
+function parseGDate(x) {
+  if (!x) return null;
+  if (x.dateTime) return new Date(x.dateTime);
+  if (x.date) { const [y, m, d] = x.date.split('-').map(Number); return new Date(y, m - 1, d); }
+  return null;
+}
+async function fetchEvents(calId, start, end, keepTransparent = false) {
+  const items = []; let pageToken = null; let n = 0;
+  do {
+    const j = await api(`calendars/${encodeURIComponent(calId)}/events`, { query: {
+      timeMin: start.toISOString(), timeMax: end.toISOString(), singleEvents: 'true', orderBy: 'startTime', maxResults: '250', pageToken,
+      fields: 'nextPageToken,items(summary,start,end,transparency,status)',
+    } });
+    for (const ev of (j.items || [])) {
+      if (ev.status === 'cancelled') continue;
+      if (!keepTransparent && ev.transparency === 'transparent') continue;
+      const s = parseGDate(ev.start), e = parseGDate(ev.end);
+      if (!s || !e) continue;
+      items.push({ start: s, end: e, title: ev.summary || '（タイトルなし）' });
+    }
+    pageToken = j.nextPageToken || null;
+  } while (pageToken && ++n < 4);
+  return items;
+}
+async function fetchHolidays(start, end) {
+  const map = {};
+  for (const ev of await fetchEvents(HOLIDAY_CAL, start, end, true)) map[ymd(ev.start)] = ev.title;
+  return map;
+}
+async function fetchMe() {
+  const cal = await api('calendars/primary');
+  st.me = { email: String(cal.id || '').toLowerCase(), name: cal.summary || '' };
+  if (st.me.email && !S.members.some((m) => m.email === st.me.email)) {
+    S.members.unshift(normalizeMember({ name: 'わたし', email: st.me.email, color: PALETTE[0] }, 0));
+    saveSettings();
+  }
+}
+async function refresh() {
+  if (st.demo) { buildDemo(); render(); return; }
+  if (!st.token) { render(); return; }
+  if (st.loading) return;
+  st.loading = true; st.lastError = null; render();
+  try {
+    if (!st.me) await fetchMe();
+    const rangeStart = startOfDay(new Date());
+    const rangeEnd = addDays(rangeStart, S.days);
+    const members = S.members.filter((m) => m.email);
+    const fbReq = members.length
+      ? api('freeBusy', { method: 'POST', body: { timeMin: rangeStart.toISOString(), timeMax: rangeEnd.toISOString(), timeZone: TZ, items: members.map((m) => ({ id: m.email })) } })
+      : Promise.resolve({ calendars: {} });
+    const [fb, evs, hol] = await Promise.all([
+      fbReq,
+      Promise.all(members.map((m) => fetchEvents(m.email, rangeStart, rangeEnd).catch(() => null))),
+      fetchHolidays(rangeStart, rangeEnd).catch(() => ({})),
+    ]);
+    st.holidays = hol;
+    st.data = {
+      rangeStart, rangeEnd, fetchedAt: new Date(),
+      members: members.map((m, i) => {
+        const c = (fb.calendars || {})[m.email] || {};
+        const busy = (c.busy || []).map((b) => ({ start: new Date(b.start), end: new Date(b.end), titles: [] }));
+        if (evs[i]) for (const b of busy) b.titles = evs[i].filter((ev) => ev.start < b.end && ev.end > b.start).map((ev) => ev.title);
+        const err = (c.errors && c.errors.length) ? (c.errors[0].reason || 'error') : null;
+        return { member: m, busy, error: err, titlesAvailable: !!evs[i] };
+      }),
+    };
+  } catch (e) {
+    st.lastError = e;
+    if (e && e.status === 401) { st.token = null; try { sessionStorage.removeItem(SS_TOKEN); } catch (x) {} }
+  } finally {
+    st.loading = false; render();
+  }
+}
+
+/* ───────── デモ用のサンプル予定 ───────── */
+function buildDemo() {
+  const rangeStart = startOfDay(new Date()), rangeEnd = addDays(rangeStart, S.days);
+  const rnd = mulberry32(20261011);
+  const mk = (d, h1, m1, h2, m2, title) => {
+    const s = new Date(d); s.setHours(h1, m1, 0, 0); const e = new Date(d); e.setHours(h2, m2, 0, 0);
+    return { start: s, end: e, titles: title ? [title] : [] };
+  };
+  const members = DEMO_MEMBERS.map((m, i) => {
+    const busy = [];
+    for (let d = new Date(rangeStart); d < rangeEnd; d = addDays(d, 1)) {
+      const dow = d.getDay();
+      if (dow >= 1 && dow <= 5) {
+        busy.push(i ? mk(d, 9, 30, 17, 0, 'パート') : mk(d, 8, 30, 18, 0, '仕事'));
+        if (rnd() < 0.35) busy.push(mk(d, 19, 0, 21, 0, i ? 'ヨガ' : '夜の打合せ'));
+        if (rnd() < 0.2) busy.push(mk(d, 7, 0, 8, 0, '朝活'));
+      } else {
+        if (rnd() < 0.5) busy.push(mk(d, 10, 0, 12, 0, i ? '美容院' : '買い物'));
+        if (rnd() < 0.35) busy.push(mk(d, 14, 0, 16, 30, i ? '友人とお茶' : '実家'));
+        if (rnd() < 0.3) busy.push(mk(d, 18, 0, 21, 0, '飲み会'));
+      }
+    }
+    return { member: m, busy, error: null, titlesAvailable: true };
+  });
+  st.data = { rangeStart, rangeEnd, fetchedAt: new Date(), members };
+  st.holidays = {};
+}
+function startDemo() { st.demo = true; st.lastError = null; buildDemo(); render(); toast('デモ表示です。緑の「みんな空き」を押すと予定を作る画面が開きます。'); }
+function exitDemo() { st.demo = false; st.data = null; render(); }
+
+/* ───────── 空き時間の計算 ───────── */
+function dayWindow(day) {
+  const ws = new Date(day); ws.setHours(S.dayStart, 0, 0, 0);
+  const we = new Date(day); we.setHours(S.dayEnd, 0, 0, 0);
+  return [ws, we];
+}
+function isOff(day) { const w = day.getDay(); return w === 0 || w === 6 || !!st.holidays[ymd(day)]; }
+function freeSlotsFor(day, memberData) {
+  let [ws, we] = dayWindow(day);
+  const now = new Date();
+  if (sameDay(day, now)) { const n = ceilTo(now, 15); if (n > ws) ws = n; }
+  if (ws >= we) return [];
+  const all = [];
+  for (const md of memberData) for (const b of md.busy) {
+    const s = Math.max(b.start.getTime(), ws.getTime()), e = Math.min(b.end.getTime(), we.getTime());
+    if (s < e) all.push([s, e]);
+  }
+  all.sort((a, b) => a[0] - b[0]);
+  const free = []; let cur = ws.getTime();
+  for (const [s, e] of all) { if (s > cur) free.push([cur, s]); if (e > cur) cur = e; }
+  if (cur < we.getTime()) free.push([cur, we.getTime()]);
+  return free.filter(([s, e]) => e - s >= S.minMinutes * 60000).map(([s, e]) => ({ start: new Date(s), end: new Date(e) }));
+}
+
+/* ───────── 画面の描画 ───────── */
+function render() {
+  const active = !!st.token || st.demo;
+  $('#btnSignIn').classList.toggle('hidden', !!st.token);
+  $('#btnSignOut').classList.toggle('hidden', !st.token);
+  $('#btnRefresh').classList.toggle('hidden', !active);
+  $('#controls').classList.toggle('hidden', !active);
+  $('#demoNote').classList.toggle('hidden', !st.demo);
+  const ul = $('#userLine');
+  if (st.token && st.me) {
+    ul.classList.remove('hidden');
+    ul.innerHTML = `<span>ログイン中：${esc(st.me.email)}</span>` + (st.data ? `<span>最終更新 ${fmtTime(st.data.fetchedAt)}</span>` : '');
+  } else ul.classList.add('hidden');
+  renderOnboard(); syncControls(); renderAlerts(); renderDays();
+}
+function renderOnboard() {
+  const el = $('#onboard');
+  if (st.token || st.demo) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  if (!S.clientId) {
+    el.innerHTML = `<h2>ようこそ 👋</h2>
+      <p>家族みんなの Google カレンダーから「<b>全員が空いている時間</b>」を見つけて、散歩・デート・待ち合わせの予定をサッと作るアプリです。夫婦や家族など、少人数向けです。</p>
+      <ol class="steps">
+        <li><b>Google にアプリを登録</b>して「クライアントID」をもらう（無料・10分ほど）</li>
+        <li><b>家族を追加</b>し、家族には「カレンダーの共有」をしてもらう</li>
+        <li><b>Google でログイン</b>すると、空き時間が表示されます</li>
+      </ol>
+      <div class="actions wrap">
+        <button type="button" class="btn primary" id="obSettings">⚙ 設定をはじめる</button>
+        <button type="button" class="btn ghost" id="obHelp">📖 くわしい手順</button>
+        <button type="button" class="btn ghost" id="obDemo">👀 まずデモで見てみる</button>
+      </div>`;
+  } else {
+    el.innerHTML = `<h2>準備ができました ✅</h2>
+      <p>「Google でログイン」を押すと、カレンダーを読み込みます。${S.members.length ? `登録メンバー：${S.members.map((m) => esc(m.name)).join('・')}` : '家族はまだ登録されていません（設定から追加できます）。'}</p>
+      <div class="actions wrap">
+        <button type="button" class="btn primary" id="obSignIn">Google でログイン</button>
+        <button type="button" class="btn ghost" id="obSettings">⚙ 設定</button>
+        <button type="button" class="btn ghost" id="obHelp">📖 手順</button>
+        <button type="button" class="btn ghost" id="obDemo">👀 デモ</button>
+      </div>`;
+  }
+  const bind = (id, fn) => { const b = $(id); if (b) b.addEventListener('click', fn); };
+  bind('#obSettings', openSettings); bind('#obHelp', openHelp); bind('#obDemo', startDemo); bind('#obSignIn', signIn);
+}
+function buildOptions(sel, values, labelFn, current) {
+  sel.innerHTML = values.map((v) => `<option value="${v}">${labelFn(v)}</option>`).join('');
+  sel.value = String(current);
+}
+function syncControls() {
+  $('#presetChips').innerHTML = PRESETS.map((p) => `<button type="button" class="chip${p.key === S.preset ? ' on' : ''}" data-preset="${p.key}">${p.emoji} ${p.label}</button>`).join('');
+  buildOptions($('#selMin'), MIN_OPTIONS.includes(S.minMinutes) ? MIN_OPTIONS : [...MIN_OPTIONS, S.minMinutes].sort((a, b) => a - b), (v) => fmtDur(v * 60000) + '以上', S.minMinutes);
+  buildOptions($('#selDays'), DAY_OPTIONS.includes(S.days) ? DAY_OPTIONS : [...DAY_OPTIONS, S.days].sort((a, b) => a - b), (v) => `${v}日間`, S.days);
+  buildOptions($('#selStart'), Array.from({ length: 24 }, (_, i) => i), (v) => `${v}時`, S.dayStart);
+  buildOptions($('#selEnd'), Array.from({ length: 24 }, (_, i) => i + 1), (v) => `${v}時`, S.dayEnd);
+  $('#chkWeekend').checked = S.weekendOnly;
+}
+function alertHtml(kind, icon, main, sub, buttons) {
+  return `<div class="alert ${kind}"><span class="ic">${icon}</span><div class="body"><p>${main}</p>${sub ? `<p class="sub">${sub}</p>` : ''}${buttons ? `<div class="actions wrap">${buttons}</div>` : ''}</div></div>`;
+}
+function renderAlerts() {
+  const el = $('#alerts'); let html = '';
+  if (st.loading) html += alertHtml('info', '⏳', 'Google カレンダーを読み込んでいます…');
+  if (st.lastError && !st.demo) {
+    const e = st.lastError;
+    if (e.status === 401 || !st.token) html += alertHtml('err', '🔑', 'ログインの有効期限が切れました。', esc(e.message), `<button type="button" class="btn sm" data-act="signin">もう一度ログイン</button>`);
+    else html += alertHtml('err', '⚠️', '読み込みに失敗しました。', esc(e.message), `<button type="button" class="btn sm" data-act="refresh">もう一度読み込む</button>`);
+  }
+  if (st.data && !st.demo) {
+    if (st.data.members.length < 2) html += alertHtml('info', '👨‍👩‍👧', '家族がまだ登録されていません。', '設定でメンバー（名前と Google のメールアドレス）を追加すると、みんなの空き時間が分かります。', `<button type="button" class="btn sm" data-act="settings">⚙ 設定で追加する</button>`);
+    const bad = st.data.members.filter((md) => md.error);
+    if (bad.length) html += alertHtml('warn', '🙈', `${bad.map((md) => esc(md.member.name) + 'さん（' + esc(md.member.email) + '）').join('、')}の予定が見られません。`, 'その人に、あなたのメールアドレス宛てに Google カレンダーを「予定の時間枠のみを表示」で共有してもらってください。メールアドレスの打ち間違いもご確認ください。それまでは、この人の予定は空き時間の計算に入っていません。', `<button type="button" class="btn sm" data-act="help">共有のやり方を見る</button><button type="button" class="btn sm" data-act="refresh">共有してもらったので読み直す</button>`);
+  }
+  el.innerHTML = html;
+  $$('[data-act]', el).forEach((b) => b.addEventListener('click', () => {
+    const a = b.dataset.act;
+    if (a === 'signin') signIn(); else if (a === 'refresh') refresh(); else if (a === 'settings') openSettings(); else if (a === 'help') openHelp();
+  }));
+}
+function renderDays() {
+  const wrap = $('#days'), sum = $('#summary');
+  st.slotMap.clear();
+  if (!st.data) { wrap.innerHTML = ''; sum.classList.add('hidden'); return; }
+  const { rangeStart, rangeEnd } = st.data;
+  const hours = S.dayEnd - S.dayStart;
+  const step = hours > 12 ? 3 : 2;
+  const activeMembers = st.data.members.filter((md) => !md.error);
+  const preset = PRESETS.find((p) => p.key === S.preset) || PRESETS[0];
+  const now = new Date();
+  let html = '', totalSlots = 0, totalMs = 0, shownDays = 0;
+  for (let d = new Date(rangeStart), di = 0; d < rangeEnd; d = addDays(d, 1), di++) {
+    const off = isOff(d);
+    if (S.weekendOnly && !off) continue;
+    shownDays++;
+    const [ws, we] = dayWindow(d); const span = we - ws;
+    const pct = (t) => Math.max(0, Math.min(100, (t - ws.getTime()) / span * 100));
+    const slots = freeSlotsFor(d, activeMembers);
+    st.slotMap.set(di, slots);
+    totalSlots += slots.length; for (const s of slots) totalMs += s.end - s.start;
+    const today = sameDay(d, now);
+    const nowMarker = (today && now > ws && now < we) ? `<i class="now" style="left:${pct(now.getTime())}%"></i>` : '';
+    let hoursHtml = '';
+    for (let h = S.dayStart; h <= S.dayEnd; h += step) hoursHtml += `<span style="left:${(h - S.dayStart) / hours * 100}%">${h}</span>`;
+    let lanes = '';
+    for (const md of st.data.members) {
+      let blocks = '';
+      if (md.error) blocks = `<span class="track-msg">予定を見られません（共有が必要）</span>`;
+      else for (const b of md.busy) {
+        const s = Math.max(b.start.getTime(), ws.getTime()), e = Math.min(b.end.getTime(), we.getTime());
+        if (s >= e) continue;
+        const label = `${md.member.name}：${fmtTime(new Date(s))}〜${fmtTime(new Date(e))}` + (b.titles.length ? '　' + b.titles.join('、') : '　予定あり');
+        blocks += `<div class="block busy" style="left:${pct(s)}%;width:${Math.max(0.6, pct(e) - pct(s))}%;background:${md.member.color}" title="${esc(label)}" data-info="${esc(label)}"></div>`;
+      }
+      lanes += `<div class="lane"><span class="lane-name" title="${esc(md.member.email)}"><i class="dot" style="background:${md.member.color}"></i>${esc(md.member.name)}</span><div class="track">${blocks}${nowMarker}</div></div>`;
+    }
+    let freeBlocks = '';
+    slots.forEach((s, si) => { freeBlocks += `<div class="block free" style="left:${pct(s.start.getTime())}%;width:${pct(s.end.getTime()) - pct(s.start.getTime())}%" data-day="${di}" data-slot="${si}" title="${fmtTime(s.start)}〜${fmtTime(s.end)}" role="button" tabindex="0"></div>`; });
+    lanes += `<div class="lane lane-free"><span class="lane-name">みんな空き</span><div class="track">${freeBlocks}${nowMarker}</div></div>`;
+    const chips = slots.length
+      ? slots.map((s, si) => `<div class="slot"><span>${fmtTime(s.start)}〜${fmtTime(s.end)}</span><span class="dur">${fmtDur(s.end - s.start)}</span><button type="button" data-day="${di}" data-slot="${si}">${preset.emoji} 予定を作る</button></div>`).join('')
+      : `<p class="none">みんなが空いている時間（${fmtDur(S.minMinutes * 60000)}以上）はありません</p>`;
+    const hol = st.holidays[ymd(d)];
+    const dow = d.getDay();
+    html += `<section class="card day${off ? ' off' : ''}${today ? ' today' : ''}">
+      <header class="day-head"><span class="d">${d.getMonth() + 1}/${d.getDate()}</span><span class="dow ${dow === 0 ? 'sun' : dow === 6 ? 'sat' : ''}">${YOUBI[dow]}</span>${hol ? `<span class="badge hol">${esc(hol)}</span>` : ''}${today ? '<span class="badge today">今日</span>' : ''}<span class="spacer"></span><span class="count${slots.length ? ' ok' : ''}">${slots.length ? `空き ${slots.length}枠` : '空きなし'}</span></header>
+      <div class="tl" style="--tick:${100 / hours}%"><div class="lane"><span class="lane-name"></span><div class="hours">${hoursHtml}</div></div>${lanes}</div>
+      <div class="slots">${chips}</div></section>`;
+  }
+  wrap.innerHTML = html || '<p class="none">表示する日がありません。</p>';
+  sum.classList.remove('hidden');
+  const hidden = st.data.members.filter((md) => md.error).length;
+  sum.innerHTML = `<span>今後 <b>${shownDays}日</b>${S.weekendOnly ? '（週末・祝日）' : ''}</span><span>みんな空いている枠 <b class="big">${totalSlots}</b> 件</span><span>合計 <b>${fmtDur(totalMs)}</b></span>` + (hidden ? `<span>※${hidden}人の予定は未反映</span>` : '');
+}
+
+/* ───────── 予定を作る ───────── */
+const ev = { day: null, slot: null, preset: 'walk' };
+function openEventModal(di, si) {
+  const slots = st.slotMap.get(di); const slot = slots && slots[si]; if (!slot) return;
+  ev.slot = slot; ev.day = startOfDay(slot.start);
+  const preset = PRESETS.find((p) => p.key === S.preset) || PRESETS[0];
+  let start = ceilTo(slot.start, 15); if (start.getTime() + 15 * 60000 > slot.end.getTime()) start = slot.start;
+  const end = new Date(Math.min(start.getTime() + preset.minutes * 60000, slot.end.getTime()));
+  $('#evDate').textContent = fmtDateJP(ev.day) + (st.holidays[ymd(ev.day)] ? '　' + st.holidays[ymd(ev.day)] : '');
+  $('#evHint').textContent = `みんな空き：${fmtTime(slot.start)}〜${fmtTime(slot.end)}（${fmtDur(slot.end - slot.start)}）`;
+  $('#evStart').value = timeVal(start); $('#evEnd').value = timeVal(end);
+  $('#evPlace').value = ''; $('#evNote').value = '';
+  setEvPreset(preset.key, true);
+  const others = (st.data ? st.data.members.map((md) => md.member) : []).filter((m) => st.demo ? m.id !== 'demo-me' : (!st.me || m.email !== st.me.email));
+  $('#evInvite').innerHTML = others.length
+    ? others.map((m) => `<label class="check"><input type="checkbox" value="${esc(m.email)}" checked> <i class="dot" style="background:${m.color}"></i>${esc(m.name)} <small>${esc(m.email)}</small></label>`).join('')
+    : '<p class="hint">招待できる家族がまだ登録されていません。</p>';
+  showModal('#modalEvent');
+  setTimeout(() => $('#evTitle').focus(), 50);
+}
+function setEvPreset(key, resetTitle) {
+  ev.preset = key;
+  const p = PRESETS.find((x) => x.key === key) || PRESETS[0];
+  $('#evPresets').innerHTML = PRESETS.map((x) => `<button type="button" class="chip${x.key === key ? ' on' : ''}" data-preset="${x.key}">${x.emoji} ${x.label}</button>`).join('');
+  if (resetTitle) $('#evTitle').value = p.key === 'other' ? '' : p.label;
+  if (ev.slot) {
+    const start = parseTimeOn(ev.day, $('#evStart').value) || ev.slot.start;
+    const end = new Date(Math.min(start.getTime() + p.minutes * 60000, Math.max(ev.slot.end.getTime(), start.getTime() + 15 * 60000)));
+    $('#evEnd').value = timeVal(end);
+  }
+}
+function parseTimeOn(day, hhmm) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || ''); if (!m) return null;
+  const d = new Date(day); d.setHours(Number(m[1]), Number(m[2]), 0, 0); return d;
+}
+function readEvTimes() {
+  const start = parseTimeOn(ev.day, $('#evStart').value);
+  let end = parseTimeOn(ev.day, $('#evEnd').value);
+  if (!start || !end) return { err: '開始と終了の時刻を入れてください。' };
+  if (end <= start && $('#evEnd').value === '00:00') end = addDays(end, 1);
+  if (end <= start) return { err: '終了は開始より後の時刻にしてください。' };
+  return { start, end };
+}
+function evValues() {
+  const p = PRESETS.find((x) => x.key === ev.preset) || PRESETS[0];
+  return { preset: p, title: $('#evTitle').value.trim() || (p.key === 'other' ? 'いっしょの予定' : p.label), place: $('#evPlace').value.trim(), note: $('#evNote').value.trim(), invitees: $$('#evInvite input:checked').map((i) => i.value) };
+}
+async function submitEvent(e) {
+  e.preventDefault();
+  const t = readEvTimes(); if (t.err) return toast(t.err);
+  const v = evValues();
+  if (st.demo) return toast('デモ表示では登録できません。「文章で送る」は試せます。');
+  if (!st.token) return toast('ログインしてください。');
+  const btn = $('#evSubmit'); const orig = btn.textContent; btn.disabled = true; btn.textContent = '登録中…';
+  try {
+    await ensureWriteScope();
+    const body = {
+      summary: `${v.preset.emoji} ${v.title}`,
+      location: v.place || undefined,
+      description: v.note || undefined,
+      start: { dateTime: toLocalISO(t.start), timeZone: TZ },
+      end: { dateTime: toLocalISO(t.end), timeZone: TZ },
+      attendees: v.invitees.map((email) => ({ email })),
+      reminders: { useDefault: true },
+    };
+    await api('calendars/primary/events', { method: 'POST', query: { sendUpdates: 'all' }, body });
+    hideModal('#modalEvent');
+    toast(`カレンダーに登録しました${v.invitees.length ? '。招待を送りました' : ''} 🎉`);
+    refresh();
+  } catch (e2) { showError(e2); }
+  finally { btn.disabled = false; btn.textContent = orig; }
+}
+async function shareEvent() {
+  const t = readEvTimes(); if (t.err) return toast(t.err);
+  const v = evValues();
+  const text = `【あいてる？】\n${fmtDateJP(ev.day)} ${fmtTime(t.start)}〜${fmtTime(t.end)}\n${v.preset.emoji} ${v.title}${v.place ? `\n📍 ${v.place}` : ''}${v.note ? `\n${v.note}` : ''}\n\nこの時間、みんな空いてるよ。どう？`;
+  if (navigator.share) { try { await navigator.share({ text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  if (await copyText(text)) toast('文章をコピーしました。LINE などに貼り付けて送ってください。'); else toast('コピーできませんでした。');
+}
+
+/* ───────── 設定画面 ───────── */
+let draft = [];
+function openSettings() {
+  $('#stClientId').value = S.clientId;
+  draft = S.members.map((m) => ({ ...m }));
+  if (!draft.length) draft.push(normalizeMember({ name: 'わたし', email: st.me ? st.me.email : '' }, 0), normalizeMember({ name: '妻' }, 1));
+  else if (draft.length === 1) draft.push(normalizeMember({ name: '妻' }, 1));
+  renderMemberRows();
+  buildOptions($('#stStart'), Array.from({ length: 24 }, (_, i) => i), (v) => `${v}時`, S.dayStart);
+  buildOptions($('#stEnd'), Array.from({ length: 24 }, (_, i) => i + 1), (v) => `${v}時`, S.dayEnd);
+  buildOptions($('#stMin'), MIN_OPTIONS.includes(S.minMinutes) ? MIN_OPTIONS : [...MIN_OPTIONS, S.minMinutes].sort((a, b) => a - b), (v) => fmtDur(v * 60000) + '以上', S.minMinutes);
+  buildOptions($('#stDays'), DAY_OPTIONS.includes(S.days) ? DAY_OPTIONS : [...DAY_OPTIONS, S.days].sort((a, b) => a - b), (v) => `${v}日間`, S.days);
+  $('#stOrigin').textContent = location.origin;
+  showModal('#modalSettings');
+}
+function renderMemberRows() {
+  $('#stMembers').innerHTML = draft.map((m, i) => `<div class="mrow" data-i="${i}">
+    <input type="color" class="m-color" value="${m.color}" title="色">
+    <input type="text" class="m-name" placeholder="名前（例：妻）" value="${esc(m.name)}" maxlength="20">
+    <input type="email" class="m-email" placeholder="Google のメールアドレス" value="${esc(m.email)}" autocapitalize="off" autocomplete="off" spellcheck="false">
+    <button type="button" class="m-del" aria-label="この人を削除">×</button></div>`).join('');
+}
+function readMemberRows() {
+  draft = $$('#stMembers .mrow').map((row, i) => normalizeMember({ id: draft[i] && draft[i].id, color: $('.m-color', row).value, name: $('.m-name', row).value, email: $('.m-email', row).value }, i));
+}
+function saveSettingsFromForm() {
+  readMemberRows();
+  const newClient = $('#stClientId').value.trim();
+  const clientChanged = newClient !== S.clientId;
+  const kept = draft.filter((m) => m.email);
+  const dropped = draft.length - kept.length;
+  const seen = new Set();
+  S.members = kept.filter((m) => { if (seen.has(m.email)) return false; seen.add(m.email); return true; });
+  S.clientId = newClient;
+  let ds = clampInt($('#stStart').value, 0, 23, 7), de = clampInt($('#stEnd').value, 1, 24, 22);
+  if (de <= ds) { toast('時間帯は「開始 < 終了」にしてください。7時〜22時にしました。'); ds = 7; de = 22; }
+  S.dayStart = ds; S.dayEnd = de;
+  S.minMinutes = clampInt($('#stMin').value, 15, 600, 60); S.days = clampInt($('#stDays').value, 1, 60, 14);
+  saveSettings();
+  if (clientChanged) {
+    st.token = null; st.me = null; st.data = null; st.lastError = null;
+    try { sessionStorage.removeItem(SS_TOKEN); } catch (e) {}
+    if (st.gisReady) createTokenClient();
+  }
+  hideModal('#modalSettings');
+  toast('保存しました' + (dropped ? `（メールアドレスが空の ${dropped} 人は保存していません）` : '') + '。');
+  render();
+  if (st.token || st.demo) refresh();
+}
+async function makeShareLink() {
+  readMemberRows();
+  const payload = { c: $('#stClientId').value.trim(), m: draft.filter((m) => m.email).map((m) => ({ name: m.name, email: m.email, color: m.color })), s: clampInt($('#stStart').value, 0, 23, 7), e: clampInt($('#stEnd').value, 1, 24, 22) };
+  if (!payload.c) return toast('先にクライアントIDを入れてください。');
+  const link = location.origin + location.pathname + '#share=' + toB64url(JSON.stringify(payload));
+  if (navigator.share) { try { await navigator.share({ title: 'あいてる？ の設定', text: 'このリンクを開くと「あいてる？」の設定が入ります。', url: link }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  if (await copyText(link)) toast('共有リンクをコピーしました。家族に送ってください。'); else prompt('このリンクを家族に送ってください', link);
+}
+function applyShareLink() {
+  const m = /share=([A-Za-z0-9\-_]+)/.exec(location.hash || '');
+  if (!m) return;
+  let obj = null;
+  try { obj = JSON.parse(fromB64url(m[1])); } catch (e) {}
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  if (!obj || typeof obj !== 'object') return;
+  const members = (Array.isArray(obj.m) ? obj.m : []).map(normalizeMember).filter((x) => x.email);
+  if (!confirm(`共有された設定を取り込みますか？\nメンバー：${members.map((x) => x.name).join('・') || 'なし'}\n（この端末の今の設定は上書きされます）`)) return;
+  if (typeof obj.c === 'string' && obj.c.trim()) S.clientId = obj.c.trim();
+  if (members.length) S.members = members;
+  S.dayStart = clampInt(obj.s, 0, 23, S.dayStart); S.dayEnd = clampInt(obj.e, 1, 24, S.dayEnd);
+  if (S.dayEnd <= S.dayStart) { S.dayStart = 7; S.dayEnd = 22; }
+  saveSettings();
+  st.token = null; try { sessionStorage.removeItem(SS_TOKEN); } catch (e) {}
+  toast('設定を取り込みました。「Google でログイン」を押してください。', 5000);
+}
+function resetAll() {
+  if (!confirm('この端末に保存した設定（クライアントID・メンバー）をすべて消します。よろしいですか？')) return;
+  try { localStorage.removeItem(LS_KEY); sessionStorage.removeItem(SS_TOKEN); } catch (e) {}
+  location.reload();
+}
+
+/* ───────── モーダル ───────── */
+function showModal(sel) { $(sel).classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+function hideModal(sel) { $(sel).classList.add('hidden'); if (!$$('.modal:not(.hidden)').length) document.body.style.overflow = ''; }
+function openHelp() { $$('#modalHelp .origin').forEach((c) => { c.textContent = location.origin; }); showModal('#modalHelp'); }
+
+/* ───────── イベント（ボタンなどの操作） ───────── */
+$('#btnSignIn').addEventListener('click', signIn);
+$('#btnSignOut').addEventListener('click', signOut);
+$('#btnRefresh').addEventListener('click', () => refresh());
+$('#btnSettings').addEventListener('click', openSettings);
+$('#btnDemoExit').addEventListener('click', exitDemo);
+$('#presetChips').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-preset]'); if (!b) return;
+  const p = PRESETS.find((x) => x.key === b.dataset.preset); if (!p) return;
+  S.preset = p.key; S.minMinutes = p.minutes; saveSettings(); render();
+});
+$('#selMin').addEventListener('change', (e) => { S.minMinutes = clampInt(e.target.value, 15, 600, 60); saveSettings(); render(); });
+$('#selDays').addEventListener('change', (e) => { S.days = clampInt(e.target.value, 1, 60, 14); saveSettings(); refresh(); });
+$('#selStart').addEventListener('change', (e) => { S.dayStart = clampInt(e.target.value, 0, 23, 7); if (S.dayEnd <= S.dayStart) S.dayEnd = Math.min(24, S.dayStart + 1); saveSettings(); render(); });
+$('#selEnd').addEventListener('change', (e) => { S.dayEnd = clampInt(e.target.value, 1, 24, 22); if (S.dayEnd <= S.dayStart) S.dayStart = Math.max(0, S.dayEnd - 1); saveSettings(); render(); });
+$('#chkWeekend').addEventListener('change', (e) => { S.weekendOnly = e.target.checked; saveSettings(); render(); });
+$('#days').addEventListener('click', (e) => {
+  const f = e.target.closest('.block.free, .slot button');
+  if (f) { openEventModal(Number(f.dataset.day), Number(f.dataset.slot)); return; }
+  const b = e.target.closest('.block.busy');
+  if (b) toast(b.dataset.info, 2500);
+});
+$('#days').addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('free')) { e.preventDefault(); openEventModal(Number(e.target.dataset.day), Number(e.target.dataset.slot)); }
+});
+$('#formEvent').addEventListener('submit', submitEvent);
+$('#evShare').addEventListener('click', shareEvent);
+$('#evPresets').addEventListener('click', (e) => { const b = e.target.closest('[data-preset]'); if (b) setEvPreset(b.dataset.preset, true); });
+$('#stAdd').addEventListener('click', () => { readMemberRows(); draft.push(normalizeMember({ name: '' }, draft.length)); renderMemberRows(); const last = $$('#stMembers .m-name').pop(); if (last) last.focus(); });
+$('#stMembers').addEventListener('click', (e) => { const b = e.target.closest('.m-del'); if (!b) return; readMemberRows(); draft.splice(Number(b.closest('.mrow').dataset.i), 1); renderMemberRows(); });
+$('#stSave').addEventListener('click', saveSettingsFromForm);
+$('#stShare').addEventListener('click', makeShareLink);
+$('#stReset').addEventListener('click', resetAll);
+$('#stHelp').addEventListener('click', openHelp);
+$$('.modal').forEach((m) => {
+  m.addEventListener('click', (e) => { if (e.target === m) hideModal('#' + m.id); });
+  $$('[data-close]', m).forEach((b) => b.addEventListener('click', () => hideModal('#' + m.id)));
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $$('.modal:not(.hidden)').forEach((m) => hideModal('#' + m.id)); });
+
+/* ───────── 起動 ───────── */
+applyShareLink();
+render();
+initGis();
+if (st.token && S.clientId) {
+  const boot = () => { if (st.gisReady) refresh(); else setTimeout(boot, 150); };
+  boot();
+}
+})();
+</script>
+</body>
+</html>
