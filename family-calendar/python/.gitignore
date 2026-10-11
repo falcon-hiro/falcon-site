@@ -1,0 +1,9 @@
+# Google からもらう「名札」と、ログイン後にできる「鍵」。絶対に公開しない
+credentials.json
+token.json
+# 家族のメールアドレスが入る設定
+settings.json
+# Python の作業ファイル
+__pycache__/
+.venv/
+venv/

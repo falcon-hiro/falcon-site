@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}設定 — あいてる？{% endblock %}
+{% block content %}
+<section class="card sheet-page">
+  <h2>設定</h2>
+  <form method="post" action="{{ url_for('settings_page') }}" autocomplete="off">
+    <h3>1. 家族メンバー</h3>
+    <div id="members">
+      {% for r in rows %}
+      <div class="mrow">
+        <input type="color" name="color" value="{{ r.color }}" title="色">
+        <input type="text" name="name" placeholder="名前（例：妻）" value="{{ r.name }}" maxlength="20">
+        <input type="email" name="email" placeholder="Google のメールアドレス" value="{{ r.email }}" autocapitalize="off" spellcheck="false">
+      </div>
+      {% endfor %}
+    </div>
+    <button type="button" class="btn ghost sm" id="addRow">＋ 行を増やす</button>
+    <p class="hint">メールアドレスは、その人の Google アカウントです。自分はログインすると自動で登録されます。消したい人は、名前とメールを空にして保存してください。家族には「カレンダーの共有（予定の時間枠のみ表示）」をしてもらうと空き状況が見えます。</p>
+
+    <h3>2. 表示</h3>
+    <div class="inline-selects">
+      <span>時間帯</span>
+      <select name="day_start">{% for h in range(0, 24) %}<option value="{{ h }}"{% if h == settings.day_start %} selected{% endif %}>{{ h }}時</option>{% endfor %}</select>
+      <span>〜</span>
+      <select name="day_end">{% for h in range(1, 25) %}<option value="{{ h }}"{% if h == settings.day_end %} selected{% endif %}>{{ h }}時</option>{% endfor %}</select>
+    </div>
+    <div class="inline-selects" style="margin-top:8px">
+      <span>空きの最短</span>
+      <select name="min_minutes">{% for v in min_options %}<option value="{{ v }}"{% if v == settings.min_minutes %} selected{% endif %}>{{ v|fmt_dur }}以上</option>{% endfor %}</select>
+      <span>期間</span>
+      <select name="days">{% for v in day_options %}<option value="{{ v }}"{% if v == settings.days %} selected{% endif %}>{{ v }}日間</option>{% endfor %}</select>
+    </div>
+
+    <h3>設定ファイル</h3>
+    <p class="hint">設定は <code>settings.json</code> に保存されます。家族のパソコンでも使うときは、このファイルをコピーして渡せば同じメンバーで始められます（相手は自分の Google でログインします）。</p>
+
+    <div class="actions end">
+      <a class="btn ghost" href="{{ url_for('index') }}">もどる</a>
+      <button type="submit" class="btn primary">保存する</button>
+    </div>
+  </form>
+</section>
+<script>
+document.getElementById('addRow').addEventListener('click', () => {
+  const rows = document.getElementById('members');
+  const row = rows.lastElementChild.cloneNode(true);
+  row.querySelectorAll('input').forEach((i) => { if (i.type !== 'color') i.value = ''; });
+  rows.appendChild(row);
+  row.querySelector('input[type=text]').focus();
+});
+</script>
+{% endblock %}

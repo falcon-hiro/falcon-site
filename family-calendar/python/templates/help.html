@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}はじめかた — あいてる？{% endblock %}
+{% block content %}
+<section class="card help">
+  <h2>はじめかた（かんたん手順）</h2>
+  <div class="note">このアプリはあなたのパソコンの中だけで動き、Google カレンダーを直接読みます。予定のデータはどこにも送られません。</div>
+  <div class="note">
+    <b>ことばの説明</b><br>
+    ・<b>credentials.json</b>（クレデンシャルズ）：Google がこのアプリに発行する「名札」のファイル。これがあると Google がアプリを見分けられます。<br>
+    ・<b>OAuth</b>（オーオース）：「このアプリに、わたしのカレンダーを見る許可をあげる」仕組み。パスワードを渡さずに許可だけ出せます。<br>
+    ・<b>API</b>（エーピーアイ）：アプリ同士が会話するための窓口。「Google Calendar API を有効にする」＝カレンダーの窓口を開ける、という意味です。<br>
+    ・<b>token.json</b>（トークン）：ログイン後に自動で作られる「鍵」。人に渡さないでください。
+  </div>
+  {% if has_credentials %}
+  <div class="note ok">✅ credentials.json は見つかっています。トップページの「Google でログイン」を押せます。</div>
+  {% else %}
+  <div class="note warn">⚠️ まだ credentials.json がありません。置く場所：<code>{{ base_dir }}</code></div>
+  {% endif %}
+  <ol>
+    <li><b>Google にアプリを登録して credentials.json をもらう</b>（無料・10分ほど）
+      <ol type="a">
+        <li><a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a> を開き、プロジェクトを新しく作る（名前は自由。例：aiteru）</li>
+        <li>左メニュー「APIとサービス」→「ライブラリ」で <b>Google Calendar API</b> を探して「有効にする」</li>
+        <li>「OAuth 同意画面」（または「Google Auth Platform」）→ ユーザーの種類は「<b>外部</b>」→ アプリ名と自分のメールを入力 → 「<b>テストユーザー</b>」に自分と家族の Gmail を追加</li>
+        <li>「認証情報」→「認証情報を作成」→「<b>OAuth クライアント ID</b>」→ 種類は「<b>デスクトップ アプリ</b>」→ 名前は自由 → 作成</li>
+        <li>できた行の右端にある「ダウンロード」（JSON）を押し、ファイル名を <code>credentials.json</code> に変えて、<code>app.py</code> と同じフォルダに置く → アプリを起動し直す</li>
+      </ol>
+    </li>
+    <li><b>家族にカレンダーを共有してもらう</b>
+      <ol type="a">
+        <li>家族が、パソコンで <a href="https://calendar.google.com/" target="_blank" rel="noopener">Google カレンダー</a> を開く → 右上の歯車「設定」</li>
+        <li>左の「マイカレンダーの設定」で自分のカレンダー名を選ぶ → 「特定のユーザーまたはグループと共有する」→「ユーザーやグループを追加」</li>
+        <li>あなたのメールアドレスを入れ、権限は「<b>予定の時間枠のみを表示（詳細は非表示）</b>」でOK（予定の中身は見えず、空き・埋まりだけ分かります）</li>
+      </ol>
+    </li>
+    <li><b>「Google でログイン」を押す</b>。ブラウザに Google の画面が開きます。「このアプリは Google で確認されていません」と出たら「続行」で進めます（自分で作ったアプリなので大丈夫です）。</li>
+    <li><b>家族のパソコンでも使う</b>：このフォルダごとコピー（<code>credentials.json</code> と <code>settings.json</code> も一緒に）して同じように起動します。家族は自分の Google でログインします。<code>token.json</code> はあなたのログインの鍵なので渡さないでください。</li>
+  </ol>
+  <div class="note">起動したら、ブラウザで <code>{{ app_url }}</code> を開きます。終わるときは、黒い画面で Ctrl + C を押します。</div>
+  <div class="actions end"><a class="btn primary" href="{{ url_for('index') }}">もどる</a></div>
+</section>
+{% endblock %}

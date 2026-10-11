@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}あいてる？ — 家族の空き時間カレンダー{% endblock %}</title>
+<meta name="theme-color" content="#e8735a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e8735a'/%3E%3Crect x='12' y='16' width='40' height='36' rx='6' fill='%23fff'/%3E%3Crect x='12' y='16' width='40' height='10' rx='6' fill='%23c95b44'/%3E%3Cpath d='M32 47l-8.5-8.2a4.8 4.8 0 0 1 8.5-4.6a4.8 4.8 0 0 1 8.5 4.6z' fill='%23e8735a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="{{ url_for('index') }}">
+    <span class="logo" aria-hidden="true">🗓️</span>
+    <span class="brand-text"><strong>あいてる？</strong><small>家族の空き時間カレンダー</small></span>
+  </a>
+  <div class="top-actions">
+    {% if logged_in %}<a class="icon-btn" href="{{ url_for('index', refresh='1') }}" title="予定を読み直す" aria-label="更新">⟳</a>{% endif %}
+    <a class="icon-btn" href="{{ url_for('settings_page') }}" title="設定" aria-label="設定">⚙</a>
+    <a class="icon-btn" href="{{ url_for('help_page') }}" title="手順" aria-label="手順">📖</a>
+    {% if logged_in %}<a class="btn ghost sm" href="{{ url_for('logout') }}">ログアウト</a>{% else %}<a class="btn primary sm" href="{{ url_for('login') }}">Googleでログイン</a>{% endif %}
+  </div>
+</header>
+<main>
+  {% with messages = get_flashed_messages() %}{% for m in messages %}
+  <div class="alert info"><span class="ic">💬</span><div class="body"><p>{{ m }}</p></div></div>
+  {% endfor %}{% endwith %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

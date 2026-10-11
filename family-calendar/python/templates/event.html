@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}予定を作る — あいてる？{% endblock %}
+{% block content %}
+<section class="card sheet-page">
+  <h2>予定を作る</h2>
+  <form method="post" action="{{ url_for('event_create') }}" id="formEvent" autocomplete="off">
+    <input type="hidden" name="day" value="{{ day.isoformat() }}">
+    <input type="hidden" name="preset" id="preset" value="{{ preset.key }}">
+    {% if demo %}<input type="hidden" name="demo" value="1">{% endif %}
+    <div class="field"><label>日付</label><div class="static">{{ day|fmt_date_jp }}</div></div>
+    <p class="hint">みんな空き：{{ slot_start|fmt_time }}〜{{ slot_end|fmt_time }}（{{ slot_minutes|fmt_dur }}）</p>
+    <div class="chips" id="evPresets">{% for p in presets %}<button type="button" class="chip{% if p.key == preset.key %} on{% endif %}" data-key="{{ p.key }}" data-label="{{ p.label }}" data-emoji="{{ p.emoji }}" data-minutes="{{ p.minutes }}">{{ p.emoji }} {{ p.label }}</button>{% endfor %}</div>
+    <div class="field"><label for="title">タイトル</label><input id="title" name="title" type="text" maxlength="60" value="{{ '' if preset.key == 'other' else preset.label }}" placeholder="例：公園を散歩"></div>
+    <div class="row">
+      <div class="field"><label for="start">開始</label><input id="start" name="start" type="time" step="300" value="{{ start.strftime('%H:%M') }}" required></div>
+      <div class="field"><label for="end">終了</label><input id="end" name="end" type="time" step="300" value="{{ end.strftime('%H:%M') }}" required></div>
+    </div>
+    <div class="field"><label for="place">場所（待ち合わせ場所など）</label><input id="place" name="place" type="text" maxlength="80" placeholder="例：駅の東口"></div>
+    <div class="field"><label for="note">メモ</label><textarea id="note" name="note" rows="2" maxlength="300" placeholder="例：帰りにパン屋に寄ろう"></textarea></div>
+    <div class="field"><label>招待する人（Google カレンダーに招待が届きます）</label>
+      <div class="checks">{% for m in others %}<label class="check"><input type="checkbox" name="invite" value="{{ m.email }}" checked> <i class="dot" style="background:{{ m.color }}"></i>{{ m.name }} <small>{{ m.email }}</small></label>{% else %}<p class="hint">招待できる家族がまだ登録されていません。</p>{% endfor %}</div>
+    </div>
+    <div class="field"><label for="message">LINE などに貼る文章（入力に合わせて自動で作られます）</label><textarea id="message" rows="5" readonly></textarea></div>
+    <div class="actions wrap">
+      <button type="button" class="btn ghost" id="btnCopy">💬 文章をコピー</button>
+      <button type="submit" class="btn primary">📅 カレンダーに登録して招待</button>
+      <a class="btn ghost" href="{{ url_for('index', demo=('1' if demo else none)) }}">もどる</a>
+    </div>
+  </form>
+</section>
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const dayLabel = {{ (day|fmt_date_jp)|tojson }};
+  const slotEnd = {{ slot_end.strftime('%H:%M')|tojson }};
+  let emoji = {{ preset.emoji|tojson }};
+  const toMin = (hm) => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
+  const toHM = (min) => `${String(Math.floor(min / 60) % 24).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+  const slotEndMin = slotEnd === '00:00' ? 24 * 60 : toMin(slotEnd);
+  const fmt = (hm) => hm ? String(Number(hm.split(':')[0])) + ':' + hm.split(':')[1] : '';
+  function build() {
+    const t = $('#title').value.trim() || 'いっしょの予定';
+    const place = $('#place').value.trim(), note = $('#note').value.trim();
+    $('#message').value = `【あいてる？】\n${dayLabel} ${fmt($('#start').value)}〜${fmt($('#end').value)}\n${emoji} ${t}${place ? '\n📍 ' + place : ''}${note ? '\n' + note : ''}\n\nこの時間、みんな空いてるよ。どう？`;
+  }
+  document.querySelectorAll('#evPresets .chip').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('#evPresets .chip').forEach((x) => x.classList.remove('on'));
+    b.classList.add('on');
+    $('#preset').value = b.dataset.key; emoji = b.dataset.emoji;
+    $('#title').value = b.dataset.key === 'other' ? '' : b.dataset.label;
+    const st = toMin($('#start').value || '00:00');
+    $('#end').value = toHM(Math.min(st + Number(b.dataset.minutes), Math.max(slotEndMin, st + 15)));
+    build();
+  }));
+  ['title', 'start', 'end', 'place', 'note'].forEach((id) => $('#' + id).addEventListener('input', build));
+  $('#btnCopy').addEventListener('click', async () => {
+    const text = $('#message').value;
+    try { await navigator.clipboard.writeText(text); } catch (e) { $('#message').select(); document.execCommand('copy'); }
+    $('#btnCopy').textContent = '✅ コピーしました';
+    setTimeout(() => { $('#btnCopy').textContent = '💬 文章をコピー'; }, 2000);
+  });
+  build();
+})();
+</script>
+{% endblock %}

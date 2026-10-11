@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block content %}
+{% if logged_in and settings.me_email %}
+<div class="user-line"><span>ログイン中：{{ settings.me_email }}</span>{% if data %}<span>最終更新 {{ data.fetched_at|fmt_time }}</span>{% endif %}</div>
+{% endif %}
+
+{% if not logged_in and not demo %}
+<section class="card onboard">
+  {% if not has_credentials %}
+  <h2>ようこそ 👋</h2>
+  <p>家族みんなの Google カレンダーから「<b>全員が空いている時間</b>」を見つけて、散歩・デート・待ち合わせの予定をサッと作るアプリです。夫婦や家族など、少人数向けです。</p>
+  <ol class="steps">
+    <li><b>Google にアプリを登録</b>して、<code>credentials.json</code> をこのフォルダに置く（無料・10分ほど）</li>
+    <li><b>家族を追加</b>し、家族には「カレンダーの共有」をしてもらう</li>
+    <li><b>Google でログイン</b>すると、空き時間が表示されます</li>
+  </ol>
+  <div class="actions wrap">
+    <a class="btn primary" href="{{ url_for('help_page') }}">📖 くわしい手順</a>
+    <a class="btn ghost" href="{{ url_for('settings_page') }}">⚙ 家族を登録</a>
+    <a class="btn ghost" href="{{ url_for('index', demo='1') }}">👀 まずデモで見てみる</a>
+  </div>
+  {% else %}
+  <h2>準備ができました ✅</h2>
+  <p>「Google でログイン」を押すと、カレンダーを読み込みます。{% if settings.members %}登録メンバー：{{ settings.members|map(attribute='name')|join('・') }}{% else %}家族はまだ登録されていません（設定から追加できます）。{% endif %}</p>
+  <div class="actions wrap">
+    <a class="btn primary" href="{{ url_for('login') }}">Google でログイン</a>
+    <a class="btn ghost" href="{{ url_for('settings_page') }}">⚙ 設定</a>
+    <a class="btn ghost" href="{{ url_for('help_page') }}">📖 手順</a>
+    <a class="btn ghost" href="{{ url_for('index', demo='1') }}">👀 デモ</a>
+  </div>
+  {% endif %}
+</section>
+
+{% else %}
+<section class="card controls">
+  <div class="ctrl-row">
+    <span class="ctrl-label">何をする？</span>
+    <div class="chips">{% for p in presets %}<a class="chip{% if p.key == settings.preset %} on{% endif %}" href="{{ url_for('index', preset=p.key, demo=('1' if demo else none)) }}">{{ p.emoji }} {{ p.label }}</a>{% endfor %}</div>
+  </div>
+  <form class="ctrl-row grid" method="get" action="{{ url_for('index') }}">
+    <input type="hidden" name="prefs" value="1">
+    {% if demo %}<input type="hidden" name="demo" value="1">{% endif %}
+    <label>最短 <select name="min" onchange="this.form.submit()">{% for v in min_options %}<option value="{{ v }}"{% if v == settings.min_minutes %} selected{% endif %}>{{ v|fmt_dur }}以上</option>{% endfor %}</select></label>
+    <label>期間 <select name="days" onchange="this.form.submit()">{% for v in day_options %}<option value="{{ v }}"{% if v == settings.days %} selected{% endif %}>{{ v }}日間</option>{% endfor %}</select></label>
+    <label>時間帯 <select name="start" onchange="this.form.submit()">{% for h in range(0, 24) %}<option value="{{ h }}"{% if h == settings.day_start %} selected{% endif %}>{{ h }}時</option>{% endfor %}</select>〜<select name="end" onchange="this.form.submit()">{% for h in range(1, 25) %}<option value="{{ h }}"{% if h == settings.day_end %} selected{% endif %}>{{ h }}時</option>{% endfor %}</select></label>
+    <label class="switch"><input type="checkbox" name="weekend" value="1"{% if settings.weekend_only %} checked{% endif %} onchange="this.form.submit()"> 週末・祝日だけ</label>
+    <noscript><button type="submit" class="btn ghost sm">絞り込む</button></noscript>
+  </form>
+</section>
+
+{% if error %}
+<div class="alert err"><span class="ic">⚠️</span><div class="body"><p>{{ error }}</p>
+  <div class="actions wrap">{% if not logged_in %}<a class="btn sm" href="{{ url_for('login') }}">もう一度ログイン</a>{% else %}<a class="btn sm" href="{{ url_for('index', refresh='1') }}">もう一度読み込む</a>{% endif %}</div></div></div>
+{% endif %}
+{% if data and not demo and member_count < 2 %}
+<div class="alert info"><span class="ic">👨‍👩‍👧</span><div class="body"><p>家族がまだ登録されていません。</p><p class="sub">設定でメンバー（名前と Google のメールアドレス）を追加すると、みんなの空き時間が分かります。</p>
+  <div class="actions wrap"><a class="btn sm" href="{{ url_for('settings_page') }}">⚙ 設定で追加する</a></div></div></div>
+{% endif %}
+{% if bad_members %}
+<div class="alert warn"><span class="ic">🙈</span><div class="body">
+  <p>{% for m in bad_members %}{{ m.name }}さん（{{ m.email }}）{% if not loop.last %}、{% endif %}{% endfor %}の予定が見られません。</p>
+  <p class="sub">その人に、あなたのメールアドレス宛てに Google カレンダーを「予定の時間枠のみを表示」で共有してもらってください。メールアドレスの打ち間違いもご確認ください。それまでは、この人の予定は空き時間の計算に入っていません。</p>
+  <div class="actions wrap"><a class="btn sm" href="{{ url_for('help_page') }}">共有のやり方を見る</a><a class="btn sm" href="{{ url_for('index', refresh='1') }}">共有してもらったので読み直す</a></div></div></div>
+{% endif %}
+
+{% if data %}
+<div class="summary">
+  <span>今後 <b>{{ days|length }}日</b>{% if settings.weekend_only %}（週末・祝日）{% endif %}</span>
+  <span>みんな空いている枠 <b class="big">{{ total_slots }}</b> 件</span>
+  <span>合計 <b>{{ total_minutes|fmt_dur }}</b></span>
+  {% if bad_members %}<span>※{{ bad_members|length }}人の予定は未反映</span>{% endif %}
+</div>
+
+{% for d in days %}
+<section class="card day{% if d.is_off %} off{% endif %}{% if d.is_today %} today{% endif %}">
+  <header class="day-head">
+    <span class="d">{{ d.label }}</span>
+    <span class="dow{% if d.weekday == 6 %} sun{% elif d.weekday == 5 %} sat{% endif %}">{{ d.youbi }}</span>
+    {% if d.holiday %}<span class="badge hol">{{ d.holiday }}</span>{% endif %}
+    {% if d.is_today %}<span class="badge today">今日</span>{% endif %}
+    <span class="spacer"></span>
+    <span class="count{% if d.slots %} ok{% endif %}">{% if d.slots %}空き {{ d.slots|length }}枠{% else %}空きなし{% endif %}</span>
+  </header>
+  <div class="tl" style="--tick:{{ d.tick }}%">
+    <div class="lane"><span class="lane-name"></span><div class="hours">{% for h, left in d.hour_marks %}<span style="left:{{ left }}%">{{ h }}</span>{% endfor %}</div></div>
+    {% for lane in d.lanes %}
+    <div class="lane">
+      <span class="lane-name" title="{{ lane.email }}"><i class="dot" style="background:{{ lane.color }}"></i>{{ lane.name }}</span>
+      <div class="track">
+        {% if lane.error %}<span class="track-msg">予定を見られません（共有が必要）</span>
+        {% else %}{% for b in lane.blocks %}<div class="block busy" style="left:{{ b.left }}%;width:{{ b.width }}%;background:{{ lane.color }}" title="{{ b.label }}"></div>{% endfor %}{% endif %}
+        {% if d.now_left is not none %}<i class="now" style="left:{{ d.now_left }}%"></i>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    <div class="lane lane-free">
+      <span class="lane-name">みんな空き</span>
+      <div class="track">
+        {% for s in d.slots %}<a class="block free" href="{{ url_for('event_new', day=s.day, start=s.start_hm, end=s.end_hm, demo=('1' if demo else none)) }}" style="left:{{ s.left }}%;width:{{ s.width }}%" title="{{ s.start|fmt_time }}〜{{ s.end|fmt_time }}"></a>{% endfor %}
+        {% if d.now_left is not none %}<i class="now" style="left:{{ d.now_left }}%"></i>{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="slots">
+    {% for s in d.slots %}
+    <div class="slot"><span>{{ s.start|fmt_time }}〜{{ s.end|fmt_time }}</span><span class="dur">{{ s.minutes|fmt_dur }}</span><a class="mini" href="{{ url_for('event_new', day=s.day, start=s.start_hm, end=s.end_hm, demo=('1' if demo else none)) }}">{{ d.preset.emoji }} 予定を作る</a></div>
+    {% else %}
+    <p class="none">みんなが空いている時間（{{ settings.min_minutes|fmt_dur }}以上）はありません</p>
+    {% endfor %}
+  </div>
+</section>
+{% else %}
+<p class="none">表示する日がありません。</p>
+{% endfor %}
+{% endif %}
+
+{% if demo %}<p class="demo-note">デモ表示中：予定はサンプルです。<a href="{{ url_for('index') }}">デモを終了する</a></p>{% endif %}
+{% endif %}
+{% endblock %}

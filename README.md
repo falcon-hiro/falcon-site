@@ -5,7 +5,7 @@
 - 公開: GitHub Pages（main ブランチ / ルート）
 - 独自ドメイン: az-falcon.com（CNAME）
 - 構成: `index.html` 単一ファイル
-- `family-calendar/`: 家族の空き時間カレンダー「あいてる？」（会社サイトとは独立した小さなアプリ。使い方は `family-calendar/README.md`）
+- `family-calendar/`: 家族の空き時間カレンダー「あいてる？」（会社サイトとは独立した小さなアプリ。使い方は `family-calendar/README.md`。`family-calendar/python/` はパソコンで動かす Python 版）
 
 ## 更新ルール
 
