@@ -344,11 +344,9 @@ section { padding: 7rem 4rem; }
   overflow: hidden;
 }
 
-/* 2026-09-10: サービスカードが5枚のため、3列・2列表示で最後に空きマスができる。
-   グリッドの背景色が見えてしまうので、疑似要素で白く埋める（1列表示では出さない） */
-@media (min-width: 641px) {
-  .services-grid::after { content: ''; background: var(--white); }
-}
+/* 2026-10-13: サービスカードが6枚になり、3列・2列とも最後まで埋まるため、
+   5枚のときに空きマスを白く埋めていた疑似要素（2026-09-10 追加）は外した。
+   ⚠️カードを7枚に増やしたら、また空きマスができるので戻すこと */
 
 .service-card {
   background: var(--white);
@@ -863,6 +861,61 @@ footer {
 .fade-up:nth-child(5) { transition-delay: 0.4s; }
 .fade-up:nth-child(6) { transition-delay: 0.5s; }
 
+/* ── 見本・制作例を開くボタンと、開く画面（2026-10-13） ── */
+.service-card--sample { cursor: pointer; }
+
+.sample-open {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  margin-top: 1.4rem; padding: 0.7rem 1.3rem;
+  background: var(--green-deep); color: #ffffff;
+  border: 0; border-radius: 2px;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.85rem; font-weight: 700; letter-spacing: 0.06em;
+  cursor: pointer; transition: background 0.3s;
+}
+
+.sample-open:hover { background: var(--green-mid); }
+.sample-open svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+.sample-modal {
+  width: min(960px, calc(100vw - 2.4rem));
+  max-height: calc(100vh - 3rem);
+  margin: auto;   /* ページ全体の margin:0 の指定を打ち消して画面の中央に出す */
+  padding: 0;
+  border: 1px solid rgba(201,168,76,0.45);
+  border-radius: 4px;
+  background: var(--white);
+  color: var(--text-main);
+  overflow: hidden;
+}
+
+.sample-modal::backdrop { background: rgba(11,22,38,0.72); }
+
+.sample-modal__head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+  padding: 1.4rem 1.6rem 1rem;
+  border-bottom: 1px solid rgba(44,74,112,0.15);
+}
+
+.sample-modal__close {
+  flex-shrink: 0;
+  width: 44px; height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(44,74,112,0.3); border-radius: 2px;
+  color: var(--green-deep);
+  cursor: pointer; transition: background 0.3s;
+}
+
+.sample-modal__close:hover { background: var(--green-mist); }
+.sample-modal__close svg { width: 20px; height: 20px; }
+
+.sample-modal__body {
+  padding: 1.4rem 1.6rem 1.8rem;
+  max-height: calc(100vh - 11rem);
+  overflow-y: auto;
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 1024px) {
   section { padding: 5rem 2rem; }
@@ -1158,7 +1211,7 @@ html { scroll-padding-top: 76px; }
       </div>
 
       <!-- 05 映像・SNS -->
-      <div class="service-card fade-up">
+      <div class="service-card service-card--sample fade-up">
         <div class="service-num">05</div>
         <div class="service-icon" style="font-size:0; line-height:0;">
           <svg width="52" height="52" viewBox="0 0 52 52" fill="none" aria-hidden="true" focusable="false">
@@ -1175,10 +1228,14 @@ html { scroll-padding-top: 76px; }
           <span class="stag">3D素材</span>
           <span class="stag">SNS運用代行</span>
         </div>
+        <button type="button" class="sample-open" data-sample="sample-video">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 5l11 7-11 7V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          制作例を見る（動画2本）
+        </button>
       </div>
 
       <!-- 06 完成イメージ（2026-10-09 追加・生成AI） -->
-      <div class="service-card fade-up">
+      <div class="service-card service-card--sample fade-up">
         <div class="service-num">06</div>
         <div class="service-icon" style="font-size:0; line-height:0;">
           <svg width="52" height="52" viewBox="0 0 52 52" fill="none" aria-hidden="true" focusable="false">
@@ -1196,46 +1253,68 @@ html { scroll-padding-top: 76px; }
           <span class="stag">住民説明</span>
           <span class="stag">完成イメージ</span>
         </div>
+        <button type="button" class="sample-open" data-sample="sample-ba">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h7v12H4zM13 6h7v12h-7z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+          見本を見る（画像2点・動画15秒）
+        </button>
       </div>
 
     </div><!-- /services-grid -->
 
-    <!-- 2026-10-09 追加: 完成イメージの見本（生成AI・架空の道路） -->
-    <div class="fade-up" style="display:flex;flex-wrap:wrap;gap:1.2rem;margin:2.5rem 0 0;">
-      <figure style="flex:1 1 300px;margin:0;">
-        <img src="images/AIGEN_road_before_20261009.webp" loading="lazy" width="1200" height="670" alt="生成AIで作成した架空の道路の工事前イメージ" style="width:100%;height:auto;">
-        <figcaption class="service-desc">工事前（架空の道路）／Before</figcaption>
-      </figure>
-      <figure style="flex:1 1 300px;margin:0;">
-        <img src="images/AIGEN_road_after_20261009.webp" loading="lazy" width="1200" height="670" alt="生成AIで作成した同じ道路の完成イメージ（拡幅・歩道・街路樹・無電柱化）" style="width:100%;height:auto;">
-        <figcaption class="service-desc">完成イメージ（同じ角度）／After</figcaption>
-      </figure>
-      <figure style="flex:1 1 100%;margin:0;max-width:720px;">
-        <video src="videos/AIGEN_road_15s_20261009.mp4" poster="images/AIGEN_road_15s_cover_20261009.jpg" controls muted playsinline preload="none" width="960" height="536" style="width:100%;height:auto;"></video>
-        <figcaption class="service-desc">15秒の説明用動画（工事前 → 工事中 → 完成イメージ）／15-second illustrative video</figcaption>
-      </figure>
-      <p class="service-desc" style="flex-basis:100%;margin:0;">※完成イメージです（生成AIにより作成。実在の場所・施工実績・計測結果ではありません）。見本は一例で、仕上がりは条件により異なります。<span lang="en"> Illustrative AI-generated images and video of a fictional location; not actual construction work or measurement results. Results vary by project.</span></p>
-    </div>
+    <!-- 2026-10-13: 見本・制作例（2026-10-09 掲載）は、カードのボタンで開く画面の中に入れた。
+         ダイアログは閉じている間は表示されず、動画は preload="none" で開くまで読み込まない -->
+    <dialog id="sample-ba" class="sample-modal" aria-labelledby="sample-ba-title">
+      <div class="sample-modal__head">
+        <div>
+          <div class="service-title-en" style="margin-bottom:0.2rem;">Before &amp; After Illustrations</div>
+          <h3 id="sample-ba-title" class="service-title-ja" style="margin:0;">完成イメージの見本（生成AI・架空の道路）</h3>
+        </div>
+        <button type="button" class="sample-modal__close" data-close aria-label="閉じる">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="sample-modal__body">
+        <div style="display:flex;flex-wrap:wrap;gap:1.2rem;">
+          <p class="service-desc" style="flex-basis:100%;margin:0;">※完成イメージです（生成AIにより作成。実在の場所・施工実績・計測結果ではありません）。見本は一例で、仕上がりは条件により異なります。<span lang="en"> Illustrative AI-generated images and video of a fictional location; not actual construction work or measurement results. Results vary by project.</span></p>
+          <figure style="flex:1 1 300px;margin:0;">
+            <img src="images/AIGEN_road_before_20261009.webp" loading="lazy" width="1200" height="670" alt="生成AIで作成した架空の道路の工事前イメージ" style="width:100%;height:auto;">
+            <figcaption class="service-desc">工事前（架空の道路）／Before</figcaption>
+          </figure>
+          <figure style="flex:1 1 300px;margin:0;">
+            <img src="images/AIGEN_road_after_20261009.webp" loading="lazy" width="1200" height="670" alt="生成AIで作成した同じ道路の完成イメージ（拡幅・歩道・街路樹・無電柱化）" style="width:100%;height:auto;">
+            <figcaption class="service-desc">完成イメージ（同じ角度）／After</figcaption>
+          </figure>
+          <figure style="flex:1 1 100%;margin:0;max-width:720px;">
+            <video src="videos/AIGEN_road_15s_20261009.mp4" poster="images/AIGEN_road_15s_cover_20261009.jpg" controls muted playsinline preload="none" width="960" height="536" style="width:100%;height:auto;"></video>
+            <figcaption class="service-desc">15秒の説明用動画（工事前 → 工事中 → 完成イメージ）／15-second illustrative video</figcaption>
+          </figure>
+        </div>
+      </div>
+    </dialog>
 
-    <!-- 2026-10-09 追加: 動画制作の制作例（05 動画制作に対応・生成AI・架空の会社） -->
-    <div class="fade-up" style="margin:2.5rem 0 0;">
-      <div class="service-title-en" style="margin-bottom:0.3rem;">Video Production Example</div>
-      <div class="service-title-ja" style="margin-bottom:1rem;">動画制作の制作例：架空の建設会社の採用動画（30秒）</div>
-      <figure style="margin:0;max-width:720px;">
-        <video src="videos/AIGEN_recruit_example_30s_20261009.mp4" poster="images/AIGEN_recruit_example_cover_20261009.jpg" controls muted playsinline preload="none" width="960" height="540" style="width:100%;height:auto;"></video>
-        <figcaption class="service-desc">※制作例です。映像は生成AIで作成した説明用イメージで、実在の会社・現場・施工実績ではありません。当社の求人ではありません。<span lang="en"> Production example: a recruiting video for a fictional construction company, made with generative AI. Not a job posting by Falcon.</span></figcaption>
-      </figure>
-    </div>
-
-    <!-- 2026-10-09 追加: 縦型リール（当社紹介のイメージ映像・生成AI） -->
-    <div class="fade-up" style="margin:2.5rem 0 0;">
-      <div class="service-title-en" style="margin-bottom:0.3rem;">Short Reel (Vertical)</div>
-      <div class="service-title-ja" style="margin-bottom:1rem;">当社紹介の縦型リール（生成AIイメージ・10秒）</div>
-      <figure style="margin:0;max-width:320px;">
-        <video src="videos/AIGEN_scan_reel_9x16_20261009.mp4" poster="images/AIGEN_scan_reel_cover_20261009.jpg" controls muted playsinline preload="none" width="540" height="960" style="width:100%;height:auto;" aria-label="生成AIによる説明用イメージ映像"></video>
-        <figcaption class="service-desc">※生成AIで作成したイメージ映像です。実際の計測データ・計測画面・作業の様子ではありません。車両・機材の形状・処理時間・計測範囲は実際と異なります。3Dデータの作成には計測後の解析処理が必要です。<span lang="en"> AI-generated illustrative video; not actual measurement data, software screens or field work. Vehicles, equipment, processing time and coverage differ from reality; 3D data requires post-survey processing.</span></figcaption>
-      </figure>
-    </div>
+    <dialog id="sample-video" class="sample-modal" aria-labelledby="sample-video-title">
+      <div class="sample-modal__head">
+        <div>
+          <div class="service-title-en" style="margin-bottom:0.2rem;">Video Production Examples</div>
+          <h3 id="sample-video-title" class="service-title-ja" style="margin:0;">動画の制作例（生成AIによる説明用イメージ）</h3>
+        </div>
+        <button type="button" class="sample-modal__close" data-close aria-label="閉じる">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="sample-modal__body">
+        <div class="service-title-ja" style="margin-bottom:1rem;">制作例1：架空の建設会社の採用動画（30秒）</div>
+        <figure style="margin:0 0 2.2rem;max-width:720px;">
+          <video src="videos/AIGEN_recruit_example_30s_20261009.mp4" poster="images/AIGEN_recruit_example_cover_20261009.jpg" controls muted playsinline preload="none" width="960" height="540" style="width:100%;height:auto;"></video>
+          <figcaption class="service-desc">※制作例です。映像は生成AIで作成した説明用イメージで、実在の会社・現場・施工実績ではありません。当社の求人ではありません。<span lang="en"> Production example: a recruiting video for a fictional construction company, made with generative AI. Not a job posting by Falcon.</span></figcaption>
+        </figure>
+        <div class="service-title-ja" style="margin-bottom:1rem;">制作例2：当社紹介の縦型リール（10秒・Instagram向け）</div>
+        <figure style="margin:0;max-width:320px;">
+          <video src="videos/AIGEN_scan_reel_9x16_20261009.mp4" poster="images/AIGEN_scan_reel_cover_20261009.jpg" controls muted playsinline preload="none" width="540" height="960" style="width:100%;height:auto;" aria-label="生成AIによる説明用イメージ映像"></video>
+          <figcaption class="service-desc">※生成AIで作成したイメージ映像です。実際の計測データ・計測画面・作業の様子ではありません。車両・機材の形状・処理時間・計測範囲は実際と異なります。3Dデータの作成には計測後の解析処理が必要です。<span lang="en"> AI-generated illustrative video; not actual measurement data, software screens or field work. Vehicles, equipment, processing time and coverage differ from reality; 3D data requires post-survey processing.</span></figcaption>
+        </figure>
+      </div>
+    </dialog>
 
     <!-- 2026-08 追加: 無料相談をグリッド外の帯へ -->
     <div class="fade-up" style="display:flex;flex-wrap:wrap;align-items:center;gap:1.5rem;margin:2.5rem 0 0;padding:2rem 2.2rem;background:var(--green-mist);border-radius:4px;">
@@ -1828,6 +1907,53 @@ document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
   btn.addEventListener('click', () => setOpen(!nav.classList.contains('is-open')));
   nav.querySelectorAll('.nav-menu a').forEach(a => a.addEventListener('click', () => setOpen(false)));
   document.addEventListener('keydown', e => { if (e.key === 'Escape') setOpen(false); });
+})();
+
+// ── 見本・制作例の画面（ダイアログ）2026-10-13 ──
+(function () {
+  const stopVideos = dlg => dlg.querySelectorAll('video').forEach(v => v.pause());
+
+  const openDialog = id => {
+    const dlg = document.getElementById(id);
+    if (!dlg) return;
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else dlg.setAttribute('open', '');   // 古いブラウザ向け
+  };
+
+  const closeDialog = dlg => {
+    stopVideos(dlg);
+    if (typeof dlg.close === 'function') dlg.close();
+    else dlg.removeAttribute('open');
+  };
+
+  document.querySelectorAll('[data-sample]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); openDialog(btn.dataset.sample); });
+  });
+
+  // カードのどこを押しても開く（ボタンは上の処理で開く）
+  document.querySelectorAll('.service-card--sample').forEach(card => {
+    const btn = card.querySelector('[data-sample]');
+    if (!btn) return;
+    card.addEventListener('click', e => {
+      if (e.target.closest('[data-sample]')) return;
+      openDialog(btn.dataset.sample);
+    });
+  });
+
+  // 表紙の中央にある再生マークは絵なので、映像のどこを押しても再生・一時停止できるようにする
+  document.querySelectorAll('.sample-modal video').forEach(v => {
+    v.addEventListener('click', e => {
+      const box = v.getBoundingClientRect();
+      if (e.clientY > box.bottom - 48) return;   // 下端の操作バーはブラウザに任せる
+      if (v.paused) { const p = v.play(); if (p && p.catch) p.catch(() => {}); } else { v.pause(); }
+    });
+  });
+
+  document.querySelectorAll('.sample-modal').forEach(dlg => {
+    dlg.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => closeDialog(dlg)));
+    dlg.addEventListener('click', e => { if (e.target === dlg) closeDialog(dlg); });  // 画面の外側を押すと閉じる
+    dlg.addEventListener('close', () => stopVideos(dlg));                            // Escキーで閉じたときも動画を止める
+  });
 })();
 </script>
 </body>
