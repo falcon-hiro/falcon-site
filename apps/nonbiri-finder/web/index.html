@@ -85,6 +85,8 @@
   .radios label:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); font-weight: 700; }
   .radios input { width: 1.3em; height: 1.3em; accent-color: var(--primary); }
   .radios small { display: block; color: var(--muted); font-size: .8rem; font-weight: 400; }
+  .radios.one { grid-template-columns: 1fr; }
+  .radios.one label { white-space: normal; }
 
   .status { padding: 12px 14px; border-radius: 12px; font-size: 1rem; margin-bottom: 14px; background: var(--primary-soft); border: 1px solid var(--line); }
   .status.error { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); font-weight: 700; }
@@ -157,25 +159,44 @@
 <main class="wrap">
   <aside>
     <section class="card step">
-      <h2><span class="num">1</span>どこから探しますか？</h2>
+      <h2><span class="num">1</span>出発地（いまどこ？）</h2>
       <button id="btnHere" type="button" class="btn wide">📍 いまいる場所をつかう</button>
       <p class="hint" id="hereHint">スマホやパソコンの位置情報を使います。許可を求める画面が出たら「許可」を押してください。</p>
       <div class="row" style="margin-top:10px">
-        <label for="placeInput" class="sr-only">駅名・地名</label>
+        <label for="placeInput" class="sr-only">出発地の駅名・地名</label>
         <input id="placeInput" type="text" placeholder="駅名・地名を入力（例: 金沢駅）" autocomplete="off" enterkeyhint="search">
-        <button id="btnPlace" type="button" class="btn secondary">🔍 探す</button>
+        <button id="btnPlace" type="button" class="btn secondary">🔍 決める</button>
       </div>
       <div id="centerLine" class="center-line" hidden></div>
     </section>
 
     <section class="card step">
-      <h2><span class="num">2</span>なにを探しますか？</h2>
+      <h2><span class="num">2</span>行きたい場所（目的地）<span class="hint" style="display:inline;font-weight:400">任意</span></h2>
+      <p class="hint" style="margin:0 0 8px">目的地を入れると、その周辺のお店や名所を探せます。出発地からの行き方も出ます。</p>
+      <div class="row">
+        <label for="destInput" class="sr-only">目的地の名前</label>
+        <input id="destInput" type="text" placeholder="例: 兼六園・清水寺・○○駅" autocomplete="off" enterkeyhint="search">
+        <button id="btnDest" type="button" class="btn secondary">🔍 決める</button>
+      </div>
+      <div id="destLine" class="center-line" hidden></div>
+      <div id="basisBox" class="radios one" style="margin-top:10px" hidden role="radiogroup" aria-label="探す中心">
+        <label><input type="radio" name="basis" id="basisDest" value="dest" checked><span>目的地のまわりを探す</span></label>
+        <label><input type="radio" name="basis" id="basisStart" value="start"><span>出発地のまわりを探す</span></label>
+      </div>
+      <div class="actions" id="destActions" hidden>
+        <a id="routeLink" class="btn small" href="#" target="_blank" rel="noopener">🧭 出発地 → 目的地 の行き方（地図アプリ）</a>
+        <button id="btnDestClear" type="button" class="btn small secondary">目的地をはずす</button>
+      </div>
+    </section>
+
+    <section class="card step">
+      <h2><span class="num">3</span>なにを探しますか？</h2>
       <div id="catChips" class="chips" role="group" aria-label="種類"></div>
       <p class="hint">押すと選んだり外したりできます。</p>
     </section>
 
     <section class="card step">
-      <h2><span class="num">3</span>どのくらい歩けますか？</h2>
+      <h2><span class="num">4</span>どのくらい歩けますか？</h2>
       <div class="radios" role="radiogroup" aria-label="距離">
         <label><input type="radio" name="radius" id="r350" value="350"><span>5分くらい<small>約350m</small></span></label>
         <label><input type="radio" name="radius" id="r700" value="700" checked><span>10分くらい<small>約700m</small></span></label>
@@ -187,7 +208,7 @@
   </aside>
 
   <section>
-    <div id="status" class="status" role="status" aria-live="polite">まず「いまいる場所をつかう」か、駅名を入れて「探す」を押してください。</div>
+    <div id="status" class="status" role="status" aria-live="polite">まず出発地を決めてください。「いまいる場所をつかう」か、駅名を入れて「決める」を押します。行きたい場所があれば②に入れると、その周辺を探せます。</div>
     <div id="mapWrap" class="map-wrap" hidden>
       <div class="map-bar">
         <span class="count" id="mapCount"></span>
@@ -473,7 +494,10 @@
     "横浜駅": [35.4658, 139.6223, "横浜駅（神奈川県横浜市）"], "鎌倉駅": [35.3192, 139.5500, "鎌倉駅（神奈川県鎌倉市）"], "金沢駅": [36.5780, 136.6478, "金沢駅（石川県金沢市）"],
     "名古屋駅": [35.1709, 136.8815, "名古屋駅（愛知県名古屋市）"], "京都駅": [34.9858, 135.7588, "京都駅（京都府京都市）"], "大阪駅": [34.7025, 135.4959, "大阪駅（大阪府大阪市）"],
     "三宮駅": [34.6949, 135.1956, "三宮駅（兵庫県神戸市）"], "広島駅": [34.3977, 132.4753, "広島駅（広島県広島市）"], "博多駅": [33.5897, 130.4207, "博多駅（福岡県福岡市）"],
-    "仙台駅": [38.2602, 140.8824, "仙台駅（宮城県仙台市）"], "札幌駅": [43.0686, 141.3508, "札幌駅（北海道札幌市）"], "那覇空港": [26.2066, 127.6469, "那覇空港（沖縄県那覇市）"] };
+    "仙台駅": [38.2602, 140.8824, "仙台駅（宮城県仙台市）"], "札幌駅": [43.0686, 141.3508, "札幌駅（北海道札幌市）"], "那覇空港": [26.2066, 127.6469, "那覇空港（沖縄県那覇市）"],
+    "兼六園": [36.5622, 136.6626, "兼六園（石川県金沢市）"], "ひがし茶屋街": [36.5725, 136.6667, "ひがし茶屋街（石川県金沢市）"], "近江町市場": [36.5717, 136.6563, "近江町市場（石川県金沢市）"],
+    "清水寺": [34.9949, 135.7850, "清水寺（京都府京都市）"], "金閣寺": [35.0394, 135.7292, "金閣寺（京都府京都市）"], "嵐山": [35.0094, 135.6667, "嵐山（京都府京都市）"],
+    "東京タワー": [35.6586, 139.7454, "東京タワー（東京都港区）"], "大阪城": [34.6873, 135.5262, "大阪城（大阪府大阪市）"], "鎌倉大仏": [35.3167, 139.5358, "鎌倉大仏（神奈川県鎌倉市）"] };
   var ALIAS = { "東京": "東京駅", "浅草寺": "浅草", "横浜": "横浜駅", "鎌倉": "鎌倉駅", "金沢": "金沢駅", "名古屋": "名古屋駅", "京都": "京都駅", "大阪": "大阪駅", "梅田": "大阪駅",
     "神戸": "三宮駅", "三宮": "三宮駅", "広島": "広島駅", "博多": "博多駅", "福岡": "博多駅", "仙台": "仙台駅", "札幌": "札幌駅", "那覇": "那覇空港", "沖縄": "那覇空港" };
   function builtinLookup(q) {
@@ -567,7 +591,7 @@
   // 6. 画面
   // ======================================================================
   var $ = function (id) { return document.getElementById(id); };
-  var state = { center: null, cats: [], radius: 700, sort: "distance", places: [], demo: FORCE_DEMO, wish: [], map: null, markers: [], circle: null, meMarker: null, busy: false };
+  var state = { start: null, dest: null, basis: "start", cats: [], radius: 700, sort: "distance", places: [], demo: FORCE_DEMO, wish: [], map: null, markers: [], circle: null, meMarker: null, busy: false };
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function stars(n) { n = Math.max(0, Math.min(5, n | 0)); return "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n); }
@@ -596,23 +620,67 @@
         var i = state.cats.indexOf(k);
         if (i >= 0) { if (state.cats.length === 1) { setStatus("種類は 1 つ以上選んでください。", "error"); return; } state.cats.splice(i, 1); } else { state.cats.push(k); }
         b.setAttribute("aria-pressed", String(i < 0)); saveLocal("nonbiri.cats", state.cats);
-        if (state.center) { runSearch(); }
+        if (centerLoc()) { runSearch(); }
       });
       box.appendChild(b);
     });
   }
 
-  // 場所
-  function setCenter(loc) {
-    state.center = loc;
-    var line = $("centerLine"); line.hidden = false; line.innerHTML = "いまの中心：<strong>" + esc(loc.label) + "</strong>";
-    $("btnSearch").disabled = false;
+  // 出発地・目的地
+  function centerLoc() { return (state.dest && state.basis === "dest") ? state.dest : state.start; }
+  function originFor(loc) { return (loc && loc.source !== "gps") ? "&origin=" + loc.lat.toFixed(6) + "," + loc.lon.toFixed(6) : ""; }
+  // 結果の「行き方」: 探している中心（出発地 or 目的地）から歩く前提。現在地のときは地図アプリに任せる。
+  function routeUrl(p) { return "https://www.google.com/maps/dir/?api=1" + originFor(centerLoc()) + "&destination=" + p.lat.toFixed(6) + "," + p.lon.toFixed(6) + "&travelmode=walking"; }
+  function updateDestUi() {
+    var has = !!state.dest;
+    $("basisBox").hidden = !has; $("destActions").hidden = !has; $("destLine").hidden = !has;
+    if (has) {
+      var extra = "";
+      if (state.start) { var d = haversine(state.start.lat, state.start.lon, state.dest.lat, state.dest.lon); extra = "　出発地から直線で約" + fmtDist(d); }
+      $("destLine").innerHTML = "目的地：<strong>" + esc(state.dest.label) + "</strong>" + esc(extra);
+      $("routeLink").href = "https://www.google.com/maps/dir/?api=1" + originFor(state.start) + "&destination=" + state.dest.lat.toFixed(6) + "," + state.dest.lon.toFixed(6);
+    }
+    $("btnSearch").disabled = !centerLoc();
   }
+  function setStart(loc) {
+    state.start = loc;
+    var line = $("centerLine"); line.hidden = false; line.innerHTML = "出発地：<strong>" + esc(loc.label) + "</strong>";
+    updateDestUi();
+  }
+  function setDest(loc) {
+    state.dest = loc; state.basis = "dest"; $("basisDest").checked = true;
+    updateDestUi();
+  }
+  function clearDest() {
+    state.dest = null; state.basis = "start"; $("basisStart").checked = true; $("destInput").value = "";
+    updateDestUi();
+    if (centerLoc()) { runSearch(); }
+  }
+  $("btnDestClear").addEventListener("click", clearDest);
+  ["basisDest", "basisStart"].forEach(function (id) {
+    $(id).addEventListener("change", function () { state.basis = $(id).value; if (centerLoc()) { runSearch(); } });
+  });
+  function searchDest() {
+    var q = $("destInput").value.trim();
+    if (!q) { setStatus("行きたい場所の名前を入力してください（例: 兼六園）。", "error"); $("destInput").focus(); return; }
+    setStatus("「" + q + "」の場所を調べています…");
+    geocode(q, state.demo).then(function (loc) {
+      if (!loc) {
+        var hint = state.demo ? "（見本データでは 兼六園・清水寺・金閣寺・東京タワー・大阪城 や主要な駅名だけ探せます）" : "";
+        setStatus("「" + q + "」が見つかりませんでした。施設名や駅名で試してください。" + hint, "error"); return;
+      }
+      setDest(loc);
+      if (!state.start) { setStatus("目的地を決めました。出発地（①）も決めると、行き方が出ます。先に目的地のまわりを探します。"); }
+      return runSearch();
+    }).catch(function (e) { setStatus(e.message, "error"); });
+  }
+  $("btnDest").addEventListener("click", searchDest);
+  $("destInput").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); searchDest(); } });
   $("btnHere").addEventListener("click", function () {
     if (state.busy) { return; }
     if (state.demo) {
-      setCenter(DEMO_DEFAULT);
-      setStatus("見本データのため、位置情報は使わず「金沢駅」を中心にします。駅名を入れて探すこともできます。");
+      setStart(DEMO_DEFAULT);
+      setStatus("見本データのため、位置情報は使わず「金沢駅」を出発地にします。駅名を入れて決めることもできます。");
       runSearch(); return;
     }
     if (!navigator.geolocation || !window.isSecureContext) {
@@ -624,7 +692,7 @@
     navigator.geolocation.getCurrentPosition(function (pos) {
       if (done) { return; } done = true; clearTimeout(fallbackTimer);
       var acc = pos.coords.accuracy ? "（誤差 約" + Math.round(pos.coords.accuracy) + "m）" : "";
-      setCenter({ lat: pos.coords.latitude, lon: pos.coords.longitude, label: "いまいる場所" + acc, source: "gps" }); runSearch();
+      setStart({ lat: pos.coords.latitude, lon: pos.coords.longitude, label: "いまいる場所" + acc, source: "gps" }); runSearch();
     }, function (err) {
       if (done) { return; } done = true; clearTimeout(fallbackTimer);
       var why = (err && err.code === 1) ? "位置情報の利用が許可されませんでした。" : "現在地をうまく取れませんでした。";
@@ -633,14 +701,14 @@
   });
   function searchPlace() {
     var q = $("placeInput").value.trim();
-    if (!q) { setStatus("駅名や地名を入力してください。", "error"); $("placeInput").focus(); return; }
+    if (!q) { setStatus("出発地の駅名や地名を入力してください。", "error"); $("placeInput").focus(); return; }
     setStatus("「" + q + "」の場所を調べています…");
     geocode(q, state.demo).then(function (loc) {
       if (!loc) {
         var hint = state.demo ? "（見本データでは 東京駅・金沢駅・京都駅・大阪駅・札幌駅 などの主要な駅名だけ探せます）" : "";
         setStatus("「" + q + "」が見つかりませんでした。駅名や市区町村名で試してください。" + hint, "error"); return;
       }
-      setCenter(loc); return runSearch();
+      setStart(loc); return runSearch();
     }).catch(function (e) { setStatus(e.message, "error"); });
   }
   $("btnPlace").addEventListener("click", searchPlace);
@@ -648,23 +716,24 @@
 
   // 距離・並び順・検索ボタン
   ["r350", "r700", "r1300", "r3000"].forEach(function (id) {
-    $(id).addEventListener("change", function () { state.radius = parseInt($(id).value, 10); saveLocal("nonbiri.radius", state.radius); if (state.center) { runSearch(); } });
+    $(id).addEventListener("change", function () { state.radius = parseInt($(id).value, 10); saveLocal("nonbiri.radius", state.radius); if (centerLoc()) { runSearch(); } });
   });
   ["sortDistance", "sortRelax", "sortFamous"].forEach(function (id) {
     $(id).addEventListener("click", function () {
       state.sort = $(id).dataset.sort;
       ["sortDistance", "sortRelax", "sortFamous"].forEach(function (x) { $(x).setAttribute("aria-pressed", String(x === id)); });
-      if (state.center) { runSearch(); }
+      if (centerLoc()) { runSearch(); }
     });
   });
-  $("btnSearch").addEventListener("click", function () { if (state.center) { runSearch(); } });
+  $("btnSearch").addEventListener("click", function () { if (centerLoc()) { runSearch(); } });
 
   // 検索
   function runSearch() {
-    if (!state.center || state.busy) { return Promise.resolve(); }
+    var center = centerLoc();
+    if (!center || state.busy) { return Promise.resolve(); }
     state.busy = true; $("btnSearch").disabled = true; $("btnHere").disabled = true;
-    setStatus(state.demo ? "見本データから探しています…" : "さがしています… 少しお待ちください（10〜20秒かかることがあります）");
-    var center = state.center;
+    var where = (state.dest && state.basis === "dest") ? "目的地のまわり" : "出発地のまわり";
+    setStatus(state.demo ? "見本データから" + where + "を探しています…" : where + "をさがしています… 少しお待ちください（10〜20秒かかることがあります）");
     return searchPlaces({ lat: center.lat, lon: center.lon, radius: state.radius, cats: state.cats, sort: state.sort, demo: state.demo, area: areaFromLabel(center.label) })
       .then(function (places) {
         state.places = places; renderResults(places); renderMap(center, places); updateFab();
@@ -677,7 +746,8 @@
     var counts = {};
     places.forEach(function (p) { counts[p.category_label] = (counts[p.category_label] || 0) + 1; });
     var parts = Object.keys(counts).map(function (k) { return k + " " + counts[k] + "件"; });
-    $("summary").textContent = places.length ? "見つかった場所 " + places.length + "件（" + parts.join("・") + "）" : "結果";
+    var where = (state.dest && state.basis === "dest") ? "目的地のまわり" : (state.start && state.start.source === "gps" ? "いまいる場所のまわり" : "出発地のまわり");
+    $("summary").textContent = places.length ? where + " " + places.length + "件（" + parts.join("・") + "）" : "結果";
     var box = $("results"); box.innerHTML = "";
     places.forEach(function (p, i) { box.appendChild(placeCard(p, i)); });
   }
@@ -698,7 +768,7 @@
       '<div class="stars"><span class="label">のんびり度</span>' + stars(p.relax_score) + "</div>" +
       (tags ? '<div class="tags">' + tags + "</div>" : "") + meta +
       '<div class="actions">' +
-      '<a class="btn small" href="' + esc(p.route_url) + '" target="_blank" rel="noopener">🧭 行き方（地図アプリ）</a>' +
+      '<a class="btn small" href="' + esc(routeUrl(p)) + '" target="_blank" rel="noopener">🧭 行き方（地図アプリ）</a>' +
       '<a class="btn small secondary" href="' + esc(p.map_url) + '" target="_blank" rel="noopener">🗺 地図で位置</a>' +
       (p.tabelog_url ? '<a class="btn small secondary" href="' + esc(p.tabelog_url) + '" target="_blank" rel="noopener">⭐ 食べログで見る</a>' : "") +
       (p.website ? '<a class="btn small secondary" href="' + esc(p.website) + '" target="_blank" rel="noopener">🌐 サイト</a>' : "") +
@@ -733,13 +803,20 @@
     var map = ensureMap(); if (!map) { return; }
     $("mapCount").textContent = places.length ? places.length + "件を地図に表示" : "";
     state.markers.forEach(function (m) { map.removeLayer(m); }); state.markers = [];
-    if (state.circle) { map.removeLayer(state.circle); } if (state.meMarker) { map.removeLayer(state.meMarker); }
+    if (state.circle) { map.removeLayer(state.circle); } if (state.meMarker) { map.removeLayer(state.meMarker); } if (state.destMarker) { map.removeLayer(state.destMarker); state.destMarker = null; }
     var c = [center.lat, center.lon];
-    state.meMarker = L.circleMarker(c, { radius: 9, color: "#fff", weight: 3, fillColor: "#b9651f", fillOpacity: 1 }).addTo(map).bindTooltip("ここが中心", { permanent: true, direction: "top" });
+    if (state.start) {
+      state.meMarker = L.circleMarker([state.start.lat, state.start.lon], { radius: 9, color: "#fff", weight: 3, fillColor: "#b9651f", fillOpacity: 1 }).addTo(map)
+        .bindTooltip(state.start.source === "gps" ? "いまいる場所" : "出発地", { permanent: true, direction: "top" });
+    } else { state.meMarker = null; }
+    if (state.dest) {
+      state.destMarker = L.marker([state.dest.lat, state.dest.lon], { icon: L.divIcon({ className: "pin", html: '<div class="pin-body" style="--pin:#c0392b">🚩</div>', iconSize: [36, 42], iconAnchor: [18, 42] }), title: "目的地", zIndexOffset: 500 })
+        .addTo(map).bindTooltip("目的地", { permanent: true, direction: "top", offset: [0, -40] });
+    }
     state.circle = L.circle(c, { radius: state.radius, color: "#2f6b50", weight: 1, fillOpacity: .05 }).addTo(map);
     places.forEach(function (p, i) {
       var m = L.marker([p.lat, p.lon], { title: p.name, icon: makeIcon(p, false) }).addTo(map)
-        .bindPopup("<strong>" + esc(p.icon + " " + p.name) + "</strong><br>ゆっくり歩いて 約" + p.walk_min + '分<br><a href="' + esc(p.route_url) + '" target="_blank" rel="noopener">行き方を見る</a>');
+        .bindPopup("<strong>" + esc(p.icon + " " + p.name) + "</strong><br>ゆっくり歩いて 約" + p.walk_min + '分<br><a href="' + esc(routeUrl(p)) + '" target="_blank" rel="noopener">行き方を見る</a>');
       m.on("click", function () { highlight(i, true); });
       state.markers.push(m);
     });
@@ -807,7 +884,7 @@
     $("demoBadge").hidden = !state.demo;
     $("demoToggle").checked = state.demo;
     $("hereHint").textContent = state.demo ? "見本データでは、位置情報の代わりに「金沢駅」を中心にします。" : "スマホやパソコンの位置情報を使います。許可を求める画面が出たら「許可」を押してください。";
-    if (state.center) { runSearch(); }
+    if (centerLoc()) { runSearch(); }
   }
   $("demoToggle").addEventListener("change", function () { if (FORCE_DEMO) { $("demoToggle").checked = true; return; } saveLocal("nonbiri.demo", $("demoToggle").checked); applyDemo($("demoToggle").checked); });
 
