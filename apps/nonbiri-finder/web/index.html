@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>のんびりさがし</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+  /* レイアウト: 上に 3 ステップの操作、下に結果カード。地図は結果の上。スマホでは 1 列。 */
+  :root {
+    --bg: #f5f6f2; --paper: #ffffff; --ink: #24302a; --muted: #5c6a62; --line: #d9ded8;
+    --primary: #2f6b50; --primary-ink: #ffffff; --primary-soft: #e3eee7;
+    --accent: #b9651f; --accent-soft: #f8e7d6; --accent-ink: #7a4211;
+    --danger: #a63d2f; --danger-soft: #fae4e0; --star: #c9971a; --map-bg: #e6e9e4;
+    --shadow: 0 2px 10px rgba(30, 50, 40, .08);
+    --font: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", "Noto Sans JP", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161b18; --paper: #1f2622; --ink: #eef2ee; --muted: #a9b5ad; --line: #37423b;
+      --primary: #7fc39f; --primary-ink: #0f1a14; --primary-soft: #223129;
+      --accent: #e8a05a; --accent-soft: #3a2a1a; --accent-ink: #f3c793;
+      --danger: #f08a7a; --danger-soft: #3b2220; --star: #e6b93f; --map-bg: #262d29;
+      --shadow: 0 2px 10px rgba(0, 0, 0, .35); color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161b18; --paper: #1f2622; --ink: #eef2ee; --muted: #a9b5ad; --line: #37423b;
+    --primary: #7fc39f; --primary-ink: #0f1a14; --primary-soft: #223129;
+    --accent: #e8a05a; --accent-soft: #3a2a1a; --accent-ink: #f3c793;
+    --danger: #f08a7a; --danger-soft: #3b2220; --star: #e6b93f; --map-bg: #262d29;
+    --shadow: 0 2px 10px rgba(0, 0, 0, .35); color-scheme: dark;
+  }
+  html { font-size: 18px; }
+  html[data-size="large"] { font-size: 21px; }
+  html[data-size="xlarge"] { font-size: 24px; }
+  * { box-sizing: border-box; min-width: 0; }
+  body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.6; font-family: var(--font); overflow-wrap: anywhere; }
+  a { color: var(--primary); }
+  button { font: inherit; cursor: pointer; }
+  button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+
+  .top { background: var(--primary); color: var(--primary-ink); padding-block: 14px; padding-inline: 16px; }
+  .wrap { max-width: 1180px; margin-inline: auto; padding-inline: 16px; }
+  .top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-inline: 0; }
+  .top h1 { margin: 0; font-size: 1.45rem; letter-spacing: .04em; text-wrap: balance; }
+  .top p { margin: 2px 0 0; font-size: .9rem; opacity: .92; }
+  .size-ctl { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .size-ctl span { font-size: .85rem; margin-right: 4px; }
+  .size-ctl button { min-width: 48px; min-height: 44px; border-radius: 10px; border: 2px solid var(--primary-ink); background: transparent; color: var(--primary-ink); font-weight: 700; }
+  .size-ctl button[aria-pressed="true"] { background: var(--primary-ink); color: var(--primary); }
+  .badge { display: inline-block; background: var(--accent); color: #fff; border-radius: 999px; padding: 2px 12px; font-size: .85rem; font-weight: 700; vertical-align: middle; }
+
+  main { display: grid; grid-template-columns: 400px 1fr; gap: 20px; padding-block: 20px 40px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; gap: 14px; padding-block: 14px 40px; } .card { padding: 14px; } }
+
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 16px; }
+  .step { margin-bottom: 16px; }
+  .step h2 { margin: 0 0 10px; font-size: 1.05rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+  .step h2 .num { display: inline-flex; width: 1.7em; height: 1.7em; border-radius: 50%; background: var(--primary); color: var(--primary-ink); align-items: center; justify-content: center; font-size: .9rem; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 10px 18px; border-radius: 12px;
+         border: 2px solid var(--primary); background: var(--primary); color: var(--primary-ink); font-weight: 700; font-size: 1rem; text-decoration: none; }
+  .btn.secondary { background: var(--paper); color: var(--primary); }
+  .btn.accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.wide { width: 100%; }
+  .btn:disabled { opacity: .55; cursor: wait; }
+  .btn.small { min-height: 44px; padding: 6px 12px; font-size: .9rem; border-width: 1.5px; }
+
+  .row { display: flex; gap: 8px; }
+  input[type="text"] { flex: 1; min-height: 52px; font-size: 1rem; padding: 8px 12px; border-radius: 12px; border: 2px solid var(--line); background: var(--paper); color: var(--ink); }
+  .hint { color: var(--muted); font-size: .88rem; margin: 6px 0 0; }
+  .center-line { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--primary-soft); font-size: .95rem; }
+  .center-line strong { color: var(--primary); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { min-height: 48px; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--primary); background: var(--paper); color: var(--primary); font-weight: 700; }
+  .chip[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); }
+  .radios { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .radios label { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 8px 12px; border-radius: 12px; border: 2px solid var(--line); background: var(--paper); cursor: pointer; white-space: nowrap; }
+  .radios label:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); font-weight: 700; }
+  .radios input { width: 1.3em; height: 1.3em; accent-color: var(--primary); }
+  .radios small { display: block; color: var(--muted); font-size: .8rem; font-weight: 400; }
+
+  .status { padding: 12px 14px; border-radius: 12px; font-size: 1rem; margin-bottom: 14px; background: var(--primary-soft); border: 1px solid var(--line); }
+  .status.error { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); font-weight: 700; }
+
+  #map { height: 340px; border-radius: 14px; border: 1px solid var(--line); margin-bottom: 16px; background: var(--map-bg); max-width: 100%; }
+  @media (max-width: 900px) { #map { height: 260px; } }
+  .summary { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .summary h2 { margin: 0; font-size: 1.1rem; }
+  .sort { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sort button { min-height: 44px; padding: 4px 12px; border-radius: 999px; border: 2px solid var(--line); background: var(--paper); color: var(--ink); font-size: .9rem; }
+  .sort button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); font-weight: 700; }
+
+  .place { margin-bottom: 12px; padding: 14px 16px; }
+  .place.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .place .head { display: flex; align-items: flex-start; gap: 10px; }
+  .place .icon { font-size: 1.6rem; line-height: 1.2; }
+  .place h3 { margin: 0; font-size: 1.15rem; line-height: 1.35; }
+  .place .kind { color: var(--muted); font-size: .9rem; }
+  .place .walk { margin: 6px 0 2px; font-weight: 700; }
+  .place .walk .dist { color: var(--muted); font-weight: 400; font-size: .9rem; }
+  .stars { color: var(--star); letter-spacing: .05em; font-size: 1.05rem; }
+  .stars .label { color: var(--muted); font-size: .85rem; letter-spacing: 0; margin-right: 4px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+  .tag { font-size: .82rem; padding: 2px 10px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); }
+  .tag.famous { background: var(--accent-soft); color: var(--accent-ink); }
+  .meta { font-size: .92rem; color: var(--muted); margin: 2px 0; font-variant-numeric: tabular-nums; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .wish-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent); }
+
+  .wish { margin-top: 24px; }
+  .wish h2 { font-size: 1.1rem; margin: 0 0 8px; }
+  .wish ul { list-style: none; margin: 0; padding: 0; }
+  .wish li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .wish .empty { color: var(--muted); }
+  .wish textarea { width: 100%; min-height: 8em; font: inherit; font-size: .9rem; margin-top: 8px; border-radius: 10px; border: 2px solid var(--line); background: var(--paper); color: var(--ink); padding: 8px; }
+  .confirm { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  footer { color: var(--muted); font-size: .82rem; text-align: center; padding-block: 12px 28px; padding-inline: 16px; }
+  footer label { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; cursor: pointer; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <h1><span style="white-space:nowrap">☕ のんびりさがし</span> <span id="demoBadge" class="badge" hidden>見本データ</span></h1>
+      <p>近くの観光名所・映えスポット・ごはん・ゆっくりカフェを、歩ける範囲で探せます</p>
+    </div>
+    <div class="size-ctl" role="group" aria-label="文字の大きさ">
+      <span>文字の大きさ</span>
+      <button type="button" id="sizeNormal" data-size="normal" aria-pressed="true">標準</button>
+      <button type="button" id="sizeLarge" data-size="large" aria-pressed="false">大</button>
+      <button type="button" id="sizeXlarge" data-size="xlarge" aria-pressed="false">特大</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <aside>
+    <section class="card step">
+      <h2><span class="num">1</span>どこから探しますか？</h2>
+      <button id="btnHere" type="button" class="btn wide">📍 いまいる場所をつかう</button>
+      <p class="hint" id="hereHint">スマホやパソコンの位置情報を使います。許可を求める画面が出たら「許可」を押してください。</p>
+      <div class="row" style="margin-top:10px">
+        <label for="placeInput" class="sr-only">駅名・地名</label>
+        <input id="placeInput" type="text" placeholder="駅名・地名を入力（例: 金沢駅）" autocomplete="off" enterkeyhint="search">
+        <button id="btnPlace" type="button" class="btn secondary">🔍 探す</button>
+      </div>
+      <div id="centerLine" class="center-line" hidden></div>
+    </section>
+
+    <section class="card step">
+      <h2><span class="num">2</span>なにを探しますか？</h2>
+      <div id="catChips" class="chips" role="group" aria-label="種類"></div>
+      <p class="hint">押すと選んだり外したりできます。</p>
+    </section>
+
+    <section class="card step">
+      <h2><span class="num">3</span>どのくらい歩けますか？</h2>
+      <div class="radios" role="radiogroup" aria-label="距離">
+        <label><input type="radio" name="radius" id="r350" value="350"><span>5分くらい<small>約350m</small></span></label>
+        <label><input type="radio" name="radius" id="r700" value="700" checked><span>10分くらい<small>約700m</small></span></label>
+        <label><input type="radio" name="radius" id="r1300" value="1300"><span>20分くらい<small>約1.3km</small></span></label>
+        <label><input type="radio" name="radius" id="r3000" value="3000"><span>車・バス<small>約3km</small></span></label>
+      </div>
+      <button id="btnSearch" type="button" class="btn accent wide" style="margin-top:12px" disabled>🔎 この条件で探す</button>
+    </section>
+  </aside>
+
+  <section>
+    <div id="status" class="status" role="status" aria-live="polite">まず「いまいる場所をつかう」か、駅名を入れて「探す」を押してください。</div>
+    <div id="map" aria-label="地図" hidden></div>
+    <div class="summary">
+      <h2 id="summary">結果</h2>
+      <div class="sort" role="group" aria-label="並び順">
+        <button type="button" id="sortDistance" data-sort="distance" aria-pressed="true">近い順</button>
+        <button type="button" id="sortRelax" data-sort="relax" aria-pressed="false">のんびり度順</button>
+        <button type="button" id="sortFamous" data-sort="famous" aria-pressed="false">有名どころ優先</button>
+      </div>
+    </div>
+    <div id="results"></div>
+
+    <section class="card wish" id="wishSection">
+      <h2>⭐ 行きたいリスト <span class="hint" style="display:inline">（このブラウザに保存されます）</span></h2>
+      <ul id="wishList"></ul>
+      <div class="actions">
+        <button id="btnCopyWish" type="button" class="btn secondary small">📋 リストを文章でコピー（LINE などで共有）</button>
+        <span id="clearBox" class="confirm"><button id="btnClearWish" type="button" class="btn secondary small">🗑 リストを空にする</button></span>
+      </div>
+      <textarea id="wishText" hidden readonly aria-label="行きたいリストの文章"></textarea>
+    </section>
+  </section>
+</main>
+<footer>
+  地図データ © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors。
+  「のんびり度」は地図データに登録された情報（バリアフリー・禁煙・テラス席など）から計算した目安です。営業時間は変わることがあるので、お出かけ前にご確認ください。
+  <br><label id="demoToggleLabel"><input type="checkbox" id="demoToggle"> 見本データで試す（インターネットの地図データを使わない）</label>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(function () {
+  "use strict";
+  // この画面（claude.ai 上の見本ページ）向けに作るときは true に差し替えます。
+  var FORCE_DEMO = false; // ARTIFACT_MODE
+
+  // ======================================================================
+  // 1. 計算（距離・方角・徒歩分）
+  // ======================================================================
+  var EARTH_R = 6371000, WALK_SPEED = 67; // 時速 4km のゆっくりペース
+  var COMPASS = ["北", "北東", "東", "南東", "南", "南西", "西", "北西"];
+  function rad(d) { return d * Math.PI / 180; }
+  function haversine(lat1, lon1, lat2, lon2) {
+    var p1 = rad(lat1), p2 = rad(lat2), dp = p2 - p1, dl = rad(lon2 - lon1);
+    var a = Math.sin(dp / 2) * Math.sin(dp / 2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) * Math.sin(dl / 2);
+    return 2 * EARTH_R * Math.asin(Math.sqrt(a));
+  }
+  function bearing(lat1, lon1, lat2, lon2) {
+    var p1 = rad(lat1), p2 = rad(lat2), dl = rad(lon2 - lon1);
+    var x = Math.sin(dl) * Math.cos(p2), y = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+    return (Math.atan2(x, y) * 180 / Math.PI + 360) % 360;
+  }
+  function compass(b) { return COMPASS[Math.floor(((b % 360) + 22.5) / 45) % 8]; }
+  function walkMin(m) { return m <= 0 ? 1 : Math.max(1, Math.ceil(m * 1.3 / WALK_SPEED)); }
+  function fmtDist(m) { return m < 1000 ? Math.round(m) + "m" : (m / 1000).toFixed(1) + "km"; }
+
+  // ======================================================================
+  // 2. 日本語に直す小さな辞書
+  // ======================================================================
+  var DAY_JA = { Mo: "月", Tu: "火", We: "水", Th: "木", Fr: "金", Sa: "土", Su: "日", PH: "祝" };
+  function openingHoursJa(v) {
+    if (!v) { return ""; }
+    var t = String(v).trim();
+    if (t === "24/7") { return "24時間営業"; }
+    t = t.replace(/\b(Mo|Tu|We|Th|Fr|Sa|Su)-(Mo|Tu|We|Th|Fr|Sa|Su)\b/g, "$1〜$2");
+    t = t.replace(/\b(Mo|Tu|We|Th|Fr|Sa|Su|PH)\b/g, function (m) { return DAY_JA[m]; });
+    t = t.replace(/\boff\b/g, "定休").replace(/\bclosed\b/g, "定休").replace(/\bsunrise\b/g, "日の出").replace(/\bsunset\b/g, "日の入り");
+    return t.replace(/;/g, " / ").replace(/\s+/g, " ").trim();
+  }
+  var CUISINE_JA = { japanese: "和食", sushi: "寿司", ramen: "ラーメン", udon: "うどん", soba: "そば", tempura: "天ぷら", yakitori: "焼き鳥",
+    izakaya: "居酒屋", kaiseki: "懐石", tonkatsu: "とんかつ", okonomiyaki: "お好み焼き", takoyaki: "たこ焼き", curry: "カレー", yakiniku: "焼肉",
+    barbecue: "バーベキュー", steak_house: "ステーキ", seafood: "海鮮", fish: "魚料理", eel: "うなぎ", unagi: "うなぎ", oden: "おでん", nabe: "鍋",
+    chinese: "中華", dim_sum: "点心", korean: "韓国料理", thai: "タイ料理", vietnamese: "ベトナム料理", indian: "インド料理", nepalese: "ネパール料理",
+    italian: "イタリアン", pizza: "ピザ", pasta: "パスタ", french: "フレンチ", spanish: "スペイン料理", mexican: "メキシコ料理", american: "アメリカン",
+    hawaiian: "ハワイアン", burger: "ハンバーガー", sandwich: "サンドイッチ", coffee_shop: "コーヒー", tea: "お茶", cake: "ケーキ", dessert: "デザート",
+    ice_cream: "アイスクリーム", crepe: "クレープ", pancake: "パンケーキ", bakery: "パン", bubble_tea: "タピオカ", juice: "ジュース", wagashi: "和菓子",
+    vegetarian: "ベジタリアン", vegan: "ビーガン", regional: "郷土料理", local: "地元料理", international: "多国籍", buffet: "ビュッフェ",
+    chicken: "鶏料理", noodle: "麺類", noodles: "麺類", teishoku: "定食", kushiage: "串揚げ", kushikatsu: "串カツ", "shabu-shabu": "しゃぶしゃぶ",
+    sukiyaki: "すき焼き", monjayaki: "もんじゃ焼き", tofu: "豆腐料理" };
+  function cuisineJa(v) {
+    if (!v) { return ""; }
+    var out = [];
+    String(v).split(";").forEach(function (raw) {
+      var k = raw.trim().toLowerCase(); if (!k) { return; }
+      var l = CUISINE_JA[k] || k.replace(/_/g, " ");
+      if (out.indexOf(l) < 0) { out.push(l); }
+    });
+    return out.join("・");
+  }
+
+  // ======================================================================
+  // 3. カテゴリと、地図データ（OpenStreetMap）の読み取り
+  // ======================================================================
+  var CATEGORIES = {
+    cafe: { label: "ゆっくりカフェ", icon: "☕", desc: "コーヒー・お茶・甘いものでひと休み",
+      selectors: [["amenity", ["cafe", "ice_cream"]], ["shop", ["tea", "coffee"]]] },
+    food: { label: "飲食店", icon: "🍽️", desc: "落ち着いて食事ができるお店（ファストフードは除く）",
+      selectors: [["amenity", ["restaurant", "food_court"]]] },
+    photo: { label: "映えスポット", icon: "📸", desc: "展望台・庭園・滝・海辺・アートなど写真がきれいに撮れる場所", unnamed: "名前のない展望・景色スポット",
+      selectors: [["tourism", ["viewpoint", "artwork"]], ["natural", ["waterfall", "beach", "hot_spring", "peak", "cliff", "cape"]],
+        ["leisure", ["garden"]], ["man_made", ["lighthouse", "tower", "observatory"]], ["attraction", ["big_wheel"]]] },
+    sightseeing: { label: "観光名所", icon: "⛩️", desc: "寺社・城・史跡・博物館・美術館・水族館など",
+      selectors: [["tourism", ["attraction", "museum", "gallery", "zoo", "aquarium", "theme_park"]],
+        ["historic", ["castle", "monument", "memorial", "ruins", "archaeological_site", "building", "fort", "citywalls", "tomb"]],
+        ["amenity", ["place_of_worship"]]] },
+    rest: { label: "公園・温泉でひと休み", icon: "♨️", desc: "ベンチのある公園、足湯・日帰り温泉など",
+      selectors: [["leisure", ["park", "nature_reserve"]], ["amenity", ["public_bath"]], ["tourism", ["picnic_site"]]] }
+  };
+  var ORDER = ["cafe", "food", "photo", "sightseeing", "rest"];
+  var DEFAULT_CATS = ["sightseeing", "photo", "food", "cafe"];
+  var KIND_JA = { "amenity=cafe": "カフェ", "amenity=ice_cream": "アイス・ジェラート", "shop=tea": "お茶・茶寮", "shop=coffee": "コーヒー専門店",
+    "amenity=restaurant": "レストラン・食事処", "amenity=food_court": "フードコート", "tourism=viewpoint": "展望スポット", "tourism=artwork": "アート作品",
+    "natural=waterfall": "滝", "natural=beach": "海辺・浜", "natural=hot_spring": "温泉（源泉）", "natural=peak": "山頂", "natural=cliff": "断崖", "natural=cape": "岬",
+    "leisure=garden": "庭園", "man_made=lighthouse": "灯台", "man_made=tower": "タワー", "man_made=observatory": "展望施設", "attraction=big_wheel": "観覧車",
+    "tourism=attraction": "観光名所", "tourism=museum": "博物館・資料館", "tourism=gallery": "美術館・ギャラリー", "tourism=zoo": "動物園", "tourism=aquarium": "水族館",
+    "tourism=theme_park": "テーマパーク", "historic=castle": "城", "historic=monument": "記念碑", "historic=memorial": "記念碑・慰霊碑", "historic=ruins": "史跡・遺構",
+    "historic=archaeological_site": "遺跡", "historic=building": "歴史的建物", "historic=fort": "砦・要塞", "historic=citywalls": "城壁", "historic=tomb": "古墳・墓所",
+    "amenity=place_of_worship": "寺社", "leisure=park": "公園", "leisure=nature_reserve": "自然保護区", "amenity=public_bath": "温泉・銭湯", "tourism=picnic_site": "ピクニック広場" };
+
+  function selMatches(sel, tags) {
+    var v = tags[sel[0]]; if (v == null) { return false; }
+    return v.split(";").some(function (x) { return sel[1].indexOf(x.trim()) >= 0; });
+  }
+  function buildQuery(lat, lon, radius, cats) {
+    var lines = ["[out:json][timeout:25];", "("], seen = {};
+    cats.forEach(function (k) {
+      CATEGORIES[k].selectors.forEach(function (s) {
+        var cond = s[1].length === 1 ? '["' + s[0] + '"="' + s[1][0] + '"]' : '["' + s[0] + '"~"^(' + s[1].join("|") + ')$"]';
+        var line = "nwr" + cond + "(around:" + radius + "," + lat.toFixed(6) + "," + lon.toFixed(6) + ");";
+        if (!seen[line]) { seen[line] = 1; lines.push("  " + line); }
+      });
+    });
+    lines.push(");", "out center qt;");
+    return lines.join("\n");
+  }
+  function classify(tags, wanted) {
+    if (tags.amenity === "restaurant" && (tags.cuisine || "").indexOf("coffee_shop") >= 0 && wanted.indexOf("cafe") >= 0) { return "cafe"; }
+    for (var i = 0; i < ORDER.length; i++) {
+      var k = ORDER[i]; if (wanted.indexOf(k) < 0) { continue; }
+      if (CATEGORIES[k].selectors.some(function (s) { return selMatches(s, tags); })) { return k; }
+    }
+    return null;
+  }
+  function isYes(v) { return ["yes", "designated", "permissive"].indexOf(String(v || "").toLowerCase()) >= 0; }
+  function relaxFeatures(tags, cat) {
+    var pts = 0, labels = [], eat = (cat === "cafe" || cat === "food");
+    var wc = String(tags.wheelchair || "").toLowerCase();
+    if (wc === "yes") { pts++; labels.push("バリアフリー"); } else if (wc === "limited") { labels.push("車いす一部OK"); }
+    var sm = String(tags.smoking || "").toLowerCase();
+    if (["no", "outside", "separated", "isolated"].indexOf(sm) >= 0) { pts++; labels.push(sm === "no" ? "禁煙" : "分煙"); }
+    if (eat) {
+      if (isYes(tags.outdoor_seating)) { pts++; labels.push("テラス席"); }
+      if (!tags.brand && !tags["brand:wikidata"]) { pts++; labels.push("個人店"); }
+      if (["yes", "recommended", "required"].indexOf(String(tags.reservation || "").toLowerCase()) >= 0) { labels.push("予約可"); }
+    } else {
+      if (isYes(tags.bench)) { pts++; labels.push("ベンチあり"); }
+      if (isYes(tags.shelter) || isYes(tags.covered)) { labels.push("屋根あり"); }
+    }
+    if (isYes(tags.toilets) || isYes(tags["toilets:wheelchair"])) { pts++; labels.push("トイレあり"); }
+    var pk = String(tags.parking || "").toLowerCase();
+    if (pk && pk !== "no") { pts++; labels.push("駐車場あり"); }
+    if (tags.wikipedia || tags.wikidata) { if (!eat) { pts++; } labels.push("有名スポット"); }
+    var net = String(tags.internet_access || "").toLowerCase();
+    if (net === "wlan" || net === "yes") { labels.push("Wi-Fi"); }
+    return { score: Math.min(5, pts), labels: labels };
+  }
+  function kindLabel(tags, cat) {
+    if (tags.amenity === "place_of_worship") {
+      if (tags.religion === "shinto") { return "神社"; } if (tags.religion === "buddhist") { return "お寺"; } if (tags.religion === "christian") { return "教会"; }
+    }
+    var cands = [], c = CATEGORIES[cat];
+    c.selectors.forEach(function (s) {
+      var v = tags[s[0]]; if (v == null) { return; }
+      v.split(";").forEach(function (x) { var l = KIND_JA[s[0] + "=" + x.trim()]; if (l && cands.indexOf(l) < 0) { cands.push(l); } });
+    });
+    for (var i = 0; i < cands.length; i++) { if (cands[i] !== c.label) { return cands[i]; } }
+    return cands[0] || c.label;
+  }
+  function displayName(tags) {
+    var keys = ["name:ja", "name", "official_name", "name:en"];
+    for (var i = 0; i < keys.length; i++) { var v = (tags[keys[i]] || "").trim(); if (v) { return v; } }
+    return "";
+  }
+  function address(tags) {
+    if (tags["addr:full"]) { return tags["addr:full"]; }
+    var t = ["addr:province", "addr:city", "addr:quarter", "addr:neighbourhood"].map(function (k) { return tags[k] || ""; }).join("");
+    var b = tags["addr:block_number"] || "", n = tags["addr:housenumber"] || "";
+    if (b && n) { t += b + "-" + n; } else if (n) { t += n; }
+    return t;
+  }
+  function coords(el) {
+    if (el.lat != null && el.lon != null) { return [+el.lat, +el.lon]; }
+    if (el.center && el.center.lat != null) { return [+el.center.lat, +el.center.lon]; }
+    return null;
+  }
+  function parseOverpass(data, clat, clon, cats, radius) {
+    var out = [], seen = {};
+    (data.elements || []).forEach(function (el) {
+      var tags = el.tags || {}; if (!Object.keys(tags).length) { return; }
+      var c = coords(el); if (!c) { return; }
+      var cat = classify(tags, cats); if (!cat) { return; }
+      var name = displayName(tags);
+      if (!name) { if (!CATEGORIES[cat].unnamed) { return; } name = CATEGORIES[cat].unnamed; }
+      var d = haversine(clat, clon, c[0], c[1]);
+      if (radius && d > radius * 1.15) { return; }
+      var key = name + "|" + cat + "|" + Math.round(c[0] * 1000) + "|" + Math.round(c[1] * 1000);
+      if (seen[key]) { return; } seen[key] = 1;
+      var rf = relaxFeatures(tags, cat), id = (el.type || "node") + "/" + el.id, q = c[0].toFixed(6) + "," + c[1].toFixed(6);
+      out.push({ id: id, name: name, category: cat, category_label: CATEGORIES[cat].label, icon: CATEGORIES[cat].icon, lat: c[0], lon: c[1],
+        distance_m: Math.round(d), distance_label: fmtDist(d), walk_min: walkMin(d), direction: compass(bearing(clat, clon, c[0], c[1])),
+        relax_score: rf.score, features: rf.labels, kind: kindLabel(tags, cat), cuisine: cuisineJa(tags.cuisine), opening_hours: openingHoursJa(tags.opening_hours),
+        website: tags.website || tags["contact:website"] || tags.url || "", phone: tags.phone || tags["contact:phone"] || "", address: address(tags),
+        famous: !!(tags.wikipedia || tags.wikidata), map_url: "https://www.google.com/maps/search/?api=1&query=" + q,
+        route_url: "https://www.google.com/maps/dir/?api=1&destination=" + q + "&travelmode=walking" });
+    });
+    return out;
+  }
+  function sortPlaces(list, mode) {
+    var a = list.slice();
+    if (mode === "relax") { a.sort(function (x, y) { return (y.relax_score - x.relax_score) || (x.distance_m - y.distance_m) || x.name.localeCompare(y.name, "ja"); }); }
+    else if (mode === "famous") { a.sort(function (x, y) { return ((y.famous ? 1 : 0) - (x.famous ? 1 : 0)) || (x.distance_m - y.distance_m) || x.name.localeCompare(y.name, "ja"); }); }
+    else { a.sort(function (x, y) { return (x.distance_m - y.distance_m) || x.name.localeCompare(y.name, "ja"); }); }
+    return a;
+  }
+
+  // ======================================================================
+  // 4. 場所さがし（内蔵の主要駅・地名検索）と見本データ
+  // ======================================================================
+  var BUILTIN = { "東京駅": [35.6812, 139.7671, "東京駅（東京都千代田区）"], "浅草": [35.7148, 139.7967, "浅草寺（東京都台東区）"],
+    "横浜駅": [35.4658, 139.6223, "横浜駅（神奈川県横浜市）"], "鎌倉駅": [35.3192, 139.5500, "鎌倉駅（神奈川県鎌倉市）"], "金沢駅": [36.5780, 136.6478, "金沢駅（石川県金沢市）"],
+    "名古屋駅": [35.1709, 136.8815, "名古屋駅（愛知県名古屋市）"], "京都駅": [34.9858, 135.7588, "京都駅（京都府京都市）"], "大阪駅": [34.7025, 135.4959, "大阪駅（大阪府大阪市）"],
+    "三宮駅": [34.6949, 135.1956, "三宮駅（兵庫県神戸市）"], "広島駅": [34.3977, 132.4753, "広島駅（広島県広島市）"], "博多駅": [33.5897, 130.4207, "博多駅（福岡県福岡市）"],
+    "仙台駅": [38.2602, 140.8824, "仙台駅（宮城県仙台市）"], "札幌駅": [43.0686, 141.3508, "札幌駅（北海道札幌市）"], "那覇空港": [26.2066, 127.6469, "那覇空港（沖縄県那覇市）"] };
+  var ALIAS = { "東京": "東京駅", "浅草寺": "浅草", "横浜": "横浜駅", "鎌倉": "鎌倉駅", "金沢": "金沢駅", "名古屋": "名古屋駅", "京都": "京都駅", "大阪": "大阪駅", "梅田": "大阪駅",
+    "神戸": "三宮駅", "三宮": "三宮駅", "広島": "広島駅", "博多": "博多駅", "福岡": "博多駅", "仙台": "仙台駅", "札幌": "札幌駅", "那覇": "那覇空港", "沖縄": "那覇空港" };
+  function builtinLookup(q) {
+    var k = q.trim(); k = ALIAS[k] || k; var b = BUILTIN[k];
+    return b ? { lat: b[0], lon: b[1], label: b[2], source: "builtin" } : null;
+  }
+  var DEMO_DEFAULT = { lat: 36.5780, lon: 136.6478, label: "金沢駅（見本用の既定地点）", source: "builtin" };
+  var DEMO_SPOTS = [
+    [120, 80, { name: "（デモ）喫茶 木もれ陽", amenity: "cafe", cuisine: "coffee_shop;cake", smoking: "no", outdoor_seating: "yes", wheelchair: "yes", opening_hours: "Mo-Fr 09:00-18:00; Sa,Su 10:00-17:00", phone: "+81-76-000-0001", website: "https://example.com/komorebi", internet_access: "wlan" }],
+    [-260, 310, { name: "（デモ）茶寮 ゆずり葉", shop: "tea", smoking: "no", wheelchair: "limited", opening_hours: "10:00-17:00; We off" }],
+    [540, -150, { name: "（デモ）大手チェーンコーヒー 駅前店", amenity: "cafe", brand: "デモコーヒー", "brand:wikidata": "Q000", smoking: "no", opening_hours: "07:00-22:00" }],
+    [80, -420, { name: "（デモ）ジェラート こはる", amenity: "ice_cream", wheelchair: "yes", opening_hours: "11:00-18:00" }],
+    [-150, -90, { name: "（デモ）和食 はなれ", amenity: "restaurant", cuisine: "japanese;kaiseki", smoking: "no", wheelchair: "yes", reservation: "recommended", opening_hours: "11:30-14:00,17:30-21:00; Tu off", phone: "+81-76-000-0002" }],
+    [330, 260, { name: "（デモ）蕎麦処 風の音", amenity: "restaurant", cuisine: "soba", smoking: "no", opening_hours: "11:00-15:00" }],
+    [-480, 120, { name: "（デモ）トラットリア 月夜", amenity: "restaurant", cuisine: "italian;pizza", outdoor_seating: "yes", wheelchair: "limited", opening_hours: "11:30-22:00" }],
+    [900, 650, { name: "（デモ）海鮮食堂 波まち", amenity: "restaurant", cuisine: "seafood", parking: "surface", toilets: "yes", opening_hours: "10:00-20:00" }],
+    [20, 600, { amenity: "restaurant" }],
+    [700, -300, { name: "（デモ）夕日の丘 展望台", tourism: "viewpoint", bench: "yes", shelter: "yes", wheelchair: "yes", wikipedia: "ja:デモ展望台" }],
+    [-620, -540, { name: "（デモ）水鏡の庭園", leisure: "garden", wheelchair: "limited", toilets: "yes", opening_hours: "09:00-17:00", fee: "yes" }],
+    [1150, 200, { name: "（デモ）白糸の小滝", natural: "waterfall" }],
+    [410, 480, { tourism: "artwork", artwork_type: "sculpture" }],
+    [-200, 900, { name: "（デモ）古城址公園の天守", historic: "castle", tourism: "attraction", wikipedia: "ja:デモ城", wheelchair: "limited", toilets: "yes", parking: "yes", opening_hours: "09:00-17:00" }],
+    [250, -700, { name: "（デモ）杜の宮", amenity: "place_of_worship", religion: "shinto", wheelchair: "yes", parking: "yes" }],
+    [-900, 300, { name: "（デモ）石畳の古寺", amenity: "place_of_worship", religion: "buddhist", wikidata: "Q0001", opening_hours: "08:00-17:00" }],
+    [1300, -800, { name: "（デモ）郷土歴史館", tourism: "museum", wheelchair: "yes", toilets: "yes", parking: "yes", opening_hours: "09:30-17:00; Mo off" }],
+    [-350, -1200, { name: "（デモ）せせらぎ公園", leisure: "park", bench: "yes", toilets: "yes" }],
+    [1600, 1100, { name: "（デモ）里の湯（日帰り温泉）", amenity: "public_bath", "bath:type": "onsen", wheelchair: "yes", parking: "yes", opening_hours: "10:00-22:00" }],
+    [2600, -1900, { name: "（デモ）岬の灯台", man_made: "lighthouse", wikipedia: "ja:デモ灯台" }],
+    [121, 82, { name: "（デモ）喫茶 木もれ陽", amenity: "cafe" }]
+  ];
+  function demoResponse(lat, lon) {
+    return { elements: DEMO_SPOTS.map(function (s, i) {
+      var plat = lat + s[0] / 111320, plon = lon + s[1] / (111320 * Math.max(0.1, Math.cos(rad(lat))));
+      return (i % 3 === 2) ? { type: "way", id: 900000 + i, center: { lat: plat, lon: plon }, tags: s[2] } : { type: "node", id: 100000 + i, lat: plat, lon: plon, tags: s[2] };
+    }) };
+  }
+
+  // ======================================================================
+  // 5. インターネットの地図データ（Overpass / Nominatim）
+  // ======================================================================
+  var OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://overpass.private.coffee/api/interpreter"];
+  var NOMINATIM = "https://nominatim.openstreetmap.org/search";
+  function fetchJson(url, opts, timeoutMs) {
+    var ctl = ("AbortController" in window) ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, timeoutMs || 20000) : null;
+    var o = Object.assign({ cache: "no-store" }, opts || {}); if (ctl) { o.signal = ctl.signal; }
+    return fetch(url, o).then(function (r) {
+      if (!r.ok) { var e = new Error("HTTP " + r.status); e.status = r.status; throw e; }
+      return r.json();
+    }).finally(function () { if (timer) { clearTimeout(timer); } });
+  }
+  function fetchOverpass(query) {
+    var i = 0;
+    function tryNext(lastErr) {
+      if (i >= OVERPASS.length) {
+        var msg = (lastErr && lastErr.status === 429) ? "地図検索サーバーが混み合っています。1 分ほど待ってからもう一度お試しください。"
+          : "地図検索サーバーにつながりませんでした。インターネット接続を確認して、もう一度お試しください。";
+        return Promise.reject(new Error(msg));
+      }
+      var url = OVERPASS[i++];
+      return fetchJson(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(query) }, 40000)
+        .then(function (d) { if (!d || !d.elements) { throw new Error("bad"); } return d; }, function (e) { return tryNext(e); });
+    }
+    return tryNext(null);
+  }
+  function geocode(q, demo) {
+    q = (q || "").trim();
+    if (!q) { return Promise.resolve(null); }
+    if (demo) { return Promise.resolve(builtinLookup(q)); }
+    var url = NOMINATIM + "?q=" + encodeURIComponent(q) + "&format=jsonv2&limit=1&accept-language=ja";
+    return fetchJson(url, {}, 15000).then(function (res) {
+      if (!res || !res.length) { return builtinLookup(q); }
+      var top = res[0], label = String(top.display_name || q).split(",").slice(0, 3).map(function (s) { return s.trim(); }).join("、");
+      return { lat: +top.lat, lon: +top.lon, label: label, source: "geocode" };
+    }, function () { var b = builtinLookup(q); if (b) { return b; } throw new Error("地名検索サービスにつながりませんでした。インターネット接続をご確認ください。"); });
+  }
+  var cache = {};
+  function searchPlaces(p) {
+    var key = [p.lat.toFixed(4), p.lon.toFixed(4), p.radius, p.cats.slice().sort().join(","), p.demo ? 1 : 0].join("|");
+    var hit = cache[key], now = Date.now();
+    var raw = (hit && now - hit.t < 600000) ? Promise.resolve(hit.d)
+      : (p.demo ? Promise.resolve(demoResponse(p.lat, p.lon)) : fetchOverpass(buildQuery(p.lat, p.lon, p.radius, p.cats)));
+    return raw.then(function (d) {
+      if (Object.keys(cache).length > 40) { cache = {}; }
+      cache[key] = { t: now, d: d };
+      return sortPlaces(parseOverpass(d, p.lat, p.lon, p.cats, p.radius), p.sort).slice(0, 150);
+    });
+  }
+
+  // ======================================================================
+  // 6. 画面
+  // ======================================================================
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { center: null, cats: [], radius: 700, sort: "distance", places: [], demo: FORCE_DEMO, wish: [], map: null, markers: [], circle: null, meMarker: null, busy: false };
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function stars(n) { n = Math.max(0, Math.min(5, n | 0)); return "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n); }
+  function setStatus(text, kind) { var el = $("status"); el.hidden = false; el.className = "status" + (kind === "error" ? " error" : ""); el.textContent = text; }
+  function clearStatus() { var el = $("status"); el.hidden = true; el.textContent = ""; }
+  function saveLocal(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function loadLocal(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
+
+  // 文字の大きさ
+  function applySize(size) {
+    document.documentElement.setAttribute("data-size", size);
+    ["sizeNormal", "sizeLarge", "sizeXlarge"].forEach(function (id) { var b = $(id); b.setAttribute("aria-pressed", String(b.dataset.size === size)); });
+    saveLocal("nonbiri.size", size);
+    if (state.map) { setTimeout(function () { state.map.invalidateSize(); }, 50); }
+  }
+  ["sizeNormal", "sizeLarge", "sizeXlarge"].forEach(function (id) { $(id).addEventListener("click", function () { applySize($(id).dataset.size); }); });
+
+  // 種類
+  function renderCats() {
+    var box = $("catChips"); box.innerHTML = "";
+    ORDER.forEach(function (k) {
+      var c = CATEGORIES[k], b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.id = "cat-" + k; b.title = c.desc; b.textContent = c.icon + " " + c.label;
+      b.setAttribute("aria-pressed", String(state.cats.indexOf(k) >= 0));
+      b.addEventListener("click", function () {
+        var i = state.cats.indexOf(k);
+        if (i >= 0) { if (state.cats.length === 1) { setStatus("種類は 1 つ以上選んでください。", "error"); return; } state.cats.splice(i, 1); } else { state.cats.push(k); }
+        b.setAttribute("aria-pressed", String(i < 0)); saveLocal("nonbiri.cats", state.cats);
+        if (state.center) { runSearch(); }
+      });
+      box.appendChild(b);
+    });
+  }
+
+  // 場所
+  function setCenter(loc) {
+    state.center = loc;
+    var line = $("centerLine"); line.hidden = false; line.innerHTML = "いまの中心：<strong>" + esc(loc.label) + "</strong>";
+    $("btnSearch").disabled = false;
+  }
+  $("btnHere").addEventListener("click", function () {
+    if (state.busy) { return; }
+    if (state.demo) {
+      setCenter(DEMO_DEFAULT);
+      setStatus("見本データのため、位置情報は使わず「金沢駅」を中心にします。駅名を入れて探すこともできます。");
+      runSearch(); return;
+    }
+    if (!navigator.geolocation || !window.isSecureContext) {
+      setStatus("このブラウザでは位置情報を使えません。駅名や地名を入れて「探す」を押してください。", "error"); $("placeInput").focus(); return;
+    }
+    setStatus("現在地を調べています…（許可を求める画面が出たら「許可」を押してください）");
+    var done = false;
+    var fallbackTimer = setTimeout(function () { if (!done) { done = true; setStatus("現在地の取得に時間がかかっています。駅名や地名を入れて「探す」を押してください。", "error"); } }, 20000);
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      if (done) { return; } done = true; clearTimeout(fallbackTimer);
+      var acc = pos.coords.accuracy ? "（誤差 約" + Math.round(pos.coords.accuracy) + "m）" : "";
+      setCenter({ lat: pos.coords.latitude, lon: pos.coords.longitude, label: "いまいる場所" + acc, source: "gps" }); runSearch();
+    }, function (err) {
+      if (done) { return; } done = true; clearTimeout(fallbackTimer);
+      var why = (err && err.code === 1) ? "位置情報の利用が許可されませんでした。" : "現在地をうまく取れませんでした。";
+      setStatus(why + " 駅名や地名を入れて「探す」を押してください。", "error"); $("placeInput").focus();
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 120000 });
+  });
+  function searchPlace() {
+    var q = $("placeInput").value.trim();
+    if (!q) { setStatus("駅名や地名を入力してください。", "error"); $("placeInput").focus(); return; }
+    setStatus("「" + q + "」の場所を調べています…");
+    geocode(q, state.demo).then(function (loc) {
+      if (!loc) {
+        var hint = state.demo ? "（見本データでは 東京駅・金沢駅・京都駅・大阪駅・札幌駅 などの主要な駅名だけ探せます）" : "";
+        setStatus("「" + q + "」が見つかりませんでした。駅名や市区町村名で試してください。" + hint, "error"); return;
+      }
+      setCenter(loc); return runSearch();
+    }).catch(function (e) { setStatus(e.message, "error"); });
+  }
+  $("btnPlace").addEventListener("click", searchPlace);
+  $("placeInput").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); searchPlace(); } });
+
+  // 距離・並び順・検索ボタン
+  ["r350", "r700", "r1300", "r3000"].forEach(function (id) {
+    $(id).addEventListener("change", function () { state.radius = parseInt($(id).value, 10); saveLocal("nonbiri.radius", state.radius); if (state.center) { runSearch(); } });
+  });
+  ["sortDistance", "sortRelax", "sortFamous"].forEach(function (id) {
+    $(id).addEventListener("click", function () {
+      state.sort = $(id).dataset.sort;
+      ["sortDistance", "sortRelax", "sortFamous"].forEach(function (x) { $(x).setAttribute("aria-pressed", String(x === id)); });
+      if (state.center) { runSearch(); }
+    });
+  });
+  $("btnSearch").addEventListener("click", function () { if (state.center) { runSearch(); } });
+
+  // 検索
+  function runSearch() {
+    if (!state.center || state.busy) { return Promise.resolve(); }
+    state.busy = true; $("btnSearch").disabled = true; $("btnHere").disabled = true;
+    setStatus(state.demo ? "見本データから探しています…" : "さがしています… 少しお待ちください（10〜20秒かかることがあります）");
+    var center = state.center;
+    return searchPlaces({ lat: center.lat, lon: center.lon, radius: state.radius, cats: state.cats, sort: state.sort, demo: state.demo })
+      .then(function (places) {
+        state.places = places; renderResults(places); renderMap(center, places);
+        if (places.length) { clearStatus(); } else { setStatus("この範囲では見つかりませんでした。距離を広げるか、種類を増やしてみてください。"); }
+      })
+      .catch(function (e) { setStatus(e.message || "うまく探せませんでした。もう一度お試しください。", "error"); })
+      .then(function () { state.busy = false; $("btnSearch").disabled = false; $("btnHere").disabled = false; });
+  }
+  function renderResults(places) {
+    var counts = {};
+    places.forEach(function (p) { counts[p.category_label] = (counts[p.category_label] || 0) + 1; });
+    var parts = Object.keys(counts).map(function (k) { return k + " " + counts[k] + "件"; });
+    $("summary").textContent = places.length ? "見つかった場所 " + places.length + "件（" + parts.join("・") + "）" : "結果";
+    var box = $("results"); box.innerHTML = "";
+    places.forEach(function (p, i) { box.appendChild(placeCard(p, i)); });
+  }
+  function placeCard(p, i) {
+    var el = document.createElement("article");
+    el.className = "card place"; el.id = "place-" + i; el.dataset.index = i;
+    var tags = p.features.map(function (f) { return '<span class="tag' + (f === "有名スポット" ? " famous" : "") + '">' + esc(f) + "</span>"; }).join("");
+    var kind = esc(p.kind) + (p.cuisine ? "（" + esc(p.cuisine) + "）" : "");
+    var meta = "";
+    if (p.opening_hours) { meta += '<p class="meta">🕒 営業: ' + esc(p.opening_hours) + "</p>"; }
+    if (p.address) { meta += '<p class="meta">🏠 ' + esc(p.address) + "</p>"; }
+    if (p.phone) { meta += '<p class="meta">📞 ' + esc(p.phone) + "</p>"; }
+    var inWish = state.wish.some(function (w) { return w.id === p.id; });
+    el.innerHTML =
+      '<div class="head"><div class="icon">' + esc(p.icon) + '</div><div style="flex:1">' +
+      "<h3>" + esc(p.name) + '</h3><div class="kind">' + esc(p.category_label) + "／" + kind + "</div></div></div>" +
+      '<p class="walk">🚶 ゆっくり歩いて 約' + p.walk_min + '分 <span class="dist">（' + esc(p.distance_label) + "・" + esc(p.direction) + "）</span></p>" +
+      '<div class="stars"><span class="label">のんびり度</span>' + stars(p.relax_score) + "</div>" +
+      (tags ? '<div class="tags">' + tags + "</div>" : "") + meta +
+      '<div class="actions">' +
+      '<a class="btn small" href="' + esc(p.route_url) + '" target="_blank" rel="noopener">🧭 行き方（地図アプリ）</a>' +
+      '<a class="btn small secondary" href="' + esc(p.map_url) + '" target="_blank" rel="noopener">🗺 地図で位置</a>' +
+      (p.website ? '<a class="btn small secondary" href="' + esc(p.website) + '" target="_blank" rel="noopener">🌐 サイト</a>' : "") +
+      '<button type="button" class="btn small secondary wish-btn" aria-pressed="' + inWish + '">' + (inWish ? "⭐ リストに入っています" : "☆ 行きたいリストへ") + "</button>" +
+      "</div>";
+    el.querySelector(".wish-btn").addEventListener("click", function () { toggleWish(p); });
+    el.addEventListener("click", function (ev) { if (ev.target.closest("a, button")) { return; } focusPlace(i); });
+    return el;
+  }
+
+  // 地図（Leaflet が読み込めた場合だけ。見本モードでは表示しない）
+  function zoomFor(r) { return r <= 350 ? 17 : r <= 700 ? 16 : r <= 1300 ? 15 : 14; }
+  function ensureMap() {
+    if (state.demo || typeof L === "undefined") { return null; }
+    if (state.map) { return state.map; }
+    try {
+      $("map").hidden = false;
+      state.map = L.map("map", { scrollWheelZoom: false }).setView([36.578, 136.6478], 14);
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap contributors" }).addTo(state.map);
+    } catch (e) { state.map = null; $("map").hidden = true; }
+    return state.map;
+  }
+  function renderMap(center, places) {
+    var map = ensureMap(); if (!map) { return; }
+    state.markers.forEach(function (m) { map.removeLayer(m); }); state.markers = [];
+    if (state.circle) { map.removeLayer(state.circle); } if (state.meMarker) { map.removeLayer(state.meMarker); }
+    var c = [center.lat, center.lon];
+    state.meMarker = L.circleMarker(c, { radius: 9, color: "#fff", weight: 3, fillColor: "#b9651f", fillOpacity: 1 }).addTo(map).bindTooltip("ここが中心", { permanent: true, direction: "top" });
+    state.circle = L.circle(c, { radius: state.radius, color: "#2f6b50", weight: 1, fillOpacity: .05 }).addTo(map);
+    places.forEach(function (p, i) {
+      var m = L.marker([p.lat, p.lon], { title: p.name }).addTo(map)
+        .bindPopup("<strong>" + esc(p.icon + " " + p.name) + "</strong><br>ゆっくり歩いて 約" + p.walk_min + '分<br><a href="' + esc(p.route_url) + '" target="_blank" rel="noopener">行き方を見る</a>');
+      m.on("click", function () { highlight(i, true); });
+      state.markers.push(m);
+    });
+    if (places.length) { map.fitBounds(state.circle.getBounds(), { padding: [10, 10] }); } else { map.setView(c, zoomFor(state.radius)); }
+  }
+  function highlight(i, scroll) {
+    Array.prototype.forEach.call(document.querySelectorAll(".place.active"), function (x) { x.classList.remove("active"); });
+    var el = $("place-" + i); if (!el) { return; }
+    el.classList.add("active"); if (scroll) { el.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  }
+  function focusPlace(i) {
+    highlight(i, false);
+    var p = state.places[i];
+    if (state.map && p) { state.map.setView([p.lat, p.lon], Math.max(state.map.getZoom(), 16)); if (state.markers[i]) { state.markers[i].openPopup(); } }
+  }
+
+  // 行きたいリスト
+  function toggleWish(p) {
+    var i = -1; state.wish.forEach(function (w, idx) { if (w.id === p.id) { i = idx; } });
+    if (i >= 0) { state.wish.splice(i, 1); } else { state.wish.push({ id: p.id, name: p.name, icon: p.icon, kind: p.kind, map_url: p.map_url, route_url: p.route_url }); }
+    saveLocal("nonbiri.wish", state.wish); renderWish();
+    Array.prototype.forEach.call(document.querySelectorAll(".place"), function (el) {
+      var place = state.places[parseInt(el.dataset.index, 10)]; if (!place) { return; }
+      var on = state.wish.some(function (w) { return w.id === place.id; });
+      var b = el.querySelector(".wish-btn"); b.setAttribute("aria-pressed", String(on)); b.textContent = on ? "⭐ リストに入っています" : "☆ 行きたいリストへ";
+    });
+  }
+  function renderWish() {
+    var ul = $("wishList"); ul.innerHTML = "";
+    if (!state.wish.length) { ul.innerHTML = '<li class="empty">まだ何も入っていません。気になる場所の「☆ 行きたいリストへ」を押すと、ここにたまります。</li>'; return; }
+    state.wish.forEach(function (w) {
+      var li = document.createElement("li");
+      li.innerHTML = "<span>" + esc(w.icon + " " + w.name) + ' <span class="kind">' + esc(w.kind || "") + "</span></span>" +
+        '<span class="actions"><a class="btn small" href="' + esc(w.route_url) + '" target="_blank" rel="noopener">🧭 行き方</a><button type="button" class="btn small secondary">はずす</button></span>';
+      li.querySelector("button").addEventListener("click", function () { toggleWish(w); });
+      ul.appendChild(li);
+    });
+  }
+  function wishText() { return "【行きたいリスト】\n" + state.wish.map(function (w, i) { return (i + 1) + ". " + w.name + "\n   " + w.map_url; }).join("\n"); }
+  $("btnCopyWish").addEventListener("click", function () {
+    if (!state.wish.length) { setStatus("行きたいリストが空です。"); return; }
+    var text = wishText(), ta = $("wishText");
+    var showBox = function () { ta.hidden = false; ta.value = text; ta.focus(); ta.select(); setStatus("下の枠の文章を長押しなどでコピーして、LINE やメールに貼り付けてください。"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { setStatus("リストをコピーしました。LINE やメールに貼り付けて共有できます。"); }, showBox);
+    } else { showBox(); }
+  });
+  // 「空にする」は押し間違い防止のため 2 段階（画面内で確認）
+  var CLEAR_BUTTON = '<button id="btnClearWish" type="button" class="btn secondary small">🗑 リストを空にする</button>';
+  function bindClear() {
+    $("btnClearWish").addEventListener("click", function () {
+      if (!state.wish.length) { return; }
+      $("clearBox").innerHTML = '<span>本当に空にしますか？</span><button type="button" class="btn small accent" id="clearYes">はい、空にする</button><button type="button" class="btn small secondary" id="clearNo">やめる</button>';
+      $("clearYes").addEventListener("click", function () { state.wish = []; saveLocal("nonbiri.wish", []); renderWish(); if (state.places.length) { renderResults(state.places); } resetClear(); });
+      $("clearNo").addEventListener("click", resetClear);
+    });
+  }
+  function resetClear() { $("clearBox").innerHTML = CLEAR_BUTTON; bindClear(); }
+  bindClear();
+
+  // 見本データの切り替え
+  function applyDemo(on) {
+    state.demo = FORCE_DEMO || !!on;
+    $("demoBadge").hidden = !state.demo;
+    $("demoToggle").checked = state.demo;
+    $("hereHint").textContent = state.demo ? "見本データでは、位置情報の代わりに「金沢駅」を中心にします。" : "スマホやパソコンの位置情報を使います。許可を求める画面が出たら「許可」を押してください。";
+    if (state.demo && state.map) { $("map").hidden = true; }
+    if (!state.demo && state.map) { $("map").hidden = false; }
+    if (state.center) { runSearch(); }
+  }
+  $("demoToggle").addEventListener("change", function () { if (FORCE_DEMO) { $("demoToggle").checked = true; return; } saveLocal("nonbiri.demo", $("demoToggle").checked); applyDemo($("demoToggle").checked); });
+
+  // 起動
+  applySize(loadLocal("nonbiri.size", "normal"));
+  state.radius = loadLocal("nonbiri.radius", 700);
+  var radio = $("r" + state.radius); if (radio) { radio.checked = true; } else { state.radius = 700; $("r700").checked = true; }
+  var savedCats = loadLocal("nonbiri.cats", null);
+  state.cats = Array.isArray(savedCats) && savedCats.length ? savedCats.filter(function (k) { return CATEGORIES[k]; }) : [];
+  if (!state.cats.length) { state.cats = DEFAULT_CATS.slice(); }
+  var w = loadLocal("nonbiri.wish", []); state.wish = Array.isArray(w) ? w : [];
+  renderCats(); renderWish();
+  if (FORCE_DEMO) { $("demoToggleLabel").hidden = true; }
+  applyDemo(FORCE_DEMO || loadLocal("nonbiri.demo", false));
+  if (state.demo) { setStatus("見本データで動いています。「いまいる場所をつかう」か、駅名（例: 金沢駅・東京駅・京都駅）を入れて試してください。"); }
+})();
+</script>
+</body>
+</html>
