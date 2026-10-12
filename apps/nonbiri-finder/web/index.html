@@ -226,16 +226,17 @@
         <span class="count" id="mapCount"></span>
         <span class="map-tools">
           <span id="glBar" class="map-tools" hidden>
-            <button type="button" id="btn3d" class="btn small secondary" aria-pressed="true">🏔 立体 3D</button>
-            <button type="button" id="btn2d" class="btn small secondary" aria-pressed="false">🗺 平面 2D</button>
+            <button type="button" id="btnTerrain" class="btn small secondary" aria-pressed="false">⛰ 地形の起伏</button>
             <button type="button" id="btnNorth" class="btn small secondary">⟲ 北を上に</button>
+            <button type="button" id="btn2d" class="btn small secondary">🗺 平面地図に戻す</button>
           </span>
-          <button type="button" id="btnTry3d" class="btn small secondary" hidden>🏔 立体地図を試す</button>
+          <button type="button" id="btnTry3d" class="btn small accent" hidden>🏔 立体地図にする</button>
           <button type="button" id="btnPin" class="btn small secondary" aria-pressed="true">📌 地図を固定中（押すと解除）</button>
           <button type="button" id="btnDiag" class="btn small secondary" title="うまく動かないときに押してください">？ 診断</button>
         </span>
       </div>
-      <p class="gl-hint" id="glHint" hidden>地図はドラッグで移動、右ボタンのドラッグ（または Ctrl キー＋ドラッグ）で回転と傾き、マウスのホイールで拡大・縮小ができます。</p>
+      <p class="gl-hint" id="glHint" hidden>立体地図: ドラッグで移動、右ボタンのドラッグ（または Ctrl キー＋ドラッグ）で回転と傾き、ホイールで拡大・縮小。「⛰ 地形の起伏」は山や谷も立体にしますが、パソコンによっては重くなります。</p>
+      <p class="gl-hint" id="tryHint" hidden></p>
       <div id="map" aria-label="地図"></div>
       <div id="mapLoading" class="map-loading" hidden>🏔 立体地図を読み込んでいます…（10 秒ほどかかることがあります）</div>
       <textarea id="diagText" class="diag" hidden readonly aria-label="診断情報"></textarea>
@@ -279,7 +280,7 @@
   var FORCE_DEMO = false; // ARTIFACT_MODE
   // Python 版のサーバー（start.py）から配信されるときは true に差し替わり、検索はサーバー経由になります。
   var SERVER_MODE = false; // SERVER_MODE_FLAG
-  var APP_BUILD = "2026-10-12.2";
+  var APP_BUILD = "2026-10-12.3";
   // うまく動かないときの手がかり（「？ 診断」ボタンで表示）
   var diagErrors = [];
   window.addEventListener("error", function (ev) { diagErrors.push("js: " + (ev.message || "") + (ev.filename ? " @" + String(ev.filename).split("/").pop() + ":" + ev.lineno : "")); });
@@ -593,7 +594,7 @@
       });
     }, function () { throw new Error("アプリのサーバーにつながりません。黒い画面（start.py）が動いているか確認してください。"); });
   }
-  function fetchOverpass(query) {
+  function fetchOverpass(query, onProgress) {
     var i = 0;
     function tryNext(lastErr) {
       if (i >= OVERPASS.length) {
@@ -601,8 +602,9 @@
           : "地図検索サーバーにつながりませんでした。インターネット接続を確認して、もう一度お試しください。";
         return Promise.reject(new Error(msg));
       }
+      if (onProgress) { try { onProgress(i + 1, OVERPASS.length); } catch (e) {} }
       var url = OVERPASS[i++];
-      return fetchJson(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(query) }, 40000)
+      return fetchJson(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(query) }, 25000)
         .then(function (d) { if (!d || !d.elements) { throw new Error("bad"); } return d; }, function (e) { return tryNext(e); });
     }
     return tryNext(null);
@@ -630,7 +632,7 @@
     var key = [p.lat.toFixed(4), p.lon.toFixed(4), p.radius, p.cats.slice().sort().join(","), p.demo ? 1 : 0].join("|");
     var hit = cache[key], now = Date.now();
     var raw = (hit && now - hit.t < 600000) ? Promise.resolve(hit.d)
-      : (p.demo ? Promise.resolve(demoResponse(p.lat, p.lon)) : fetchOverpass(buildQuery(p.lat, p.lon, p.radius, p.cats)));
+      : (p.demo ? Promise.resolve(demoResponse(p.lat, p.lon)) : fetchOverpass(buildQuery(p.lat, p.lon, p.radius, p.cats), p.onProgress));
     return raw.then(function (d) {
       if (Object.keys(cache).length > 40) { cache = {}; }
       cache[key] = { t: now, d: d };
@@ -642,7 +644,7 @@
   // 6. 画面
   // ======================================================================
   var $ = function (id) { return document.getElementById(id); };
-  var state = { start: null, dest: null, basis: "start", cats: [], radius: 700, sort: "distance", places: [], demo: FORCE_DEMO, wish: [], lastRender: null, busy: false };
+  var state = { start: null, dest: null, basis: "start", cats: [], radius: 700, sort: "distance", places: [], demo: FORCE_DEMO, wish: [], lastRender: null, use3D: false, busy: false };
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function stars(n) { n = Math.max(0, Math.min(5, n | 0)); return "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n); }
@@ -790,7 +792,8 @@
     state.busy = true; $("btnSearch").disabled = true; $("btnHere").disabled = true;
     var where = (state.dest && state.basis === "dest") ? "目的地のまわり" : "出発地のまわり";
     setStatus(state.demo ? "見本データから" + where + "を探しています…" : where + "をさがしています… 少しお待ちください（10〜20秒かかることがあります）");
-    return searchPlaces({ lat: center.lat, lon: center.lon, radius: state.radius, cats: state.cats, sort: state.sort, demo: state.demo, area: areaFromLabel(center.label) })
+    return searchPlaces({ lat: center.lat, lon: center.lon, radius: state.radius, cats: state.cats, sort: state.sort, demo: state.demo, area: areaFromLabel(center.label),
+      onProgress: function (n, total) { setStatus(where + "をさがしています…（地図検索サーバー " + n + "/" + total + " に問い合わせ中。10〜20 秒かかることがあります）"); } })
       .then(function (places) {
         state.places = places; renderResults(places); renderMap(center, places); updateFab();
         if (places.length) { clearStatus(); } else { setStatus("この範囲では見つかりませんでした。距離を広げるか、種類を増やしてみてください。"); }
@@ -853,23 +856,41 @@
   function zoomFor(r) { return r <= 350 ? 17 : r <= 700 ? 16 : r <= 1300 ? 15 : 14; }
   function webglOk() { try { var c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; } }
   function wideScreenGL() { return !FORCE_DEMO && window.matchMedia("(min-width: 900px)").matches && webglOk(); }
-  function wantsGL() { return wideScreenGL() && !glDisabled; }
+  function wantsGL() { return wideScreenGL() && !glDisabled && state.use3D; }
+  function glRendererInfo() {
+    try {
+      var c = document.createElement("canvas"), gl = c.getContext("webgl2") || c.getContext("webgl"); if (!gl) { return ""; }
+      var ext = gl.getExtension("WEBGL_debug_renderer_info");
+      return String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    } catch (e) { return ""; }
+  }
+  function softwareGL() { return /swiftshader|llvmpipe|software|mesa offscreen|basic render/i.test(glRendererInfo()); }
+  function showTryHint() {
+    var el = $("tryHint"); el.hidden = $("btnTry3d").hidden;
+    el.textContent = "「🏔 立体地図にする」を押すと、建物が立体の地図に切り替わります。" + (softwareGL() ? "※ このパソコンは画面描画をソフトウェアで行っているため、立体地図は重くなる可能性があります。" : "");
+  }
+  // 立体地図をやめて平面地図に切り替える（forget=true なら次回も平面から始める）
+  function switchToFlat(msg, forget) {
+    clearTimeout(glLoadTimer); $("mapLoading").hidden = true;
+    if (engine === glEngine) { try { glEngine.destroy(); } catch (e) {} }
+    engine = null; state.use3D = false;
+    if (forget) { saveLocal("nonbiri.use3d", false); }
+    $("mapWrap").classList.remove("gl"); $("glBar").hidden = true; $("glHint").hidden = true; $("map").innerHTML = "";
+    if (msg) { setStatus(msg); }
+    if (state.lastRender) { renderMap(state.lastRender.center, state.lastRender.places); }
+  }
   function loadGl() {
     return loadScript(GL_JS).then(function () { loadCss(GL_CSS); return true; }, function () {
       diagErrors.push("MapLibre を unpkg から読み込めなかったので jsdelivr を試します");
       return loadScript(GL_JS_ALT).then(function () { loadCss(GL_CSS_ALT); return true; }, function () { diagErrors.push("MapLibre（立体地図の部品）を読み込めませんでした"); return false; });
     });
   }
-  // 立体地図をあきらめて平面地図に切り替える
+  // 立体地図の読み込みに失敗したとき: 平面に戻し、次回も平面から始める
   function fallbackToFlat(msg) {
     if (engine !== glEngine) { return; }
-    clearTimeout(glLoadTimer); $("mapLoading").hidden = true;
     diagErrors.push("立体→平面に切替: " + (msg || ""));
-    try { glEngine.destroy(); } catch (e) {}
-    glDisabled = true; engine = null;
-    $("mapWrap").classList.remove("gl"); $("glBar").hidden = true; $("glHint").hidden = true; $("map").innerHTML = "";
-    if (msg) { setStatus(msg); }
-    if (state.lastRender) { renderMap(state.lastRender.center, state.lastRender.places); }
+    glDisabled = true;
+    switchToFlat(msg, true);
   }
   function loadScript(src) { return new Promise(function (res, rej) { var el = document.createElement("script"); el.src = src; el.onload = res; el.onerror = rej; document.head.appendChild(el); }); }
   function loadCss(href) { var el = document.createElement("link"); el.rel = "stylesheet"; el.href = href; document.head.appendChild(el); }
@@ -920,11 +941,11 @@
 
   // --- 立体地図（MapLibre GL） ---
   var glEngine = {
-    name: "gl", map: null, markers: [], extra: [], loaded: false, is3D: true, firstSymbol: undefined, pendingCircle: null,
+    name: "gl", map: null, markers: [], extra: [], loaded: false, terrainOn: false, firstSymbol: undefined, pendingCircle: null,
     init: function () {
       var self = this;
-      this.is3D = loadLocal("nonbiri.3d", true) !== false;
-      this.map = new maplibregl.Map({ container: "map", style: GL_STYLE, center: [136.6478, 36.578], zoom: 14, pitch: this.is3D ? PITCH_3D : 0, bearing: 0, maxPitch: 70, attributionControl: true });
+      this.terrainOn = loadLocal("nonbiri.terrain", false) === true;
+      this.map = new maplibregl.Map({ container: "map", style: GL_STYLE, center: [136.6478, 36.578], zoom: 14, pitch: PITCH_3D, bearing: 0, maxPitch: 70, attributionControl: true });
       this.map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-left");
       this.map.addControl(new maplibregl.ScaleControl({ unit: "metric" }));
       $("mapLoading").hidden = false;
@@ -942,9 +963,14 @@
         var styleFailed = url.indexOf("styles/") >= 0 || url === GL_STYLE || (!url && !self.styleReceived && /Failed to fetch|NetworkError|Load failed/i.test(msg));
         if (!self.loaded && styleFailed) { fallbackToFlat("立体地図のデータを読み込めなかったため、平面地図に切り替えました。"); }
       });
-      this.map.on("load", function () { clearTimeout(glLoadTimer); $("mapLoading").hidden = true; self.loaded = true; self.setupStyle(); self.apply3D(); });
-      $("glBar").hidden = false; $("glHint").hidden = false; $("btnTry3d").hidden = true; $("mapWrap").classList.add("gl");
-      update3DButtons();
+      this.map.on("load", function () {
+        clearTimeout(glLoadTimer); $("mapLoading").hidden = true; self.loaded = true;
+        self.setupStyle(); self.applyTerrain();
+        saveLocal("nonbiri.use3d", true);  // うまく開けたので次回も立体で始める
+        if (/立体地図を読み込んでいます/.test($("status").textContent)) { setStatus("立体地図を表示しました。重いと感じたら「🗺 平面地図に戻す」を押してください。"); }
+      });
+      $("glBar").hidden = false; $("glHint").hidden = false; $("btnTry3d").hidden = true; $("tryHint").hidden = true; $("mapWrap").classList.add("gl");
+      updateGlButtons();
       return true;
     },
     destroy: function () {
@@ -962,7 +988,7 @@
       try {  // 標高（地形）
         if (!map.getSource("terrain-dem")) { map.addSource("terrain-dem", { type: "raster-dem", tiles: [DEM_TILES], encoding: "terrarium", tileSize: 256, maxzoom: 15, attribution: '標高: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Terrain Tiles</a>' }); }
         if (!map.getSource("hillshade-dem")) { map.addSource("hillshade-dem", { type: "raster-dem", tiles: [DEM_TILES], encoding: "terrarium", tileSize: 256, maxzoom: 15 }); }
-        if (!map.getLayer("nonbiri-hillshade")) { map.addLayer({ id: "nonbiri-hillshade", type: "hillshade", source: "hillshade-dem", paint: { "hillshade-exaggeration": 0.3 } }, this.firstSymbol); }
+        if (!map.getLayer("nonbiri-hillshade")) { map.addLayer({ id: "nonbiri-hillshade", type: "hillshade", source: "hillshade-dem", layout: { visibility: this.terrainOn ? "visible" : "none" }, paint: { "hillshade-exaggeration": 0.3 } }, this.firstSymbol); }
       } catch (e) {}
       var vec = Object.keys(style.sources || {}).filter(function (k) { return style.sources[k].type === "vector"; })[0];
       if (vec && !map.getLayer("nonbiri-buildings")) {  // 建物を立体に
@@ -979,22 +1005,20 @@
       }
       if (this.pendingCircle) { map.getSource("nonbiri-circle").setData(this.pendingCircle); }
     },
-    apply3D: function () {
-      var map = this.map; if (!this.loaded) { update3DButtons(); return; }
+    applyTerrain: function () {
+      var map = this.map; if (!this.loaded) { updateGlButtons(); return; }
       try {
-        if (this.is3D) {
+        if (this.terrainOn) {
           if (map.getSource("terrain-dem")) { map.setTerrain({ source: "terrain-dem", exaggeration: 1.3 }); }
-          if (map.getLayer("nonbiri-buildings")) { map.setLayoutProperty("nonbiri-buildings", "visibility", "visible"); }
-          map.easeTo({ pitch: PITCH_3D, duration: 600 });
+          if (map.getLayer("nonbiri-hillshade")) { map.setLayoutProperty("nonbiri-hillshade", "visibility", "visible"); }
         } else {
           map.setTerrain(null);
-          if (map.getLayer("nonbiri-buildings")) { map.setLayoutProperty("nonbiri-buildings", "visibility", "none"); }
-          map.easeTo({ pitch: 0, bearing: 0, duration: 600 });
+          if (map.getLayer("nonbiri-hillshade")) { map.setLayoutProperty("nonbiri-hillshade", "visibility", "none"); }
         }
-      } catch (e) {}
-      update3DButtons();
+      } catch (e) { diagErrors.push("terrain: " + (e && e.message)); }
+      updateGlButtons();
     },
-    set3D: function (on) { this.is3D = !!on; saveLocal("nonbiri.3d", this.is3D); this.apply3D(); },
+    setTerrain: function (on) { this.terrainOn = !!on; saveLocal("nonbiri.terrain", this.terrainOn); this.applyTerrain(); },
     resetNorth: function () { this.map.easeTo({ bearing: 0, duration: 400 }); },
     render: function (center, places) {
       var map = this.map, self = this;
@@ -1016,7 +1040,7 @@
           .setPopup(new maplibregl.Popup({ offset: 44 }).setHTML(popupHtml(p))).addTo(map));
       });
       var cam = map.cameraForBounds(circleBounds(center.lat, center.lon, state.radius), { padding: 24 });
-      if (cam) { cam.pitch = this.is3D ? PITCH_3D : 0; cam.duration = 700; map.easeTo(cam); }
+      if (cam) { cam.pitch = PITCH_3D; cam.duration = 700; map.easeTo(cam); }
       else { map.easeTo({ center: [center.lon, center.lat], zoom: zoomFor(state.radius), duration: 700 }); }
     },
     highlight: function (i) { this.markers.forEach(function (m, idx) { m.getElement().classList.toggle("active", idx === i); }); },
@@ -1028,12 +1052,11 @@
     resize: function () { this.map.resize(); }
   };
 
-  function update3DButtons() {
-    var on = engine === glEngine && glEngine.is3D;
-    $("btn3d").setAttribute("aria-pressed", String(on)); $("btn2d").setAttribute("aria-pressed", String(!on));
+  function updateGlButtons() {
+    $("btnTerrain").setAttribute("aria-pressed", String(engine === glEngine && glEngine.terrainOn));
   }
-  $("btn3d").addEventListener("click", function () { if (engine === glEngine) { glEngine.set3D(true); } });
-  $("btn2d").addEventListener("click", function () { if (engine === glEngine) { glEngine.set3D(false); } });
+  $("btnTerrain").addEventListener("click", function () { if (engine === glEngine) { glEngine.setTerrain(!glEngine.terrainOn); } });
+  $("btn2d").addEventListener("click", function () { switchToFlat("平面地図に戻しました。", true); });
   $("btnNorth").addEventListener("click", function () { if (engine === glEngine) { glEngine.resetNorth(); } });
 
   function ensureMap() {
@@ -1042,17 +1065,17 @@
     if (wantsGL() && typeof maplibregl !== "undefined") {
       try { if (glEngine.init()) { engine = glEngine; return engine; } } catch (e) { if (window.console) { console.warn("3D 地図を使えないため平面地図にします:", e); } $("map").innerHTML = ""; $("mapWrap").classList.remove("gl"); }
     }
-    try { if (leafletEngine.init()) { engine = leafletEngine; $("btnTry3d").hidden = !wideScreenGL(); return engine; } } catch (e) { diagErrors.push("Leaflet: " + (e && e.message)); }
+    try { if (leafletEngine.init()) { engine = leafletEngine; $("btnTry3d").hidden = !wideScreenGL(); showTryHint(); return engine; } } catch (e) { diagErrors.push("Leaflet: " + (e && e.message)); }
     $("mapWrap").hidden = true;
     return null;
   }
   $("btnTry3d").addEventListener("click", function () {
-    glDisabled = false; $("btnTry3d").hidden = true;
+    glDisabled = false; state.use3D = true; $("btnTry3d").hidden = true; $("tryHint").hidden = true;
     if (engine === leafletEngine) { try { leafletEngine.destroy(); } catch (e) {} }
     engine = null; $("map").innerHTML = "";
     if (typeof maplibregl === "undefined") { glReady = loadGl(); }
-    setStatus("立体地図を読み込んでいます…");
-    if (state.lastRender) { renderMap(state.lastRender.center, state.lastRender.places); }
+    setStatus("立体地図を読み込んでいます…（部品の取得に 10 秒ほどかかることがあります）");
+    if (state.lastRender) { renderMap(state.lastRender.center, state.lastRender.places); } else { ensureMap(); }
   });
 
   // ？ 診断: 状況を文章にして、チャットに貼り付けられるようにする
@@ -1063,11 +1086,11 @@
       "ページ: " + location.href,
       "ブラウザ: " + navigator.userAgent,
       "画面幅: " + window.innerWidth + "px（900px 以上で立体地図）",
-      "WebGL: " + (webglOk() ? "使える" : "使えない"),
+      "WebGL: " + (webglOk() ? "使える" : "使えない") + "　描画: " + (glRendererInfo() || "不明") + (softwareGL() ? "（ソフトウェア描画＝重い）" : ""),
       "立体地図の部品（MapLibre）: " + (typeof maplibregl !== "undefined" ? "読み込み済み" : "未読み込み"),
       "平面地図の部品（Leaflet）: " + (typeof L !== "undefined" ? "読み込み済み" : "未読み込み"),
       "いまの地図: " + (engine ? (engine === glEngine ? "立体（MapLibre）" + (glEngine.loaded ? "・地図データ読み込み済み" : "・地図データ読み込み中または失敗") : "平面（Leaflet）") : "なし"),
-      "立体を無効化: " + (glDisabled ? "はい" : "いいえ") + "　見本データ: " + (state.demo ? "はい" : "いいえ") + "　サーバーモード: " + (SERVER_MODE ? "はい" : "いいえ"),
+      "立体の設定: " + (state.use3D ? "オン" : "オフ") + "　地形: " + (glEngine.terrainOn ? "オン" : "オフ") + "　立体を無効化: " + (glDisabled ? "はい" : "いいえ") + "　見本データ: " + (state.demo ? "はい" : "いいえ") + "　サーバーモード: " + (SERVER_MODE ? "はい" : "いいえ"),
       "出発地: " + (state.start ? state.start.label : "未設定") + "　目的地: " + (state.dest ? state.dest.label : "未設定") + "　結果: " + state.places.length + "件",
       "エラー記録: " + (diagErrors.length ? "" : "なし")
     ].concat(diagErrors.slice(-10).map(function (e) { return "  - " + e; }));
@@ -1180,6 +1203,7 @@
   var w = loadLocal("nonbiri.wish", []); state.wish = Array.isArray(w) ? w : [];
   renderCats(); renderWish();
   $("buildTag").textContent = APP_BUILD;
+  state.use3D = loadLocal("nonbiri.use3d", false) === true;  // 前回うまく開けた人だけ最初から立体
   if (wantsGL()) { glReady = loadGl(); }
   if (FORCE_DEMO || SERVER_MODE) { $("demoToggleLabel").hidden = true; }
   applyDemo(FORCE_DEMO || (!SERVER_MODE && loadLocal("nonbiri.demo", false)));
