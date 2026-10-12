@@ -4,7 +4,7 @@
   GET /api/categories                      探せる種類の一覧
   GET /api/geocode?q=金沢駅                 地名 → 緯度経度
   GET /api/iplocate                        IP からおおよその現在地
-  GET /api/search?lat=..&lon=..&radius=..&cats=cafe,food&sort=distance
+  GET /api/search?lat=..&lon=..&radius=..&cats=cafe,food&sort=distance&area=石川県金沢市
 """
 from __future__ import annotations
 
@@ -139,7 +139,9 @@ class Handler(BaseHTTPRequestHandler):
             limit = max(1, min(300, int(query.get("limit", 150))))
         except ValueError:
             limit = 150
-        places = self.state.searcher.search(lat, lon, radius_m=radius, categories=cats, sort=sort, limit=limit)
+        area_hint = (query.get("area") or "")[:60]
+        places = self.state.searcher.search(lat, lon, radius_m=radius, categories=cats, sort=sort, limit=limit,
+                                            area_hint=area_hint)
         return self._json({
             "ok": True, "demo": self.state.demo,
             "center": {"lat": lat, "lon": lon}, "radius_m": radius, "categories": cats, "sort": sort,
