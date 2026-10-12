@@ -250,6 +250,8 @@
   "use strict";
   // この画面（claude.ai 上の見本ページ）向けに作るときは true に差し替えます。
   var FORCE_DEMO = false; // ARTIFACT_MODE
+  // Python 版のサーバー（start.py）から配信されるときは true に差し替わり、検索はサーバー経由になります。
+  var SERVER_MODE = false; // SERVER_MODE_FLAG
 
   // ======================================================================
   // 1. 計算（距離・方角・徒歩分）
@@ -472,7 +474,7 @@
         distance_m: Math.round(d), distance_label: fmtDist(d), walk_min: walkMin(d), direction: compass(bearing(clat, clon, c[0], c[1])),
         relax_score: rf.score, features: rf.labels, kind: kindLabel(tags, cat), cuisine: cuisineJa(tags.cuisine), opening_hours: openingHoursJa(tags.opening_hours),
         website: website, phone: tags.phone || tags["contact:phone"] || "", address: address(tags),
-        instagram: instagram, facebook: facebook, twitter: twitter, wikipedia: wiki, tabelog_url: tabelogUrl, search_url: searchUrl,
+        instagram: instagram, facebook: facebook, twitter: twitter, wikipedia_url: wiki, tabelog_url: tabelogUrl, search_url: searchUrl,
         name_url: website || instagram || facebook || twitter || wiki || searchUrl,
         famous: !!(tags.wikipedia || tags.wikidata), map_url: mapUrl,
         route_url: "https://www.google.com/maps/dir/?api=1&destination=" + q + "&travelmode=walking" });
@@ -549,6 +551,16 @@
       return r.json();
     }).finally(function () { if (timer) { clearTimeout(timer); } });
   }
+  // Python 版サーバーの API を呼ぶ（サーバーモードのときだけ使う）
+  function apiJson(path, params) {
+    var qs = Object.keys(params || {}).map(function (k) { return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]); }).join("&");
+    return fetch(path + (qs ? "?" + qs : ""), { cache: "no-store" }).then(function (r) {
+      return r.json().catch(function () { return { ok: false, error: "サーバーの返事を読み取れませんでした。" }; }).then(function (data) {
+        if (!r.ok || !data.ok) { var e = new Error(data.error || ("通信エラー（" + r.status + "）")); e.status = r.status; throw e; }
+        return data;
+      });
+    }, function () { throw new Error("アプリのサーバーにつながりません。黒い画面（start.py）が動いているか確認してください。"); });
+  }
   function fetchOverpass(query) {
     var i = 0;
     function tryNext(lastErr) {
@@ -566,6 +578,9 @@
   function geocode(q, demo) {
     q = (q || "").trim();
     if (!q) { return Promise.resolve(null); }
+    if (SERVER_MODE) {
+      return apiJson("/api/geocode", { q: q }).then(function (d) { return d.location; }, function (e) { if (e.status === 404) { return null; } throw e; });
+    }
     if (demo) { return Promise.resolve(builtinLookup(q)); }
     var url = NOMINATIM + "?q=" + encodeURIComponent(q) + "&format=jsonv2&limit=1&accept-language=ja";
     return fetchJson(url, {}, 15000).then(function (res) {
@@ -576,6 +591,10 @@
   }
   var cache = {};
   function searchPlaces(p) {
+    if (SERVER_MODE) {
+      return apiJson("/api/search", { lat: p.lat, lon: p.lon, radius: p.radius, cats: p.cats.join(","), sort: p.sort, area: p.area || "" })
+        .then(function (d) { return d.places; });
+    }
     var key = [p.lat.toFixed(4), p.lon.toFixed(4), p.radius, p.cats.slice().sort().join(","), p.demo ? 1 : 0].join("|");
     var hit = cache[key], now = Date.now();
     var raw = (hit && now - hit.t < 600000) ? Promise.resolve(hit.d)
@@ -696,7 +715,12 @@
     }, function (err) {
       if (done) { return; } done = true; clearTimeout(fallbackTimer);
       var why = (err && err.code === 1) ? "位置情報の利用が許可されませんでした。" : "現在地をうまく取れませんでした。";
-      setStatus(why + " 駅名や地名を入れて「探す」を押してください。", "error"); $("placeInput").focus();
+      if (SERVER_MODE) {
+        apiJson("/api/iplocate").then(function (d) { setStart(d.location); setStatus(why + " おおよその場所（IP アドレスから推定）を使って探します。"); runSearch(); })
+          .catch(function (e) { setStatus(why + " " + e.message + " 駅名や地名を入れて「決める」を押してください。", "error"); $("placeInput").focus(); });
+        return;
+      }
+      setStatus(why + " 駅名や地名を入れて「決める」を押してください。", "error"); $("placeInput").focus();
     }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 120000 });
   });
   function searchPlace() {
@@ -775,7 +799,7 @@
       (p.instagram ? '<a class="btn small secondary" href="' + esc(p.instagram) + '" target="_blank" rel="noopener">📷 Instagram</a>' : "") +
       (p.facebook ? '<a class="btn small secondary" href="' + esc(p.facebook) + '" target="_blank" rel="noopener">📘 Facebook</a>' : "") +
       (p.twitter ? '<a class="btn small secondary" href="' + esc(p.twitter) + '" target="_blank" rel="noopener">𝕏 X（旧Twitter）</a>' : "") +
-      (p.wikipedia ? '<a class="btn small secondary" href="' + esc(p.wikipedia) + '" target="_blank" rel="noopener">📖 Wikipedia</a>' : "") +
+      (p.wikipedia_url ? '<a class="btn small secondary" href="' + esc(p.wikipedia_url) + '" target="_blank" rel="noopener">📖 Wikipedia</a>' : "") +
       '<button type="button" class="btn small secondary wish-btn" aria-pressed="' + inWish + '">' + (inWish ? "⭐ リストに入っています" : "☆ 行きたいリストへ") + "</button>" +
       "</div>";
     el.querySelector(".wish-btn").addEventListener("click", function () { toggleWish(p); });
@@ -913,9 +937,14 @@
   if (!state.cats.length) { state.cats = DEFAULT_CATS.slice(); }
   var w = loadLocal("nonbiri.wish", []); state.wish = Array.isArray(w) ? w : [];
   renderCats(); renderWish();
-  if (FORCE_DEMO) { $("demoToggleLabel").hidden = true; }
-  applyDemo(FORCE_DEMO || loadLocal("nonbiri.demo", false));
+  if (FORCE_DEMO || SERVER_MODE) { $("demoToggleLabel").hidden = true; }
+  applyDemo(FORCE_DEMO || (!SERVER_MODE && loadLocal("nonbiri.demo", false)));
   if (state.demo) { setStatus("見本データで動いています。「いまいる場所をつかう」か、駅名（例: 金沢駅・東京駅・京都駅）を入れて試してください。"); }
+  if (SERVER_MODE) {
+    apiJson("/api/health").then(function (d) {
+      if (d.demo) { applyDemo(true); setStatus("見本データで動いています（start.py --demo）。「いまいる場所をつかう」か、駅名（例: 金沢駅・東京駅・京都駅）を入れて試してください。"); }
+    }).catch(function (e) { setStatus(e.message, "error"); });
+  }
 })();
 </script>
 </body>
