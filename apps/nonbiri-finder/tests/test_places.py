@@ -130,3 +130,50 @@ class SearcherTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LinkTests(unittest.TestCase):
+    def test_place_icon_splits_park_and_bath(self):
+        self.assertEqual(places.place_icon({"leisure": "park"}, "rest"), "🌳")
+        self.assertEqual(places.place_icon({"amenity": "public_bath"}, "rest"), "♨️")
+        self.assertEqual(places.place_icon({"tourism": "picnic_site"}, "rest"), "🧺")
+        self.assertEqual(places.place_icon({"amenity": "cafe"}, "cafe"), "☕")
+
+    def test_social_url_normalizes_ids_and_keeps_urls(self):
+        self.assertEqual(places.social_url("instagram", "@komorebi"), "https://www.instagram.com/komorebi/")
+        self.assertEqual(places.social_url("facebook", "https://www.facebook.com/x;https://other"), "https://www.facebook.com/x")
+        self.assertEqual(places.social_url("twitter", "hanare"), "https://x.com/hanare")
+        self.assertEqual(places.social_url("instagram", None), "")
+
+    def test_wikipedia_url(self):
+        self.assertEqual(places.wikipedia_url("ja:兼六園"), "https://ja.wikipedia.org/wiki/%E5%85%BC%E5%85%AD%E5%9C%92")
+        self.assertEqual(places.wikipedia_url("not a link"), "")
+
+    def test_area_from_label(self):
+        self.assertEqual(places.area_from_label("金沢駅（石川県金沢市）"), "石川県金沢市")
+        self.assertEqual(places.area_from_label("金沢駅（デモ用の既定地点）"), "金沢")
+        self.assertEqual(places.area_from_label("いまいる場所（誤差 約20m）"), "")
+        self.assertEqual(places.area_from_label("指定した地点"), "")
+        self.assertEqual(places.area_from_label("金沢駅、木ノ新保町、金沢市"), "金沢")
+
+    def test_links_on_parsed_places(self):
+        data = demo_overpass_response(LAT, LON)
+        result = places.parse_overpass(data, LAT, LON, list(places.CATEGORY_ORDER), area_hint="石川県金沢市")
+        by_name = {p.name: p for p in result}
+        cafe = by_name["（デモ）喫茶 木もれ陽"]
+        self.assertEqual(cafe.name_url, "https://example.com/komorebi")           # サイトがあればサイト
+        self.assertEqual(cafe.instagram, "https://www.instagram.com/komorebi_cafe_demo/")
+        self.assertIn("tabelog.com", cafe.tabelog_url)
+        self.assertIn("sa=%E7%9F%B3%E5%B7%9D", cafe.tabelog_url)                 # 地域ヒントが入る
+        hanare = by_name["（デモ）和食 はなれ"]
+        self.assertEqual(hanare.name_url, "https://www.facebook.com/example.hanare")  # サイトが無ければ SNS
+        self.assertIn("sa=%E9%87%91%E6%B2%A2%E5%B8%82", hanare.tabelog_url)       # addr:city が優先
+        soba = by_name["（デモ）蕎麦処 風の音"]
+        self.assertTrue(soba.name_url.startswith("https://www.google.com/search?q="))  # 何も無ければ検索
+        viewpoint = by_name["（デモ）夕日の丘 展望台"]
+        self.assertEqual(viewpoint.tabelog_url, "")                              # 名所には食べログなし
+        self.assertTrue(viewpoint.wikipedia_url.startswith("https://ja.wikipedia.org/wiki/"))
+        unnamed = by_name["名前のない展望・景色スポット"]
+        self.assertEqual(unnamed.name_url, unnamed.map_url)                       # 名前が無ければ地図へ
+        park = by_name["（デモ）せせらぎ公園"]
+        self.assertEqual((park.icon, by_name["（デモ）里の湯（日帰り温泉）"].icon), ("🌳", "♨️"))

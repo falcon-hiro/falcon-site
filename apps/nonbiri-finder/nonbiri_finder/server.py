@@ -1,6 +1,6 @@
 """ブラウザで使うための小さな Web サーバー（Python 標準ライブラリだけで動きます）。
 
-画面（HTML）は static/index.html にあり、ブラウザ側から次の API を呼びます。
+画面（HTML）はブラウザ版と共通の ../web/index.html で、ブラウザ側から次の API を呼びます。
   GET /api/categories                      探せる種類の一覧
   GET /api/geocode?q=金沢駅                 地名 → 緯度経度
   GET /api/iplocate                        IP からおおよその現在地
@@ -23,15 +23,20 @@ from .locate import geocode, locate_by_ip
 from .netutil import NetworkError
 from .places import DEFAULT_RADIUS_M, PlaceSearcher, category_list, clamp_radius, normalize_categories
 
-STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+# 画面はブラウザ版（apps/nonbiri-finder/web/index.html）と同じファイルを使う。
+# 配信するときに SERVER_MODE を true に差し替えると、検索がこのサーバー経由になる。
+WEB_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web"))
+_SERVER_FLAG_OFF = b"var SERVER_MODE = false; // SERVER_MODE_FLAG"
+_SERVER_FLAG_ON = b"var SERVER_MODE = true; // SERVER_MODE_FLAG"
 
 
-def _read_static(name: str) -> Optional[bytes]:
-    path = os.path.normpath(os.path.join(STATIC_DIR, name))
-    if not path.startswith(STATIC_DIR) or not os.path.isfile(path):
+def _read_index() -> Optional[bytes]:
+    path = os.path.join(WEB_DIR, "index.html")
+    if not os.path.isfile(path):
         return None
     with open(path, "rb") as fh:
-        return fh.read()
+        data = fh.read()
+    return data.replace(_SERVER_FLAG_OFF, _SERVER_FLAG_ON, 1)
 
 
 class AppState:
@@ -69,9 +74,9 @@ class Handler(BaseHTTPRequestHandler):
         path = parsed.path
         try:
             if path in ("/", "/index.html"):
-                body = _read_static("index.html")
+                body = _read_index()
                 if body is None:
-                    return self._error("画面ファイル（index.html）が見つかりません。", 500)
+                    return self._error("画面ファイル（web/index.html）が見つかりません。", 500)
                 return self._send(200, body, "text/html; charset=utf-8")
             if path == "/favicon.ico":
                 self.send_response(HTTPStatus.NO_CONTENT)

@@ -37,6 +37,16 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("text/html", ctype)
         self.assertIn("のんびりさがし".encode("utf-8"), body)
+        self.assertIn(b"var SERVER_MODE = true; // SERVER_MODE_FLAG", body)   # 共通画面をサーバーモードで配信
+        self.assertNotIn(b"var SERVER_MODE = false;", body)
+
+    def test_search_area_hint_reaches_tabelog_url(self):
+        status, _, body = self.get("/api/search", lat=36.578, lon=136.6478, radius=700, cats="cafe", area="石川県金沢市")
+        data = json.loads(body)
+        self.assertEqual(status, 200)
+        cafe = next(p for p in data["places"] if p["name"] == "（デモ）喫茶 木もれ陽")
+        self.assertIn("sa=%E7%9F%B3%E5%B7%9D%E7%9C%8C%E9%87%91%E6%B2%A2%E5%B8%82", cafe["tabelog_url"])
+        self.assertEqual(cafe["name_url"], "https://example.com/komorebi")
 
     def test_categories(self):
         status, _, body = self.get("/api/categories")
