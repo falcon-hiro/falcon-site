@@ -17,7 +17,7 @@ from . import APP_NAME, __version__, geo
 from .locate import Location, geocode, locate_by_ip
 from .netutil import NetworkError
 from .places import (CATEGORIES, CATEGORY_ORDER, DEFAULT_RADIUS_M, MAX_RADIUS_M, Place, PlaceSearcher,
-                     category_list, normalize_categories)
+                     area_from_label, category_list, normalize_categories)
 
 
 def _ensure_utf8_stdout() -> None:
@@ -59,6 +59,10 @@ def format_place(place: Place, index: int) -> str:
         lines.append(f"     電話: {place.phone}")
     if place.website:
         lines.append(f"     サイト: {place.website}")
+    for label, url in (("Instagram", place.instagram), ("Facebook", place.facebook), ("X", place.twitter),
+                       ("Wikipedia", place.wikipedia_url), ("食べログ", place.tabelog_url)):
+        if url:
+            lines.append(f"     {label}: {url}")
     lines.append(f"     地図: {place.map_url}")
     return "\n".join(lines)
 
@@ -137,7 +141,8 @@ def run_search(args: argparse.Namespace) -> int:
     searcher = PlaceSearcher(demo=args.demo)
     try:
         places = searcher.search(center.lat, center.lon, radius_m=args.radius,
-                                 categories=categories, sort=args.sort, limit=args.limit)
+                                 categories=categories, sort=args.sort, limit=args.limit,
+                                 area_hint=area_from_label(center.label))
     except NetworkError as exc:
         print(f"⚠ {exc.message}", file=sys.stderr)
         return 3

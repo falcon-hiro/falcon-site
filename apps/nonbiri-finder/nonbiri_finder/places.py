@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 import time
+import urllib.parse
 from dataclasses import dataclass, field, asdict
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -101,7 +102,7 @@ CATEGORIES: Dict[str, Category] = {
         ),
     ),
     "rest": Category(
-        key="rest", label="公園・温泉でひと休み", icon="♨️",
+        key="rest", label="公園・温泉でひと休み", icon="🌳",
         description="ベンチのある公園、足湯・日帰り温泉など",
         selectors=(
             Selector("leisure", ("park", "nature_reserve")),
@@ -114,6 +115,60 @@ CATEGORIES: Dict[str, Category] = {
 # 1 つの場所が複数カテゴリに当てはまるとき、この順番で早いものに入れます。
 CATEGORY_ORDER: Tuple[str, ...] = ("cafe", "food", "photo", "sightseeing", "rest")
 DEFAULT_CATEGORIES: Tuple[str, ...] = ("sightseeing", "photo", "food", "cafe")
+
+
+def place_icon(tags: Dict[str, str], category_key: str) -> str:
+    """一覧と地図で使う絵文字。公園は 🌳、温泉・銭湯は ♨️ と分ける。"""
+    if category_key == "rest":
+        if tags.get("amenity") == "public_bath" or tags.get("natural") == "hot_spring":
+            return "♨️"
+        if tags.get("tourism") == "picnic_site":
+            return "🧺"
+        return "🌳"
+    return CATEGORIES[category_key].icon
+
+
+def social_url(kind: str, value: Optional[str]) -> str:
+    """地図データの SNS 欄（URL か ID）を開ける URL にする。"""
+    if not value:
+        return ""
+    value = value.split(";")[0].strip()
+    if not value:
+        return ""
+    if re.match(r"^https?://", value, re.I):
+        return value
+    value = urllib.parse.quote(value.lstrip("@"), safe="")
+    if kind == "instagram":
+        return f"https://www.instagram.com/{value}/"
+    if kind == "facebook":
+        return f"https://www.facebook.com/{value}"
+    if kind == "twitter":
+        return f"https://x.com/{value}"
+    return ""
+
+
+def wikipedia_url(value: Optional[str]) -> str:
+    """"ja:兼六園" → "https://ja.wikipedia.org/wiki/兼六園"。"""
+    if not value:
+        return ""
+    m = re.match(r"^([a-z\-]+):(.+)$", value.strip(), re.I)
+    if not m:
+        return ""
+    return f"https://{m.group(1)}.wikipedia.org/wiki/" + urllib.parse.quote(m.group(2).strip().replace(" ", "_"))
+
+
+def area_from_label(label: Optional[str]) -> str:
+    """「金沢駅（石川県金沢市）」→「石川県金沢市」。食べログ検索や Google 検索の地域ヒント。"""
+    if not label:
+        return ""
+    m = re.match(r"^(.*?)（([^）]+)）", label)
+    inner = m.group(2).strip() if m else ""
+    outer = (m.group(1) if m else re.split(r"[、,]", label)[0]).strip()
+    if inner and not re.search(r"いまいる場所|誤差|見本用|既定|デモ用|指定した", inner):
+        return inner
+    if re.search(r"いまいる場所|誤差|指定した地点|おおよそ", outer):
+        return ""
+    return re.sub(r"駅.*$", "", outer).strip()
 
 
 def category_list() -> List[Dict[str, str]]:
@@ -209,6 +264,13 @@ class Place:
     osm_url: str = ""
     map_url: str = ""
     route_url: str = ""
+    instagram: str = ""
+    facebook: str = ""
+    twitter: str = ""
+    wikipedia_url: str = ""
+    tabelog_url: str = ""      # 飲食店・カフェ: 食べログの検索結果
+    search_url: str = ""       # Google 検索（店名＋地域）
+    name_url: str = ""         # 店名を押したときの行き先（サイト → SNS → Wikipedia → 検索）
     tags: Dict[str, str] = field(default_factory=dict)
 
     def to_dict(self, include_tags: bool = False) -> Dict[str, Any]:
@@ -377,6 +439,7 @@ def parse_overpass(
     categories: Sequence[str],
     *,
     radius_m: Optional[int] = None,
+    area_hint: str = "",
 ) -> List[Place]:
     """Overpass の返事を Place の一覧にする。重複は除き、距離の近い順に並べる。"""
     wanted = list(categories)
@@ -393,10 +456,12 @@ def parse_overpass(
         if category is None:
             continue
         name = _display_name(tags)
+        unnamed = False
         if not name:
             if not category.unnamed_label:
                 continue
             name = category.unnamed_label
+            unnamed = True
         lat, lon = coords
         distance = geo.haversine_m(center_lat, center_lon, lat, lon)
         if radius_m is not None and distance > radius_m * 1.15:
@@ -410,12 +475,29 @@ def parse_overpass(
         score, labels = relax_features(tags, category.key)
         bearing = geo.bearing_deg(center_lat, center_lon, lat, lon)
         osm_id = f"{element.get('type', 'node')}/{element.get('id', '')}"
+        area = tags.get("addr:city") or tags.get("addr:province") or area_hint or ""
+        website = tags.get("website") or tags.get("contact:website") or tags.get("url") or ""
+        instagram = social_url("instagram", tags.get("contact:instagram") or tags.get("instagram"))
+        facebook = social_url("facebook", tags.get("contact:facebook") or tags.get("facebook"))
+        twitter = social_url("twitter", tags.get("contact:twitter") or tags.get("twitter"))
+        wiki = wikipedia_url(tags.get("wikipedia"))
+        map_url = f"https://www.google.com/maps/search/?api=1&query={lat:.6f},{lon:.6f}"
+        if unnamed:
+            search_url = map_url
+            tabelog_url = ""
+        else:
+            search_url = "https://www.google.com/search?q=" + urllib.parse.quote(name + (f" {area}" if area else ""))
+            tabelog_url = ""
+            if category.key in ("food", "cafe"):
+                tabelog_url = "https://tabelog.com/rst/rstsearch/?vs=1&sk=" + urllib.parse.quote(name)
+                if area:
+                    tabelog_url += "&sa=" + urllib.parse.quote(area)
         places.append(Place(
             id=osm_id,
             name=name,
             category=category.key,
             category_label=category.label,
-            icon=category.icon,
+            icon=place_icon(tags, category.key),
             lat=round(lat, 6),
             lon=round(lon, 6),
             distance_m=int(round(distance)),
@@ -427,13 +509,20 @@ def parse_overpass(
             kind=_kind_label(tags, category),
             cuisine=cuisine_ja(tags.get("cuisine")),
             opening_hours=opening_hours_ja(tags.get("opening_hours")),
-            website=tags.get("website") or tags.get("contact:website") or tags.get("url") or "",
+            website=website,
             phone=tags.get("phone") or tags.get("contact:phone") or "",
             address=_address(tags),
             famous=bool(tags.get("wikipedia") or tags.get("wikidata")),
             osm_url=f"https://www.openstreetmap.org/{osm_id}",
-            map_url=f"https://www.google.com/maps/search/?api=1&query={lat:.6f},{lon:.6f}",
+            map_url=map_url,
             route_url=f"https://www.google.com/maps/dir/?api=1&destination={lat:.6f},{lon:.6f}&travelmode=walking",
+            instagram=instagram,
+            facebook=facebook,
+            twitter=twitter,
+            wikipedia_url=wiki,
+            tabelog_url=tabelog_url,
+            search_url=search_url,
+            name_url=website or instagram or facebook or twitter or wiki or search_url,
             tags=dict(tags),
         ))
     places.sort(key=lambda p: (p.distance_m, p.name))
@@ -485,11 +574,12 @@ class PlaceSearcher:
         categories: Optional[Iterable[str]] = None,
         sort: str = "distance",
         limit: int = DEFAULT_LIMIT,
+        area_hint: str = "",
     ) -> List[Place]:
         cats = normalize_categories(categories)
         radius = clamp_radius(radius_m)
         data = self._raw(lat, lon, radius, cats)
-        places = parse_overpass(data, lat, lon, cats, radius_m=radius)
+        places = parse_overpass(data, lat, lon, cats, radius_m=radius, area_hint=area_hint)
         places = sort_places(places, sort)
         if limit and limit > 0:
             places = places[:limit]
