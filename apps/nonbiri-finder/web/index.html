@@ -95,10 +95,19 @@
   .map-wrap.pinned { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); padding-block: 6px; }
   .map-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
   .map-bar .count { font-size: .9rem; color: var(--muted); }
+  .map-tools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .map-tools button[aria-pressed="true"] { background: var(--primary-soft); border-color: var(--primary); }
+  .gl-hint { font-size: .82rem; color: var(--muted); margin: 4px 0 0; }
+  @media (min-width: 900px) { .map-wrap.gl #map { height: 480px; } .map-wrap.gl.pinned #map { height: 360px; } }
+  .me-dot { position: relative; width: 18px; height: 18px; border-radius: 50%; background: #b9651f; border: 3px solid #fff; box-shadow: 0 0 0 2px rgba(185, 101, 31, .45); }
+  .pin .pin-label, .me-dot .me-label { position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); margin-bottom: 4px; background: #fff; color: #24302a;
+                                        font-size: 12px; line-height: 1.4; padding: 1px 6px; border-radius: 6px; white-space: nowrap; box-shadow: 0 1px 4px rgba(0, 0, 0, .3); }
+  .maplibregl-popup-content { font-family: var(--font); font-size: .95rem; color: #24302a; line-height: 1.5; }
+  .maplibregl-ctrl-attrib { font-size: 11px; }
   #map { height: 340px; border-radius: 14px; border: 1px solid var(--line); background: var(--map-bg); max-width: 100%; }
   .map-wrap.pinned #map { height: 240px; }
   @media (max-width: 900px) { #map { height: 260px; } .map-wrap.pinned #map { height: 200px; } }
-  .pin { background: transparent; border: 0; }
+  .pin { width: 36px; height: 42px; background: transparent; border: 0; }
   .pin .pin-body { position: relative; width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 3px solid var(--pin, #2f6b50);
                    box-shadow: 0 2px 6px rgba(0, 0, 0, .35); display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; }
   .pin .pin-body::after { content: ""; position: absolute; left: 50%; top: 100%; margin-left: -6px; border: 6px solid transparent; border-top: 8px solid var(--pin, #2f6b50); border-bottom: 0; }
@@ -212,8 +221,16 @@
     <div id="mapWrap" class="map-wrap" hidden>
       <div class="map-bar">
         <span class="count" id="mapCount"></span>
-        <button type="button" id="btnPin" class="btn small secondary" aria-pressed="true">📌 地図を固定中（押すと解除）</button>
+        <span class="map-tools">
+          <span id="glBar" class="map-tools" hidden>
+            <button type="button" id="btn3d" class="btn small secondary" aria-pressed="true">🏔 立体 3D</button>
+            <button type="button" id="btn2d" class="btn small secondary" aria-pressed="false">🗺 平面 2D</button>
+            <button type="button" id="btnNorth" class="btn small secondary">⟲ 北を上に</button>
+          </span>
+          <button type="button" id="btnPin" class="btn small secondary" aria-pressed="true">📌 地図を固定中（押すと解除）</button>
+        </span>
       </div>
+      <p class="gl-hint" id="glHint" hidden>地図はドラッグで移動、右ボタンのドラッグ（または Ctrl キー＋ドラッグ）で回転と傾き、マウスのホイールで拡大・縮小ができます。</p>
       <div id="map" aria-label="地図"></div>
     </div>
     <div class="summary">
@@ -240,6 +257,7 @@
 <button type="button" id="fab" class="btn accent fab" hidden>▲ 条件に戻る</button>
 <footer>
   地図データ © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors。
+  立体地図: <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a>・<a href="https://openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a>、標高: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Terrain Tiles</a>。
   「のんびり度」は地図データに登録された情報（バリアフリー・禁煙・テラス席など）から計算した目安です。営業時間は変わることがあるので、お出かけ前にご確認ください。
   <br><label id="demoToggleLabel"><input type="checkbox" id="demoToggle"> 見本データで試す（インターネットの地図データを使わない）</label>
 </footer>
@@ -610,7 +628,7 @@
   // 6. 画面
   // ======================================================================
   var $ = function (id) { return document.getElementById(id); };
-  var state = { start: null, dest: null, basis: "start", cats: [], radius: 700, sort: "distance", places: [], demo: FORCE_DEMO, wish: [], map: null, markers: [], circle: null, meMarker: null, busy: false };
+  var state = { start: null, dest: null, basis: "start", cats: [], radius: 700, sort: "distance", places: [], demo: FORCE_DEMO, wish: [], lastRender: null, busy: false };
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function stars(n) { n = Math.max(0, Math.min(5, n | 0)); return "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n); }
@@ -624,7 +642,7 @@
     document.documentElement.setAttribute("data-size", size);
     ["sizeNormal", "sizeLarge", "sizeXlarge"].forEach(function (id) { var b = $(id); b.setAttribute("aria-pressed", String(b.dataset.size === size)); });
     saveLocal("nonbiri.size", size);
-    if (state.map) { setTimeout(function () { state.map.invalidateSize(); }, 50); }
+    if (engine) { setTimeout(function () { engine.resize(); }, 50); }
   }
   ["sizeNormal", "sizeLarge", "sizeXlarge"].forEach(function (id) { $(id).addEventListener("click", function () { applySize($(id).dataset.size); }); });
 
@@ -807,56 +825,190 @@
     return el;
   }
 
-  // 地図（Leaflet が読み込めた場合だけ。見本モードでは表示しない）
+  // ======================================================================
+  // 地図: パソコン（幅 900px 以上）は MapLibre GL で立体（3D）、スマホは Leaflet で平面
+  // ======================================================================
+  var GL_JS = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"; // GL_JS_URL
+  var GL_CSS = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"; // GL_CSS_URL
+  var GL_STYLE = "https://tiles.openfreemap.org/styles/liberty"; // GL_STYLE_URL
+  var DEM_TILES = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png";
+  var PITCH_3D = 55;
+  var engine = null, glReady = null;
   function zoomFor(r) { return r <= 350 ? 17 : r <= 700 ? 16 : r <= 1300 ? 15 : 14; }
-  function ensureMap() {
-    if (typeof L === "undefined") { return null; }
-    if (state.map) { return state.map; }
-    try {
-      $("mapWrap").hidden = false;
-      state.map = L.map("map", { scrollWheelZoom: false }).setView([36.578, 136.6478], 14);
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap contributors" }).addTo(state.map);
-    } catch (e) { state.map = null; $("mapWrap").hidden = true; }
-    return state.map;
+  function webglOk() { try { var c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; } }
+  function wantsGL() { return !FORCE_DEMO && window.matchMedia("(min-width: 900px)").matches && webglOk(); }
+  function loadScript(src) { return new Promise(function (res, rej) { var el = document.createElement("script"); el.src = src; el.onload = res; el.onerror = rej; document.head.appendChild(el); }); }
+  function loadCss(href) { var el = document.createElement("link"); el.rel = "stylesheet"; el.href = href; document.head.appendChild(el); }
+  function pinHtml(p) { return '<div class="pin-body" style="--pin:' + (CAT_COLOR[p.category] || "#2f6b50") + '">' + esc(p.icon) + "</div>"; }
+  function popupHtml(p) { return "<strong>" + esc(p.icon + " " + p.name) + "</strong><br>ゆっくり歩いて 約" + p.walk_min + '分<br><a href="' + esc(routeUrl(p)) + '" target="_blank" rel="noopener">行き方を見る</a>'; }
+  function circleBounds(lat, lon, r) { var dlat = r / 111320, dlon = r / (111320 * Math.max(0.1, Math.cos(rad(lat)))); return [[lon - dlon, lat - dlat], [lon + dlon, lat + dlat]]; }
+  function circlePolygon(lat, lon, r) {
+    var pts = [], kx = 111320 * Math.max(0.1, Math.cos(rad(lat)));
+    for (var i = 0; i <= 64; i++) { var a = i / 64 * 2 * Math.PI; pts.push([lon + r * Math.sin(a) / kx, lat + r * Math.cos(a) / 111320]); }
+    return { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [pts] } };
   }
-  function makeIcon(p, active) {
-    return L.divIcon({ className: "pin" + (active ? " active" : ""), html: '<div class="pin-body" style="--pin:' + (CAT_COLOR[p.category] || "#2f6b50") + '">' + esc(p.icon) + "</div>",
-      iconSize: [36, 42], iconAnchor: [18, 42], popupAnchor: [0, -40] });
+
+  // --- 平面地図（Leaflet） ---
+  var leafletEngine = {
+    name: "leaflet", map: null, markers: [], layers: [],
+    init: function () {
+      if (typeof L === "undefined") { return false; }
+      this.map = L.map("map", { scrollWheelZoom: false }).setView([36.578, 136.6478], 14);
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap contributors" }).addTo(this.map);
+      return true;
+    },
+    icon: function (p, active) { return L.divIcon({ className: "pin" + (active ? " active" : ""), html: pinHtml(p), iconSize: [36, 42], iconAnchor: [18, 42], popupAnchor: [0, -40] }); },
+    render: function (center, places) {
+      var map = this.map, self = this;
+      this.markers.concat(this.layers).forEach(function (l) { map.removeLayer(l); }); this.markers = []; this.layers = [];
+      if (state.start) {
+        this.layers.push(L.circleMarker([state.start.lat, state.start.lon], { radius: 9, color: "#fff", weight: 3, fillColor: "#b9651f", fillOpacity: 1 }).addTo(map)
+          .bindTooltip(state.start.source === "gps" ? "いまいる場所" : "出発地", { permanent: true, direction: "top" }));
+      }
+      if (state.dest) {
+        this.layers.push(L.marker([state.dest.lat, state.dest.lon], { icon: L.divIcon({ className: "pin", html: '<div class="pin-body" style="--pin:#c0392b">🚩</div>', iconSize: [36, 42], iconAnchor: [18, 42] }), title: "目的地", zIndexOffset: 500 })
+          .addTo(map).bindTooltip("目的地", { permanent: true, direction: "top", offset: [0, -40] }));
+      }
+      var circle = L.circle([center.lat, center.lon], { radius: state.radius, color: "#2f6b50", weight: 1, fillOpacity: .05 }).addTo(map);
+      this.layers.push(circle);
+      places.forEach(function (p, i) {
+        var m = L.marker([p.lat, p.lon], { title: p.name, icon: self.icon(p, false) }).addTo(map).bindPopup(popupHtml(p));
+        m.on("click", function () { highlight(i, true); });
+        self.markers.push(m);
+      });
+      if (places.length) { map.fitBounds(circle.getBounds(), { padding: [10, 10] }); } else { map.setView([center.lat, center.lon], zoomFor(state.radius)); }
+    },
+    highlight: function (i) { var self = this; this.markers.forEach(function (m, idx) { var p = state.places[idx]; if (p) { m.setIcon(self.icon(p, idx === i)); } }); },
+    focus: function (i) { var p = state.places[i]; if (!p) { return; } this.map.setView([p.lat, p.lon], Math.max(this.map.getZoom(), 16)); if (this.markers[i]) { this.markers[i].openPopup(); } },
+    resize: function () { this.map.invalidateSize(); }
+  };
+
+  // --- 立体地図（MapLibre GL） ---
+  var glEngine = {
+    name: "gl", map: null, markers: [], extra: [], loaded: false, is3D: true, firstSymbol: undefined, pendingCircle: null,
+    init: function () {
+      var self = this;
+      this.is3D = loadLocal("nonbiri.3d", true) !== false;
+      this.map = new maplibregl.Map({ container: "map", style: GL_STYLE, center: [136.6478, 36.578], zoom: 14, pitch: this.is3D ? PITCH_3D : 0, bearing: 0, maxPitch: 70, attributionControl: true });
+      this.map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-left");
+      this.map.addControl(new maplibregl.ScaleControl({ unit: "metric" }));
+      this.map.on("error", function (e) { if (e && e.error && window.console) { console.warn("map:", e.error.message || e.error); } });
+      this.map.on("load", function () { self.loaded = true; self.setupStyle(); self.apply3D(); });
+      $("glBar").hidden = false; $("glHint").hidden = false; $("mapWrap").classList.add("gl");
+      update3DButtons();
+      return true;
+    },
+    setupStyle: function () {
+      var map = this.map, style = map.getStyle() || {}, layers = style.layers || [];
+      layers.forEach(function (l) {  // 地名は日本語を優先
+        if (l.type === "symbol" && l.layout && l.layout["text-field"]) { try { map.setLayoutProperty(l.id, "text-field", ["coalesce", ["get", "name:ja"], ["get", "name"]]); } catch (e) {} }
+      });
+      var sym = layers.filter(function (l) { return l.type === "symbol"; })[0];
+      this.firstSymbol = sym ? sym.id : undefined;
+      try {  // 標高（地形）
+        if (!map.getSource("terrain-dem")) { map.addSource("terrain-dem", { type: "raster-dem", tiles: [DEM_TILES], encoding: "terrarium", tileSize: 256, maxzoom: 15, attribution: '標高: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Terrain Tiles</a>' }); }
+        if (!map.getSource("hillshade-dem")) { map.addSource("hillshade-dem", { type: "raster-dem", tiles: [DEM_TILES], encoding: "terrarium", tileSize: 256, maxzoom: 15 }); }
+        if (!map.getLayer("nonbiri-hillshade")) { map.addLayer({ id: "nonbiri-hillshade", type: "hillshade", source: "hillshade-dem", paint: { "hillshade-exaggeration": 0.3 } }, this.firstSymbol); }
+      } catch (e) {}
+      var vec = Object.keys(style.sources || {}).filter(function (k) { return style.sources[k].type === "vector"; })[0];
+      if (vec && !map.getLayer("nonbiri-buildings")) {  // 建物を立体に
+        try {
+          map.addLayer({ id: "nonbiri-buildings", type: "fill-extrusion", source: vec, "source-layer": "building", minzoom: 13.5,
+            paint: { "fill-extrusion-color": "#d8d2c6", "fill-extrusion-height": ["coalesce", ["get", "render_height"], 10],
+                     "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0], "fill-extrusion-opacity": 0.85 } }, this.firstSymbol);
+        } catch (e) {}
+      }
+      if (!map.getSource("nonbiri-circle")) {  // 検索範囲の円
+        map.addSource("nonbiri-circle", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+        map.addLayer({ id: "nonbiri-circle-fill", type: "fill", source: "nonbiri-circle", paint: { "fill-color": "#2f6b50", "fill-opacity": 0.06 } }, this.firstSymbol);
+        map.addLayer({ id: "nonbiri-circle-line", type: "line", source: "nonbiri-circle", paint: { "line-color": "#2f6b50", "line-width": 1.5 } }, this.firstSymbol);
+      }
+      if (this.pendingCircle) { map.getSource("nonbiri-circle").setData(this.pendingCircle); }
+    },
+    apply3D: function () {
+      var map = this.map; if (!this.loaded) { update3DButtons(); return; }
+      try {
+        if (this.is3D) {
+          if (map.getSource("terrain-dem")) { map.setTerrain({ source: "terrain-dem", exaggeration: 1.3 }); }
+          if (map.getLayer("nonbiri-buildings")) { map.setLayoutProperty("nonbiri-buildings", "visibility", "visible"); }
+          map.easeTo({ pitch: PITCH_3D, duration: 600 });
+        } else {
+          map.setTerrain(null);
+          if (map.getLayer("nonbiri-buildings")) { map.setLayoutProperty("nonbiri-buildings", "visibility", "none"); }
+          map.easeTo({ pitch: 0, bearing: 0, duration: 600 });
+        }
+      } catch (e) {}
+      update3DButtons();
+    },
+    set3D: function (on) { this.is3D = !!on; saveLocal("nonbiri.3d", this.is3D); this.apply3D(); },
+    resetNorth: function () { this.map.easeTo({ bearing: 0, duration: 400 }); },
+    render: function (center, places) {
+      var map = this.map, self = this;
+      this.markers.concat(this.extra).forEach(function (m) { m.remove(); }); this.markers = []; this.extra = [];
+      if (state.start) {
+        var me = document.createElement("div"); me.className = "me-dot"; me.innerHTML = '<span class="me-label">' + (state.start.source === "gps" ? "いまいる場所" : "出発地") + "</span>";
+        this.extra.push(new maplibregl.Marker({ element: me, anchor: "center" }).setLngLat([state.start.lon, state.start.lat]).addTo(map));
+      }
+      if (state.dest) {
+        var de = document.createElement("div"); de.className = "pin"; de.innerHTML = '<div class="pin-body" style="--pin:#c0392b">🚩</div><span class="pin-label">目的地</span>';
+        this.extra.push(new maplibregl.Marker({ element: de, anchor: "bottom" }).setLngLat([state.dest.lon, state.dest.lat]).addTo(map));
+      }
+      this.pendingCircle = { type: "FeatureCollection", features: [circlePolygon(center.lat, center.lon, state.radius)] };
+      if (this.loaded && map.getSource("nonbiri-circle")) { map.getSource("nonbiri-circle").setData(this.pendingCircle); }
+      places.forEach(function (p, i) {
+        var el = document.createElement("div"); el.className = "pin"; el.innerHTML = pinHtml(p); el.title = p.name;
+        el.addEventListener("click", function () { highlight(i, true); });
+        self.markers.push(new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([p.lon, p.lat])
+          .setPopup(new maplibregl.Popup({ offset: 44 }).setHTML(popupHtml(p))).addTo(map));
+      });
+      var cam = map.cameraForBounds(circleBounds(center.lat, center.lon, state.radius), { padding: 24 });
+      if (cam) { cam.pitch = this.is3D ? PITCH_3D : 0; cam.duration = 700; map.easeTo(cam); }
+      else { map.easeTo({ center: [center.lon, center.lat], zoom: zoomFor(state.radius), duration: 700 }); }
+    },
+    highlight: function (i) { this.markers.forEach(function (m, idx) { m.getElement().classList.toggle("active", idx === i); }); },
+    focus: function (i) {
+      var p = state.places[i]; if (!p) { return; }
+      this.map.easeTo({ center: [p.lon, p.lat], zoom: Math.max(this.map.getZoom(), 16.5), duration: 600 });
+      var m = this.markers[i]; if (m && m.getPopup() && !m.getPopup().isOpen()) { m.togglePopup(); }
+    },
+    resize: function () { this.map.resize(); }
+  };
+
+  function update3DButtons() {
+    var on = engine === glEngine && glEngine.is3D;
+    $("btn3d").setAttribute("aria-pressed", String(on)); $("btn2d").setAttribute("aria-pressed", String(!on));
+  }
+  $("btn3d").addEventListener("click", function () { if (engine === glEngine) { glEngine.set3D(true); } });
+  $("btn2d").addEventListener("click", function () { if (engine === glEngine) { glEngine.set3D(false); } });
+  $("btnNorth").addEventListener("click", function () { if (engine === glEngine) { glEngine.resetNorth(); } });
+
+  function ensureMap() {
+    if (engine) { return engine; }
+    $("mapWrap").hidden = false;
+    if (wantsGL() && typeof maplibregl !== "undefined") {
+      try { if (glEngine.init()) { engine = glEngine; return engine; } } catch (e) { if (window.console) { console.warn("3D 地図を使えないため平面地図にします:", e); } $("map").innerHTML = ""; $("mapWrap").classList.remove("gl"); }
+    }
+    try { if (leafletEngine.init()) { engine = leafletEngine; return engine; } } catch (e) {}
+    $("mapWrap").hidden = true;
+    return null;
   }
   function renderMap(center, places) {
-    var map = ensureMap(); if (!map) { return; }
-    $("mapCount").textContent = places.length ? places.length + "件を地図に表示" : "";
-    state.markers.forEach(function (m) { map.removeLayer(m); }); state.markers = [];
-    if (state.circle) { map.removeLayer(state.circle); } if (state.meMarker) { map.removeLayer(state.meMarker); } if (state.destMarker) { map.removeLayer(state.destMarker); state.destMarker = null; }
-    var c = [center.lat, center.lon];
-    if (state.start) {
-      state.meMarker = L.circleMarker([state.start.lat, state.start.lon], { radius: 9, color: "#fff", weight: 3, fillColor: "#b9651f", fillOpacity: 1 }).addTo(map)
-        .bindTooltip(state.start.source === "gps" ? "いまいる場所" : "出発地", { permanent: true, direction: "top" });
-    } else { state.meMarker = null; }
-    if (state.dest) {
-      state.destMarker = L.marker([state.dest.lat, state.dest.lon], { icon: L.divIcon({ className: "pin", html: '<div class="pin-body" style="--pin:#c0392b">🚩</div>', iconSize: [36, 42], iconAnchor: [18, 42] }), title: "目的地", zIndexOffset: 500 })
-        .addTo(map).bindTooltip("目的地", { permanent: true, direction: "top", offset: [0, -40] });
+    state.lastRender = { center: center, places: places };
+    if (!engine && glReady) {  // 立体地図の部品を読み込み中なら、終わってから描く
+      glReady.then(function () { glReady = null; var e = ensureMap(); if (e && state.lastRender) { $("mapCount").textContent = state.lastRender.places.length ? state.lastRender.places.length + "件を地図に表示" : ""; e.render(state.lastRender.center, state.lastRender.places); } });
+      return;
     }
-    state.circle = L.circle(c, { radius: state.radius, color: "#2f6b50", weight: 1, fillOpacity: .05 }).addTo(map);
-    places.forEach(function (p, i) {
-      var m = L.marker([p.lat, p.lon], { title: p.name, icon: makeIcon(p, false) }).addTo(map)
-        .bindPopup("<strong>" + esc(p.icon + " " + p.name) + "</strong><br>ゆっくり歩いて 約" + p.walk_min + '分<br><a href="' + esc(routeUrl(p)) + '" target="_blank" rel="noopener">行き方を見る</a>');
-      m.on("click", function () { highlight(i, true); });
-      state.markers.push(m);
-    });
-    if (places.length) { map.fitBounds(state.circle.getBounds(), { padding: [10, 10] }); } else { map.setView(c, zoomFor(state.radius)); }
+    var e = ensureMap(); if (!e) { return; }
+    $("mapCount").textContent = places.length ? places.length + "件を地図に表示" : "";
+    e.render(center, places);
   }
   function highlight(i, scroll) {
     Array.prototype.forEach.call(document.querySelectorAll(".place.active"), function (x) { x.classList.remove("active"); });
-    state.markers.forEach(function (m, idx) { var p = state.places[idx]; if (p) { m.setIcon(makeIcon(p, idx === i)); } });
+    if (engine) { engine.highlight(i); }
     var el = $("place-" + i); if (!el) { return; }
     el.classList.add("active"); if (scroll) { el.scrollIntoView({ behavior: "smooth", block: "center" }); }
   }
-  function focusPlace(i) {
-    highlight(i, false);
-    var p = state.places[i];
-    if (state.map && p) { state.map.setView([p.lat, p.lon], Math.max(state.map.getZoom(), 16)); if (state.markers[i]) { state.markers[i].openPopup(); } }
-  }
+  function focusPlace(i) { highlight(i, false); if (engine) { engine.focus(i); } }
 
   // 行きたいリスト
   function toggleWish(p) {
@@ -918,7 +1070,7 @@
     $("btnPin").setAttribute("aria-pressed", String(!!on));
     $("btnPin").textContent = on ? "📌 地図を固定中（押すと解除）" : "📍 地図を画面に固定する";
     saveLocal("nonbiri.pin", !!on);
-    if (state.map) { setTimeout(function () { state.map.invalidateSize(); }, 60); }
+    if (engine) { setTimeout(function () { engine.resize(); }, 60); }
   }
   $("btnPin").addEventListener("click", function () { applyPin(!$("mapWrap").classList.contains("pinned")); });
   applyPin(loadLocal("nonbiri.pin", true));
@@ -937,6 +1089,7 @@
   if (!state.cats.length) { state.cats = DEFAULT_CATS.slice(); }
   var w = loadLocal("nonbiri.wish", []); state.wish = Array.isArray(w) ? w : [];
   renderCats(); renderWish();
+  if (wantsGL()) { loadCss(GL_CSS); glReady = loadScript(GL_JS).then(function () { return true; }, function () { return false; }); }
   if (FORCE_DEMO || SERVER_MODE) { $("demoToggleLabel").hidden = true; }
   applyDemo(FORCE_DEMO || (!SERVER_MODE && loadLocal("nonbiri.demo", false)));
   if (state.demo) { setStatus("見本データで動いています。「いまいる場所をつかう」か、駅名（例: 金沢駅・東京駅・京都駅）を入れて試してください。"); }
