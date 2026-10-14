@@ -1,0 +1,6 @@
+# 株式会社ファルコン（https://az-falcon.com）
+# 2026-10-14 作成（広報G KOUHOU-20261013-01 の検索対策）
+User-agent: *
+Allow: /
+
+Sitemap: https://az-falcon.com/sitemap.xml
