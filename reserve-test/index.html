@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>計測のご予約・お見積り｜株式会社ファルコン</title>
+<meta name="description" content="建物の中の3次元計測（ハンディSLAM）のお見積りとご予約。3つ入力するだけで、おおよその金額がすぐわかります。仙台の株式会社ファルコン。">
+<!-- 試運転用（2026-11-08 社長指示）。トップからリンクしない・検索に出さない。正式公開のときに reserve/ へ移して、このフォルダは消す -->
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1f3a5f; --navy2:#2c4a70; --gold:#c9a84c; --gold-l:#f0dcaa; --gold-d:#9a7a2c;
+    --blue-l:#bfd0e6; --cream:#f4efe2; --cream2:#f7f5ef; --ink:#33404f; --line:#d8d2c4; --err:#b03a2e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream2);font-family:'Noto Sans JP',sans-serif;color:var(--ink);line-height:1.8}
+  a{color:var(--navy)}
+  .sitehead{background:var(--navy);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  .logo{color:#fff;text-decoration:none;font-weight:700;letter-spacing:.08em}
+  .sitehead nav{display:flex;gap:16px;font-size:.8rem}
+  .sitehead nav a{color:var(--blue-l);text-decoration:none}
+  .hero{background:linear-gradient(180deg,var(--navy2),var(--navy));color:#fff;padding:30px 16px;text-align:center}
+  .hero h1{margin:0 0 6px;font-size:1.3rem}
+  .hero p{margin:0;font-size:.86rem;color:var(--blue-l)}
+  .wrap{max-width:820px;margin:0 auto;padding:24px 16px 64px}
+  .demo{background:#fff3cd;border:1px solid #e6c65c;border-radius:6px;padding:8px 12px;font-size:.8rem;margin-bottom:16px}
+  .steps{display:flex;gap:6px;margin-bottom:22px}
+  .st{flex:1;text-align:center;font-size:.68rem;padding:7px 2px;border-radius:6px;background:var(--cream);border:1px solid var(--line);color:#8b8475}
+  .st b{display:block;font-size:.95rem}
+  .st.on{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:700}
+  .st.done{border-color:var(--gold);color:var(--gold-d)}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px 20px;box-shadow:0 2px 14px rgba(31,58,95,.06)}
+  .panel[hidden]{display:none}
+  h2{margin:0 0 14px;font-size:1rem;color:var(--navy)}
+  h2 small{font-weight:400;color:#8b8475;font-size:.76rem;margin-left:8px}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{display:block;text-align:left;width:100%;border:2px solid var(--line);border-radius:8px;padding:14px;background:#fff;cursor:pointer;font:inherit;color:inherit}
+  .card:hover,.card:focus-visible{border-color:var(--gold)}
+  .card.sel{border-color:var(--gold);background:#fffdf6;box-shadow:0 0 0 3px rgba(201,168,76,.15)}
+  .card h3{margin:0 0 4px;font-size:.92rem;color:var(--navy)}
+  .card p{margin:0;font-size:.76rem;color:#7b7566}
+  .card .tag{display:inline-block;margin-top:6px;font-size:.72rem;font-weight:700}
+  .row{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:start;margin-bottom:12px}
+  .row>label,.row>.lbl{font-size:.84rem;font-weight:500;padding-top:8px}
+  .req{color:var(--err);font-size:.72rem;margin-left:4px}
+  input[type=text],input[type=tel],input[type=email],input[type=number],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:6px;font-size:.9rem;font-family:inherit;background:#fff}
+  textarea{min-height:70px}
+  .w-s{max-width:140px}.w-m{max-width:260px}
+  .hint{font-size:.74rem;color:#8b8475;margin:3px 0 0}
+  .radios{display:flex;gap:16px;flex-wrap:wrap;padding-top:6px;font-size:.86rem}
+  .result{margin-top:20px;background:var(--navy);color:#fff;border-radius:10px;padding:18px 20px}
+  .result .lbl{font-size:.76rem;color:var(--blue-l);margin:0}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+  .sc{background:rgba(255,255,255,.08);border-radius:8px;padding:12px}
+  .sc .cap{font-size:.76rem;color:var(--gold-l);margin:0 0 2px}
+  .sc .amt{font-size:1.25rem;font-weight:700;margin:0}
+  .sc .tax{font-size:1.25rem;font-weight:700;margin:0}
+  .sc .tl{font-size:.74rem;font-weight:500;color:var(--blue-l);margin-right:.4em}
+  .sc .menu{font-size:.74rem;margin:4px 0 0;color:#fff}
+  .result .travel{font-size:.78rem;margin:10px 0 0;color:var(--blue-l)}
+  .note{font-size:.74rem;color:#8b8475;margin:10px 0 0;padding-left:1em;text-indent:-1em}
+  .menus{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+  .menus .card .amt{font-size:1.25rem;font-weight:700;color:var(--navy);margin:6px 0 0}
+  .menus .card .tax{font-size:1.25rem;font-weight:700;color:var(--navy);margin:0}
+  .menus .card .tl{font-size:.74rem;font-weight:500;color:#7b7566;margin-right:.4em}
+  .menus .card .fx{font-size:.74rem;color:#7b7566;margin:2px 0 0}
+  .menus .card ul{margin:8px 0 0;padding-left:1.1em;font-size:.74rem;color:#5b5548}
+  .info{width:100%;border-collapse:collapse;margin-top:14px;font-size:.82rem}
+  .info th,.info td{border-bottom:1px solid #eee9dd;padding:7px 4px;text-align:left}
+  .info th{color:#8b8475;font-weight:500;width:42%}
+  .warn{background:#fffaf0;border:1px solid var(--gold-l);border-left:5px solid var(--gold);border-radius:6px;padding:12px 15px;margin-top:16px;font-size:.82rem}
+  .warn b{color:var(--gold-d)}
+  .chk{display:flex;gap:9px;align-items:flex-start;margin-top:12px;font-size:.84rem;background:#fff;border:1px solid var(--line);border-radius:6px;padding:11px 13px;cursor:pointer}
+  .chk input{margin-top:6px}
+  .btns{margin-top:22px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;align-items:center}
+  [hidden]{display:none!important}
+  .b{padding:11px 26px;border-radius:999px;border:0;font-size:.9rem;font-family:inherit;cursor:pointer;font-weight:700;text-decoration:none;display:inline-block}
+  .b.main{background:var(--gold);color:#fff}
+  .b.main:disabled{background:#d9cfb3;cursor:not-allowed}
+  .b.sub{background:#fff;color:var(--navy);border:1px solid var(--line);font-weight:400}
+  .left{margin-right:auto;font-size:.76rem;color:#8b8475}
+  .msg{margin-top:14px;font-size:.84rem;color:var(--err)}
+  .msg:empty{display:none}
+  .busy{opacity:.55;pointer-events:none}
+  .cal{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px}
+  .calhead{background:var(--cream);padding:8px 14px;font-weight:700;color:var(--navy);font-size:.88rem;display:flex;justify-content:space-between}
+  .calhead span{font-size:.74rem;font-weight:400;color:#8b8475}
+  table.m{width:100%;border-collapse:collapse;table-layout:fixed}
+  table.m th{font-size:.72rem;padding:5px 0;color:#8b8475;font-weight:500;border-bottom:1px solid var(--line)}
+  table.m td{height:54px;vertical-align:top;border:1px solid #eee9dd;padding:3px;font-size:.74rem;text-align:center}
+  table.m td .d{display:block;text-align:left;color:#b5afa2;font-size:.72rem}
+  table.m td.ok{background:#fffdf6;cursor:pointer}
+  table.m td.ok .d{color:var(--navy);font-weight:700}
+  table.m td.ok .tg{display:inline-block;margin-top:3px;background:var(--gold);color:#fff;border-radius:4px;padding:1px 5px;font-size:.66rem}
+  table.m td.full .x{display:block;color:#c3bdb0;font-size:.66rem;margin-top:6px}
+  table.m td.pick{background:var(--navy)}
+  table.m td.pick .d{color:#fff}
+  .slotpick{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .slotpick button{padding:9px 20px;border-radius:999px;border:2px solid var(--gold);background:#fff;color:var(--gold-d);font-family:inherit;font-weight:700;cursor:pointer}
+  .slotpick button.sel{background:var(--gold);color:#fff}
+  .done{text-align:center;padding:10px 0}
+  .done .ck{width:54px;height:54px;border-radius:50%;background:var(--gold);color:#fff;font-size:1.7rem;line-height:54px;margin:0 auto 12px}
+  .recap{margin:18px auto 0;max-width:520px;text-align:left;background:var(--cream);border-radius:8px;padding:14px 16px;font-size:.84rem}
+  .recap dl{margin:0;display:grid;grid-template-columns:110px 1fr;gap:6px 10px}
+  .recap dt{color:#8b8475}.recap dd{margin:0;font-weight:500}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  footer{text-align:center;font-size:.74rem;color:#8b8475;padding:24px 16px 40px}
+  @media(max-width:640px){
+    .cards,.two,.menus{grid-template-columns:1fr}
+    .row{grid-template-columns:1fr;gap:2px}
+    .row>label,.row>.lbl{padding-top:0}
+    .st{font-size:0;padding:6px 0}.st b{font-size:.9rem}
+    .recap dl{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<header class="sitehead">
+  <a class="logo" href="/">FALCON</a>
+  <nav><a href="/#services">事業内容</a><a href="/#contact">お問い合わせ</a></nav>
+</header>
+<section class="hero">
+  <h1>計測のご予約・お見積り</h1>
+  <p>3つ入力するだけで、おおよその金額がすぐわかります</p>
+</section>
+
+<main class="wrap">
+  <p class="demo" style="font-weight:700">【試運転中】このページは社内の試験用です。実際のお申し込みは受け付けておりません。</p>
+  <p class="demo" id="demo" hidden>デモ表示です（このパソコンの中だけで動いています。予約は入りません）。</p>
+  <p class="demo" id="notready" hidden>ただいま準備中です。お見積り・ご予約は<a href="/#contact">お問い合わせ</a>からお願いいたします。</p>
+
+  <div class="steps" aria-hidden="true">
+    <div class="st" data-st="1"><b>1</b>何を測るか</div>
+    <div class="st" data-st="2"><b>2</b>かんたん見積り</div>
+    <div class="st" data-st="3"><b>3</b>くわしく</div>
+    <div class="st" data-st="4"><b>4</b>日にち</div>
+    <div class="st" data-st="5"><b>5</b>ご連絡先</div>
+  </div>
+
+  <!-- 1 何を測るか -->
+  <section class="panel" id="p1">
+    <h2>何を測りますか</h2>
+    <div class="cards">
+      <button type="button" class="card" data-what="indoor"><h3>建物の中</h3><p>住宅・マンション・店舗・事務所・倉庫の内部</p><span class="tag" style="color:var(--navy)">いますぐお見積り・ご予約いただけます</span></button>
+      <button type="button" class="card" data-what="outdoor"><h3>屋外の舗装（道路・駐車場）</h3><p>路面の現況・乗り入れの位置・段差や沈下</p><span class="tag" style="color:var(--gold-d)">お問い合わせから順番待ちのご相談</span></button>
+      <button type="button" class="card" data-what="site"><h3>敷地・外構</h3><p>お宅や建物の敷地まわり</p><span class="tag" style="color:var(--gold-d)">お問い合わせから順番待ちのご相談</span></button>
+      <button type="button" class="card" data-what="other"><h3>決まっていない・相談したい</h3><p>何を測ればよいかも含めてご相談ください</p><span class="tag" style="color:var(--gold-d)">お問い合わせへ</span></button>
+    </div>
+    <div class="warn" id="outdoorNote" hidden>
+      <b>屋外・敷地の計測について</b><br>
+      測量業者登録の通知をお待ちしているため、いまは<b>日程の順番待ちのご相談</b>のみ承っております。ご契約ではなく、費用も発生いたしません。着手日は登録の通知後にご相談のうえ決めさせていただきます。ご相談の段階で、現地での計測や試し計測は行いません。
+      <div class="btns"><a class="b main" href="/#contact">お問い合わせフォームへ</a></div>
+    </div>
+  </section>
+
+  <!-- 2 かんたん見積り -->
+  <section class="panel" id="p2" hidden>
+    <h2>3つだけ教えてください<small>ご連絡先はまだ必要ありません</small></h2>
+    <div class="row"><label for="type">建物の種類<span class="req">必須</span></label>
+      <select id="type"><option value="">お選びください</option><option value="house">住宅・マンション</option><option value="shop">店舗・事務所</option><option value="hall">倉庫・工場（大きな空間）</option><option value="building">建築中の建物</option></select></div>
+    <div class="row"><label for="tsubo">広さ（延床）<span class="req">必須</span></label>
+      <div><input id="tsubo" type="number" min="1" max="5000" step="0.1" inputmode="decimal" class="w-s"> 坪　<span class="hint" id="m2" style="display:inline"></span>
+      <p class="hint">すべての階を合わせた広さを坪でご入力ください（㎡は自動で計算します）</p></div></div>
+    <div class="row"><label for="address">現場の住所<span class="req">必須</span></label>
+      <div><input id="address" type="text" maxlength="200" placeholder="例：宮城県仙台市太白区長町5丁目" autocomplete="off">
+      <p class="hint">町名までで結構です。当社の作業拠点（仙台市宮城野区）からの道のりで、交通費を金額に入れます</p></div></div>
+    <p class="msg" id="msg2"></p>
+    <div class="btns"><button class="b sub" type="button" data-back="1">戻る</button><button class="b main" type="button" id="q1">金額を見る</button></div>
+
+    <div id="r1" hidden>
+      <div class="result">
+        <p class="lbl">おおよその金額（交通費込み）</p>
+        <div class="two">
+          <div class="sc"><p class="cap">1フロア・物が少ない場合</p><div id="r1s"></div></div>
+          <div class="sc"><p class="cap">3フロア・物が多い場合</p><div id="r1l"></div></div>
+        </div>
+        <p class="travel" id="r1t"></p>
+      </div>
+      <p class="note">※ この金額は<b>はじめの目安</b>です。次の画面で3つだけ追加でお伺いすると、<b>もっと近い金額</b>をお出しできます。広さや物の多さによっては<b>標準メニュー（1日で終わる範囲の上限 340,000円・作業拠点から20km以内の場合）</b>になります。</p>
+      <p class="note">※ 本サービスは<b>現況把握を目的とした3次元計測記録</b>です。測量法に基づく測量成果ではありません。</p>
+      <div class="btns"><span class="left">金額だけご覧いただいて閉じていただいても構いません</span><a class="b sub" href="/#contact">資料のご請求・ご相談</a><button class="b main" type="button" data-go="3">くわしい金額を見る →</button></div>
+    </div>
+  </section>
+
+  <!-- 3 くわしく -->
+  <section class="panel" id="p3" hidden>
+    <h2>あと3つだけ教えてください<small>これで金額が決まります</small></h2>
+    <div class="row"><label for="floors">階数<span class="req">必須</span></label>
+      <div><select id="floors" class="w-m"><option value="">お選びください</option><option value="1">1フロアのみ</option><option value="2">2フロア</option><option value="3">3フロア以上</option></select>
+      <p class="hint">地下や小屋裏も1フロアとして数えてください</p></div></div>
+    <div class="row"><label for="congestion">家具・在室<span class="req">必須</span></label>
+      <div><select id="congestion" class="w-m"><option value="">お選びください</option><option value="empty">空っぽ・ほとんど物がない</option><option value="furnished">家具はそのまま</option><option value="full">物が多い・営業中</option></select>
+      <p class="hint">物が多いと作業が長くなります</p></div></div>
+    <div class="row"><label for="ceiling">天井の高さ<span class="req">必須</span></label>
+      <div><select id="ceiling" class="w-m"><option value="">お選びください</option><option value="low">4m以下</option><option value="mid">4mを超え、10m程度まで</option><option value="high">10mを超える・高い棚が並ぶ</option></select>
+      <p class="hint">一部でも高いところがある場合は、高い方をお選びください</p></div></div>
+    <p class="msg" id="msg3"></p>
+    <div class="btns"><button class="b sub" type="button" data-back="2">戻る</button><button class="b main" type="button" id="q2">金額を確かめる</button></div>
+
+    <div id="r2" hidden>
+      <h2 style="margin-top:22px">メニューをお選びください</h2>
+      <div class="menus" id="menus"></div>
+      <table class="info"><tr><th>現地での滞在の目安</th><td id="stay"></td></tr><tr><th>お渡しまでの目安</th><td id="deliv"></td></tr><tr><th>交通費</th><td id="r2t"></td></tr></table>
+      <div class="warn" id="ceilNote" hidden><b>天井が高い場合</b><br>天井の高い場所は、天井付近まで計測できるよう歩く速さを落とすため、その分を見込んで計算しています。</div>
+      <div id="kogNote" hidden>
+        <div class="warn"><b>小口「点群そのまま」でお渡しするもの／お渡しできないもの</b><br>
+          ○ 点群ファイル（LAS・E57）と閲覧用データ／ノイズ除去と座標の整理／データの保管90日（納品日から）<br>
+          × <b>図面にはなりません。</b>寸法の記入・面積表・CAD出力（DWG/DXF）は含まれません。寸法の正確さをお約束するものではありません。</div>
+        <label class="chk"><input type="checkbox" id="agreeNoDrawing"><span><b>点群データは図面（CAD図）ではないこと、寸法の正確さをお約束するものではないこと</b>を確認しました（必須）</span></label>
+      </div>
+      <p class="note">※ 現場のご様子がご入力と大きく異なる場合は、メニューの切り替えをご相談させていただきます。お見積りの有効期限は14日です。</p>
+      <p class="note">※ 本サービスは<b>現況把握を目的とした3次元計測記録</b>です。測量法に基づく測量成果ではありません。</p>
+      <p class="msg" id="msg3b"></p>
+      <div class="btns"><button class="b main" type="button" id="toCal">日にちを選ぶ →</button></div>
+    </div>
+  </section>
+
+  <!-- 4 日にち -->
+  <section class="panel" id="p4" hidden>
+    <h2>ご希望の日にちをお選びください<small>金色の日が空いています／1日2件まで</small></h2>
+    <div id="cals"></div>
+    <div id="slotBox" hidden><p class="hint" id="slotDay"></p><div class="slotpick" id="slotpick"></div></div>
+    <p class="note">※ 同じ日に近くの現場（半径2km以内）がもう1件入る場合は、2件目から<b>20,000円（税込22,000円）お安く</b>なります（おまとめ割）。</p>
+    <p class="msg" id="msg4"></p>
+    <div class="btns"><button class="b sub" type="button" data-back="3">戻る</button><button class="b main" type="button" id="toForm" disabled>この日時で進む →</button></div>
+  </section>
+
+  <!-- 5 ご連絡先 -->
+  <section class="panel" id="p5" hidden>
+    <h2>最後に、ご連絡先を教えてください</h2>
+    <div class="row"><span class="lbl">お申し込みの区分<span class="req">必須</span></span>
+      <div class="radios"><label><input type="radio" name="kind" value="corp" checked> 法人</label><label><input type="radio" name="kind" value="person"> 個人</label></div></div>
+    <div class="row" id="rowCompany"><label for="company">会社名<span class="req">必須</span></label><input id="company" type="text" maxlength="200" autocomplete="organization"></div>
+    <div class="row"><label for="companyAddress" id="lblAddr">会社の住所<span class="req">必須</span></label><input id="companyAddress" type="text" maxlength="200" autocomplete="street-address"></div>
+    <div class="row"><label for="name" id="lblName">ご担当者名<span class="req">必須</span></label><input id="name" type="text" maxlength="100" autocomplete="name"></div>
+    <div class="row"><label for="phone">携帯電話<span class="req">必須</span></label><div><input id="phone" type="tel" maxlength="20" class="w-m" autocomplete="tel"><p class="hint">当日ご連絡がつく番号をお願いいたします</p></div></div>
+    <div class="row"><label for="email">メールアドレス<span class="req">必須</span></label><input id="email" type="email" maxlength="200" autocomplete="email"></div>
+    <div class="row"><label for="notes">ご要望など</label><textarea id="notes" maxlength="400" placeholder="例：2階の階段まわりを重点的に"></textarea></div>
+    <div class="hp" aria-hidden="true"><label>ホームページ<input id="website" type="text" tabindex="-1" autocomplete="off"></label></div>
+    <label class="chk"><input type="checkbox" id="agreePrivacy"><span><b>個人情報の取り扱い</b>に同意します（必須）<br>
+      <span class="hint" style="display:block">ご入力いただいた情報は、お見積り（移動距離の計算を含みます）、日程の調整、ご連絡、ご契約後の計測・納品・ご請求のために使います。記録はGoogle社（米国）のクラウドに保管します。現場に写り込んだ人のお顔と車のナンバーは、ぼかして納品します。くわしくは<a href="/privacy/">個人情報の取り扱い</a>をご覧ください。</span></span></label>
+    <div class="recap" style="margin-top:16px;max-width:none"><p style="margin:0 0 8px;font-weight:700">送る前に、内容をご確認ください</p><dl id="preRecap"></dl></div>
+    <p class="msg" id="msg5"></p>
+    <div class="btns"><button class="b sub" type="button" data-back="4">戻る</button><button class="b main" type="button" id="submit">仮予約を送る（お支払い・ご契約は発生しません）</button></div>
+  </section>
+
+  <!-- 完了 -->
+  <section class="panel" id="p6" hidden>
+    <div class="done">
+      <div class="ck">✓</div>
+      <h2 style="margin-bottom:6px">仮のご予約を受け付けました</h2>
+      <p style="margin:0;font-size:.86rem">当社より<b>1営業日以内</b>（土日・祝日・年末年始を除きます）に、お電話またはメールでご連絡し、正式なお見積りをお送りします。<br>この時点ではご契約ではございません。費用も発生いたしません。</p>
+      <div class="recap"><dl id="recap"></dl></div>
+      <p style="margin:14px auto 0;max-width:520px;font-size:.82rem;text-align:left">ご希望の日時は仮のお押さえです。正式なお見積りにご同意いただいた時点でご契約となり、日程が確定します。お見積りをご覧になってお断りいただいても、費用はかかりません。<br>2営業日を過ぎても連絡がない場合は、<b>050-1784-4609</b> までお電話ください。</p>
+    </div>
+  </section>
+</main>
+
+<footer>株式会社ファルコン｜宮城県仙台市青葉区中央四丁目4番19号 アーバンネット仙台中央ビル2F YUINOS内<br><a href="/privacy/">個人情報の取り扱い</a>｜<a href="/tokushoho/">特定商取引法に基づく表記</a></footer>
+
+<script>
+// 予約の受け皿（Google Apps Script のウェブアプリ）のURL。設置後に貼り付ける。
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbyxTfdtbsEMsJ0BJiYsws5QLadjEOdfEc_hwvdpu-94WAw34DD6HW5IDEVpU0kVLwdW/exec';
+// このパソコンの中で開いたときだけ試験用の代役で動かす（ホームページ上では動かない）
+var DEMO = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+
+var S = { step: 1 };
+var $ = function (id) { return document.getElementById(id); };
+var yen = function (n) { return Number(n).toLocaleString('ja-JP') + '円'; };
+
+function show(step) {
+  S.step = step;
+  for (var i = 1; i <= 6; i++) $('p' + i).hidden = i !== step;
+  document.querySelectorAll('.st').forEach(function (el) {
+    var n = Number(el.dataset.st);
+    el.className = 'st' + (n === step ? ' on' : n < step ? ' done' : '');
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function busy(el, on) { el.classList.toggle('busy', on); }
+
+function api(params) {
+  if (DEMO) return Promise.resolve(window.demoGet(params));
+  var qs = Object.keys(params).map(function (k) { return k + '=' + encodeURIComponent(params[k]); }).join('&');
+  return fetch(GAS_URL + '?' + qs).then(function (r) { return r.json(); });
+}
+
+function post(data) {
+  if (DEMO) return Promise.resolve(window.demoPost(data));
+  return fetch(GAS_URL, { method: 'POST', body: JSON.stringify(data) }).then(function (r) { return r.json(); });
+}
+
+// 金額の見せ方（税抜と税込を同じ大きさで並べる＝社長ご決定 10/30。標準は幅、小口は定額）
+function amtHtml(lowNet, lowTax, highNet, highTax) {
+  var r = function (a, b) { return yen(a) + (b ? '〜' + yen(b) : ''); };
+  return '<p class="amt"><span class="tl">税抜</span>' + r(lowNet, highNet) + '</p><p class="tax"><span class="tl">税込</span>' + r(lowTax, highTax) + '</p>';
+}
+function consultReason(reason) {
+  if (reason === 'distance') return '作業拠点から遠方のため、個別にご相談させてください。';
+  if (reason === 'ceiling') return '天井が10mを超える建物や高い棚が並ぶ建物は、機材の届き方を確かめる必要があるため、自動のお見積りは出しません。担当者がご様子を伺ったうえで正式なお見積りをお出しします。';
+  return '1日で終わらない規模のため、個別にご相談させてください。';
+}
+function priceHtml(v) {
+  if (!v || v.menu === 'consult') {
+    return '<p class="amt" style="font-size:1rem">担当者がお見積りします</p><p class="menu">' +
+      (v && v.reason === 'distance' ? '遠方のため個別にご相談' : '1日で終わらない規模のため個別にご相談') + '</p>';
+  }
+  if (v.menu === 'koguchi') {
+    return amtHtml(v.koguchi.price, v.koguchi.tax) + '<p class="menu">小口「点群そのまま」（定額）</p>';
+  }
+  return amtHtml(v.standard.low, v.standard.lowTax, v.standard.high, v.standard.highTax) + '<p class="menu">標準「三次元計測一式」</p>';
+}
+
+// 1 何を測るか
+document.querySelectorAll('[data-what]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    document.querySelectorAll('[data-what]').forEach(function (x) { x.classList.toggle('sel', x === b); });
+    if (b.dataset.what === 'indoor') { $('outdoorNote').hidden = true; show(2); return; }
+    $('outdoorNote').hidden = false;
+    $('outdoorNote').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+});
+document.querySelectorAll('[data-back]').forEach(function (b) {
+  b.addEventListener('click', function () { show(Number(b.dataset.back)); });
+});
+
+// 2 かんたん見積り
+$('tsubo').addEventListener('input', function () {
+  var t = Number(this.value);
+  $('m2').textContent = t > 0 ? '（約' + Math.round(t * 3.3058).toLocaleString('ja-JP') + '㎡）' : '';
+});
+['type', 'tsubo', 'address'].forEach(function (id) { $(id).addEventListener('change', function () { $('r1').hidden = true; }); });
+
+$('q1').addEventListener('click', function () {
+  $('msg2').textContent = '';
+  var p = { action: 'quote', type: $('type').value, tsubo: $('tsubo').value, address: $('address').value.trim() };
+  if (!p.type || !(Number(p.tsubo) > 0) || !p.address) { $('msg2').textContent = '3つともご入力ください。'; return; }
+  busy($('p2'), true);
+  api(p).then(function (r) {
+    if (!r.ok) { $('msg2').textContent = r.message; return; }
+    S.base = p;
+    $('r1s').innerHTML = priceHtml(r.small);
+    $('r1l').innerHTML = priceHtml(r.large);
+    $('r1t').textContent = '※ ' + r.travelNote;
+    $('r1').hidden = false;
+  }).catch(function () { $('msg2').textContent = 'ただいま計算できません。時間をおいてお試しください。'; })
+    .finally(function () { busy($('p2'), false); });
+});
+document.querySelector('[data-go="3"]').addEventListener('click', function () { show(3); });
+
+// 3 くわしく
+['floors', 'congestion', 'ceiling'].forEach(function (id) { $(id).addEventListener('change', function () { $('r2').hidden = true; }); });
+
+$('q2').addEventListener('click', function () {
+  $('msg3').textContent = '';
+  var p = Object.assign({}, S.base, { floors: $('floors').value, congestion: $('congestion').value, ceiling: $('ceiling').value });
+  if (!p.floors || !p.congestion || !p.ceiling) { $('msg3').textContent = '3つともお選びください。'; return; }
+  busy($('p3'), true);
+  api(p).then(function (r) {
+    if (!r.ok) { $('msg3').textContent = r.message; return; }
+    S.detail = p;
+    renderMenus(r);
+    $('r2').hidden = false;
+  }).catch(function () { $('msg3').textContent = 'ただいま計算できません。時間をおいてお試しください。'; })
+    .finally(function () { busy($('p3'), false); });
+});
+
+function renderMenus(r) {
+  var v = r.result;
+  S.menu = null;
+  $('kogNote').hidden = true;
+  $('ceilNote').hidden = r.ceiling !== 'mid';
+  S.v = v;
+  $('r2t').textContent = r.travelNote;
+  if (v.menu === 'consult') {
+    $('menus').innerHTML = '<div class="warn" style="grid-column:1/-1;margin:0"><b>このご条件は担当者がお見積りします</b><br>' +
+      consultReason(v.reason) + '<div class="btns"><a class="b main" href="/#contact">お問い合わせへ</a></div></div>';
+    $('ceilNote').hidden = true;
+    $('stay').textContent = '—'; $('deliv').textContent = '—'; $('toCal').hidden = true;
+    return;
+  }
+  $('toCal').hidden = false;
+  var cards = [];
+  if (v.koguchi) {
+    cards.push('<button type="button" class="card" data-menu="koguchi"><h3>小口「点群そのまま」</h3>' + amtHtml(v.koguchi.price, v.koguchi.tax) +
+      '<p class="fx">定額・交通費込み</p><ul><li>点群データ（LAS・E57）をお渡し</li><li><b>図面にはなりません</b></li></ul></button>');
+  }
+  cards.push('<button type="button" class="card" data-menu="standard"><h3>標準「三次元計測一式」</h3>' +
+    amtHtml(v.standard.low, v.standard.lowTax, v.standard.high, v.standard.highTax) +
+    '<p class="fx">交通費込み・正式なお見積りで確定</p><ul><li>点群データに加えて、平面図・展開図のもと</li><li>CAD出力（DWG/DXF）・寸法の記入・面積表</li><li>ご説明の打合せ</li></ul></button>');
+  $('menus').innerHTML = cards.join('');
+  $('stay').textContent = '約' + v.stayHours + '時間（計測そのものは' + (v.netMinutes <= 12 ? '12分程度まで' : '約' + v.netMinutes + '分') + '）';
+  $('deliv').innerHTML = '小口：計測日の翌営業日から5営業日程度<br>標準：計測日の翌営業日から5〜7営業日程度（広い建物・複数階の建物はそれ以上かかる場合があります）' +
+    '<span class="hint" style="display:block">ご予約の混み具合やデータ量により前後します。お渡し予定日はご予約確定のご連絡でお知らせします。</span>';
+  document.querySelectorAll('[data-menu]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      S.menu = b.dataset.menu;
+      document.querySelectorAll('[data-menu]').forEach(function (x) { x.classList.toggle('sel', x === b); });
+      $('kogNote').hidden = S.menu !== 'koguchi';
+      S.menuName = b.querySelector('h3').textContent;
+    });
+  });
+}
+
+$('toCal').addEventListener('click', function () {
+  $('msg3b').textContent = '';
+  if (!S.menu) { $('msg3b').textContent = 'メニューをお選びください。'; return; }
+  if (S.menu === 'koguchi' && !$('agreeNoDrawing').checked) { $('msg3b').textContent = '「図面にはならないこと」のご確認をお願いします。'; return; }
+  show(4);
+  loadSlots();
+});
+
+// 4 日にち
+function loadSlots() {
+  $('cals').innerHTML = '<p class="hint">空いている日を読み込んでいます…</p>';
+  $('slotBox').hidden = true; $('toForm').disabled = true; S.date = S.slot = null;
+  api({ action: 'slots' }).then(function (r) {
+    if (!r.ok) { $('msg4').textContent = r.message; return; }
+    var open = r.slots.filter(function (s) { return s.am || s.pm; });
+    if (!open.length) {
+      $('cals').innerHTML = '<div class="warn" style="margin:0"><b>ただいまご予約いただける日がありません</b><br>お手数ですが<a href="/#contact">お問い合わせ</a>からご希望の時期をお知らせください。</div>';
+      return;
+    }
+    S.slots = {};
+    r.slots.forEach(function (s) { S.slots[s.date] = s; });
+    renderCals(r.slots);
+  }).catch(function () { $('msg4').textContent = '空いている日を読み込めませんでした。時間をおいてお試しください。'; });
+}
+
+function renderCals(slots) {
+  var first = slots[0].date, last = slots[slots.length - 1].date;
+  var y = Number(first.slice(0, 4)), m = Number(first.slice(5, 7)) - 1;
+  var ly = Number(last.slice(0, 4)), lm = Number(last.slice(5, 7)) - 1;
+  var html = '';
+  while (y < ly || (y === ly && m <= lm)) {
+    html += monthHtml(y, m);
+    m++; if (m > 11) { m = 0; y++; }
+  }
+  $('cals').innerHTML = html;
+  document.querySelectorAll('td.ok').forEach(function (td) {
+    td.addEventListener('click', function () { pickDay(td); });
+  });
+}
+
+function monthHtml(y, m) {
+  var pad = function (n) { return ('0' + n).slice(-2); };
+  var start = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+  var h = '<div class="cal"><div class="calhead">' + y + '年' + (m + 1) + '月<span>金色の日が空いています</span></div><table class="m"><tr>' +
+    '<th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th></tr><tr>';
+  for (var i = 0; i < start; i++) h += '<td></td>';
+  for (var d = 1; d <= days; d++) {
+    var key = y + '-' + pad(m + 1) + '-' + pad(d), s = S.slots[key];
+    if (s && (s.am || s.pm)) {
+      h += '<td class="ok" data-date="' + key + '"><span class="d">' + d + '</span>' + (s.am ? '<span class="tg">午前</span> ' : '') + (s.pm ? '<span class="tg">午後</span>' : '') + '</td>';
+    } else if (s && s.full) {
+      h += '<td class="full"><span class="d">' + d + '</span><span class="x">満</span></td>';
+    } else {
+      h += '<td><span class="d">' + d + '</span></td>';
+    }
+    if ((start + d) % 7 === 0 && d !== days) h += '</tr><tr>';
+  }
+  return h + '</tr></table></div>';
+}
+
+function pickDay(td) {
+  document.querySelectorAll('td.pick').forEach(function (x) { x.classList.remove('pick'); });
+  td.classList.add('pick');
+  S.date = td.dataset.date; S.slot = null; $('toForm').disabled = true;
+  var s = S.slots[S.date], p = S.date.split('-');
+  var wd = '日月火水木金土'[new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getDay()];
+  $('slotDay').textContent = Number(p[1]) + '月' + Number(p[2]) + '日（' + wd + '）の時間帯をお選びください';
+  S.dateText = Number(p[0]) + '年' + Number(p[1]) + '月' + Number(p[2]) + '日（' + wd + '）';
+  $('slotpick').innerHTML = (s.am ? '<button type="button" data-slot="am">午前（9時〜12時）</button>' : '') +
+    (s.pm ? '<button type="button" data-slot="pm">午後（13時〜17時）</button>' : '');
+  $('slotBox').hidden = false;
+  document.querySelectorAll('[data-slot]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      S.slot = b.dataset.slot;
+      document.querySelectorAll('[data-slot]').forEach(function (x) { x.classList.toggle('sel', x === b); });
+      $('toForm').disabled = false;
+    });
+  });
+}
+
+$('toForm').addEventListener('click', function () {
+  if (!S.date || !S.slot) return;
+  var v = S.v, k = S.menu === 'koguchi';
+  var tax = k ? yen(v.koguchi.tax) : yen(v.standard.lowTax) + '〜' + yen(v.standard.highTax);
+  var net = k ? yen(v.koguchi.price) : yen(v.standard.low) + '〜' + yen(v.standard.high);
+  $('preRecap').innerHTML = '<dt>メニュー</dt><dd>' + S.menuName + '</dd><dt>金額の目安</dt><dd>税込 ' + tax + '（税抜 ' + net + '）・交通費込み</dd>' +
+    '<dt>ご希望日</dt><dd>' + S.dateText + ' ' + (S.slot === 'am' ? '午前' : '午後') + '（仮のお押さえ）</dd>';
+  show(5);
+});
+
+// 5 ご連絡先
+document.querySelectorAll('input[name=kind]').forEach(function (r) {
+  r.addEventListener('change', function () {
+    var corp = document.querySelector('input[name=kind]:checked').value === 'corp';
+    $('rowCompany').hidden = !corp;
+    $('lblAddr').innerHTML = (corp ? '会社の住所' : 'ご住所') + '<span class="req">必須</span>';
+    $('lblName').innerHTML = (corp ? 'ご担当者名' : 'お名前') + '<span class="req">必須</span>';
+  });
+});
+
+$('submit').addEventListener('click', function () {
+  $('msg5').textContent = '';
+  var kind = document.querySelector('input[name=kind]:checked').value;
+  var d = Object.assign({}, S.detail, {
+    menu: S.menu, date: S.date, slot: S.slot, kind: kind,
+    company: kind === 'corp' ? $('company').value.trim() : '',
+    companyAddress: $('companyAddress').value.trim(), name: $('name').value.trim(),
+    phone: $('phone').value.trim(), email: $('email').value.trim(), notes: $('notes').value.trim(),
+    agreeNoDrawing: $('agreeNoDrawing').checked, agreePrivacy: $('agreePrivacy').checked, website: $('website').value
+  });
+  delete d.action;
+  if ((kind === 'corp' && !d.company) || !d.companyAddress || !d.name || !d.phone || !d.email) { $('msg5').textContent = '必須の項目をご入力ください。'; return; }
+  if (!d.agreePrivacy) { $('msg5').textContent = '個人情報の取り扱いへのご同意をお願いします。'; return; }
+  busy($('p5'), true);
+  post(d).then(function (r) {
+    if (!r.ok) { $('msg5').textContent = r.message; return; }
+    $('recap').innerHTML = '<dt>受付番号</dt><dd>' + r.receipt + '（お控えください）</dd><dt>ご希望日</dt><dd>' + S.dateText + ' ' + r.slot + '</dd>' +
+      '<dt>メニュー</dt><dd>' + r.menu + '</dd><dt>金額の目安</dt><dd>税込 ' + r.taxText + '（税抜 ' + r.priceText + '）・交通費込み</dd>';
+    show(6);
+  }).catch(function () { $('msg5').textContent = 'お申し込みを受け付けられませんでした。お手数ですがお問い合わせからご連絡ください。'; })
+    .finally(function () { busy($('p5'), false); });
+});
+
+// 起動
+if (DEMO) {
+  $('demo').hidden = false;
+  var s = document.createElement('script');
+  s.src = '../gas/demo_stub.js';
+  document.body.appendChild(s);
+} else if (!GAS_URL) {
+  $('notready').hidden = false;
+  document.querySelectorAll('[data-what="indoor"]').forEach(function (b) { b.disabled = true; });
+}
+show(1);
+</script>
+</body>
+</html>
