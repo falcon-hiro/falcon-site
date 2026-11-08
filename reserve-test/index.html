@@ -124,7 +124,7 @@
 </header>
 <section class="hero">
   <h1>計測のご予約・お見積り</h1>
-  <p>3つ入力するだけで、おおよその金額がすぐわかります</p>
+  <p>計測可能日を選んで、3つ入力するだけで、おおよその金額がすぐわかります</p>
 </section>
 
 <main class="wrap">
@@ -134,9 +134,9 @@
 
   <div class="steps" aria-hidden="true">
     <div class="st" data-st="1"><b>1</b>何を測るか</div>
-    <div class="st" data-st="2"><b>2</b>かんたん見積り</div>
-    <div class="st" data-st="3"><b>3</b>くわしく</div>
-    <div class="st" data-st="4"><b>4</b>日にち</div>
+    <div class="st" data-st="4"><b>2</b>日にち</div>
+    <div class="st" data-st="2"><b>3</b>かんたん見積り</div>
+    <div class="st" data-st="3"><b>4</b>くわしく</div>
     <div class="st" data-st="5"><b>5</b>ご連絡先</div>
   </div>
 
@@ -156,9 +156,20 @@
     </div>
   </section>
 
+  <!-- 日にち（「何を測るか」の次に出す。画面の順番は ORDER で決める） -->
+  <section class="panel" id="p4" hidden>
+    <h2>計測可能日からお選びください<small>金色の日が計測可能日です／1日2件まで</small></h2>
+    <div id="cals"></div>
+    <div id="slotBox" hidden><p class="hint" id="slotDay"></p><div class="slotpick" id="slotpick"></div></div>
+    <p class="note">※ 同じ日に近くの現場（半径2km以内）がもう1件入る場合は、2件目から<b>20,000円（税込22,000円）お安く</b>なります（おまとめ割）。</p>
+    <p class="msg" id="msg4"></p>
+    <div class="btns"><button class="b sub" type="button" data-back="1">戻る</button><button class="b sub" type="button" id="priceOnly">先に金額だけ見る</button><button class="b main" type="button" id="toForm" disabled>この日時で進む →</button></div>
+  </section>
+
   <!-- 2 かんたん見積り -->
   <section class="panel" id="p2" hidden>
     <h2>3つだけ教えてください<small>ご連絡先はまだ必要ありません</small></h2>
+    <p class="hint" id="chosen" style="font-weight:700;color:var(--navy)"></p>
     <div class="row"><label for="type">建物の種類<span class="req">必須</span></label>
       <select id="type"><option value="">お選びください</option><option value="house">住宅・マンション</option><option value="shop">店舗・事務所</option><option value="hall">倉庫・工場（大きな空間）</option><option value="building">建築中の建物</option></select></div>
     <div class="row"><label for="tsubo">広さ（延床）<span class="req">必須</span></label>
@@ -168,7 +179,7 @@
       <div><input id="address" type="text" maxlength="200" placeholder="例：宮城県仙台市太白区長町5丁目" autocomplete="off">
       <p class="hint">町名までで結構です。当社の作業拠点（仙台市宮城野区）からの道のりで、交通費を金額に入れます</p></div></div>
     <p class="msg" id="msg2"></p>
-    <div class="btns"><button class="b sub" type="button" data-back="1">戻る</button><button class="b main" type="button" id="q1">金額を見る</button></div>
+    <div class="btns"><button class="b sub" type="button" data-back="4">戻る</button><button class="b main" type="button" id="q1">金額を見る</button></div>
 
     <div id="r1" hidden>
       <div class="result">
@@ -214,18 +225,8 @@
       <p class="note">※ 現場のご様子がご入力と大きく異なる場合は、メニューの切り替えをご相談させていただきます。お見積りの有効期限は14日です。</p>
       <p class="note">※ 本サービスは<b>現況把握を目的とした3次元計測記録</b>です。測量法に基づく測量成果ではありません。</p>
       <p class="msg" id="msg3b"></p>
-      <div class="btns"><button class="b main" type="button" id="toCal">日にちを選ぶ →</button></div>
+      <div class="btns"><button class="b main" type="button" id="toCal">ご連絡先の入力へ →</button></div>
     </div>
-  </section>
-
-  <!-- 4 日にち -->
-  <section class="panel" id="p4" hidden>
-    <h2>ご希望の日にちをお選びください<small>金色の日が空いています／1日2件まで</small></h2>
-    <div id="cals"></div>
-    <div id="slotBox" hidden><p class="hint" id="slotDay"></p><div class="slotpick" id="slotpick"></div></div>
-    <p class="note">※ 同じ日に近くの現場（半径2km以内）がもう1件入る場合は、2件目から<b>20,000円（税込22,000円）お安く</b>なります（おまとめ割）。</p>
-    <p class="msg" id="msg4"></p>
-    <div class="btns"><button class="b sub" type="button" data-back="3">戻る</button><button class="b main" type="button" id="toForm" disabled>この日時で進む →</button></div>
   </section>
 
   <!-- 5 ご連絡先 -->
@@ -241,10 +242,20 @@
     <div class="row"><label for="notes">ご要望など</label><textarea id="notes" maxlength="400" placeholder="例：2階の階段まわりを重点的に"></textarea></div>
     <div class="hp" aria-hidden="true"><label>ホームページ<input id="website" type="text" tabindex="-1" autocomplete="off"></label></div>
     <label class="chk"><input type="checkbox" id="agreePrivacy"><span><b>個人情報の取り扱い</b>に同意します（必須）<br>
-      <span class="hint" style="display:block">ご入力いただいた情報は、お見積り（移動距離の計算を含みます）、日程の調整、ご連絡、ご契約後の計測・納品・ご請求のために使います。記録はGoogle社（米国）のクラウドに保管します。現場に写り込んだ人のお顔と車のナンバーは、ぼかして納品します。くわしくは<a href="/privacy/">個人情報の取り扱い</a>をご覧ください。</span></span></label>
+      <span class="hint" style="display:block">ご入力いただいた情報は、お見積り（移動距離の計算を含みます）、日程の調整、ご連絡、ご契約後の計測・納品・ご請求のために使います。記録はGoogle社（米国）のクラウドに保管し、書類の作成やメールの確認にAnthropic社（米国）のAIサービスを使うことがあります。米国にあるこれらの会社にお客様の個人データが渡る場合があることに同意のうえ、お申し込みください。米国の制度と両社の保護措置は、<a href="/privacy/#s8">「個人情報の取り扱い」の8</a>からご確認いただけます。納品データに人のお顔や車のナンバーが判別できる形で写り込んでいることを確認したときは、ぼかしまたは該当部分の削除を行います。くわしくは<a href="/privacy/">個人情報の取り扱い</a>をご覧ください。</span></span></label>
+    <div class="warn" id="cancelTerms">
+      <b>キャンセル・日程変更について</b>
+      <p style="margin:8px 0 0"><b>1 仮のご予約</b><br>仮のご予約は、正式なお見積りにご同意いただくまで、いつでも無料でお取り消しいただけます。</p>
+      <p style="margin:8px 0 0"><b>2 ご契約後のお取消し</b><br>正式なお見積りにご同意いただいたあとにお取り消しになる場合は、次の取消料をいただきます（日数は計測日を含めず、暦日で数えます）。お申し出はメールまたはお電話でお願いします。お申し出が当社に届いた日をお取消しの日とします（メールは当社に届いた日、お電話はお話しした日とします）。<br>・計測日の7日前まで：無料<br>・6日前〜2日前：ご契約金額（税抜）の15％<br>・前日：同20％<br>・計測日当日（計測途中の中止を含む）：同30％<br>6日前以降に宿泊のキャンセル料が発生したときは、その実費を加算します（当社が手配済みの宿泊で実際に発生した額に限ります）。計測日まで6日以内にご契約いただく場合は、ご契約の時点から上の取消料が適用されます。お見積りの際にご説明します。取消料は、請求書の日付から30日以内に銀行振込でお支払いください（振込手数料はお客様のご負担）。取消料の計算の根拠は、お求めがあればご説明します。</p>
+      <p style="margin:8px 0 0"><b>3 日程の変更</b><br>・計測日の2日前までのお申し出：1回に限り無料（新しい日程は、当初の計測日から60日以内でお選びください）<br>・前日・当日のお申し出：延期手数料18,000円（税込19,800円）。当社の出発後は、交通費と宿泊キャンセル料の実費を加算します<br>・2回目以降の変更：いったんお取り消しのうえ新規のご予約として扱い、2の取消料を適用します<br>・延期したあとのお取消し：延期のお申し出の時点で当初の日程に当てはまる料率と、お取消しの時点で新しい日程に当てはまる料率のうち、高いほうを適用します。お支払い済みの延期手数料（税込19,800円）は、取消料に充てます。取消料のほうが少ないときも、差額はお返ししません<br>当社の都合や災害、交通の途絶による変更は無料で、回数にも数えません。</p>
+      <p style="margin:8px 0 0"><b>4 計測できない場合（お客様に責任がないとき）</b><br>建物の中の計測ですので、雨の日も原則として実施します。気象警報・地震などの災害、交通機関の運休・通行止め、または機材の故障・担当者の急病など当社の都合で計測できないときは、お客様のご希望により、無料で日程を変更するか、無料でご契約を解除します。可否は前日17時までに（急な場合は当日できるだけ早く）ご連絡します。当社の責任で生じた損害の賠償は、当社に故意または重大な過失がある場合を除き、ご契約金額を上限とします。</p>
+      <p style="margin:8px 0 0"><b>5 当日、お客様のご事情で計測できない場合</b><br>立会いの方がいない、鍵が開かない、お約束した片付けや電源の用意ができていないなどで、開始予定時刻から60分を過ぎても計測を始められないときは、当日のお取消しとして扱います。お客様がご存じでお知らせいただけなかった立入禁止の区域や危険のために中止したときも、同じです。計測できた範囲のデータをご希望の場合は、別にご相談します。</p>
+      <p style="margin:8px 0 0"><b>6 法人・事業者のお客様</b><br>原則として上と同じです。個別にお見積りする場合で、お見積書に別の定めを書いたときは、お見積書の定めを優先します。</p>
+      <p style="margin:8px 0 0"><b>7 クーリング・オフ</b><br>このサービスは通信販売のため、法律上のクーリング・オフはありません。</p>
+    </div>
     <div class="recap" style="margin-top:16px;max-width:none"><p style="margin:0 0 8px;font-weight:700">送る前に、内容をご確認ください</p><dl id="preRecap"></dl></div>
     <p class="msg" id="msg5"></p>
-    <div class="btns"><button class="b sub" type="button" data-back="4">戻る</button><button class="b main" type="button" id="submit">仮予約を送る（お支払い・ご契約は発生しません）</button></div>
+    <div class="btns"><button class="b sub" type="button" data-back="3">戻る</button><button class="b main" type="button" id="submit">仮予約を送る（お支払い・ご契約は発生しません）</button></div>
   </section>
 
   <!-- 完了 -->
@@ -271,12 +282,16 @@ var S = { step: 1 };
 var $ = function (id) { return document.getElementById(id); };
 var yen = function (n) { return Number(n).toLocaleString('ja-JP') + '円'; };
 
+// 画面の順番（何を測るか→日にち→かんたん見積り→くわしく→ご連絡先→完了）＝社長ご指示 2026-11-08
+var ORDER = [1, 4, 2, 3, 5, 6];
+
 function show(step) {
   S.step = step;
   for (var i = 1; i <= 6; i++) $('p' + i).hidden = i !== step;
+  var pos = ORDER.indexOf(step);
   document.querySelectorAll('.st').forEach(function (el) {
-    var n = Number(el.dataset.st);
-    el.className = 'st' + (n === step ? ' on' : n < step ? ' done' : '');
+    var n = ORDER.indexOf(Number(el.dataset.st));
+    el.className = 'st' + (n === pos ? ' on' : n < pos ? ' done' : '');
   });
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -319,7 +334,7 @@ function priceHtml(v) {
 document.querySelectorAll('[data-what]').forEach(function (b) {
   b.addEventListener('click', function () {
     document.querySelectorAll('[data-what]').forEach(function (x) { x.classList.toggle('sel', x === b); });
-    if (b.dataset.what === 'indoor') { $('outdoorNote').hidden = true; show(2); return; }
+    if (b.dataset.what === 'indoor') { $('outdoorNote').hidden = true; show(4); loadSlots(); return; }
     $('outdoorNote').hidden = false;
     $('outdoorNote').scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
@@ -410,25 +425,27 @@ $('toCal').addEventListener('click', function () {
   $('msg3b').textContent = '';
   if (!S.menu) { $('msg3b').textContent = 'メニューをお選びください。'; return; }
   if (S.menu === 'koguchi' && !$('agreeNoDrawing').checked) { $('msg3b').textContent = '「図面にはならないこと」のご確認をお願いします。'; return; }
-  show(4);
-  loadSlots();
+  if (!S.date || !S.slot) { show(4); loadSlots(); return; }   // 「先に金額だけ見る」から来た方は、ここで日にちを選ぶ
+  goContact();
 });
 
-// 4 日にち
+$('priceOnly').addEventListener('click', function () { show(2); });
+
+// 日にち
 function loadSlots() {
-  $('cals').innerHTML = '<p class="hint">空いている日を読み込んでいます…</p>';
+  $('cals').innerHTML = '<p class="hint">計測可能日を読み込んでいます…</p>';
   $('slotBox').hidden = true; $('toForm').disabled = true; S.date = S.slot = null;
   api({ action: 'slots' }).then(function (r) {
     if (!r.ok) { $('msg4').textContent = r.message; return; }
     var open = r.slots.filter(function (s) { return s.am || s.pm; });
     if (!open.length) {
-      $('cals').innerHTML = '<div class="warn" style="margin:0"><b>ただいまご予約いただける日がありません</b><br>お手数ですが<a href="/#contact">お問い合わせ</a>からご希望の時期をお知らせください。</div>';
+      $('cals').innerHTML = '<div class="warn" style="margin:0"><b>ただいま計測可能日がありません</b><br>お手数ですが<a href="/#contact">お問い合わせ</a>からご希望の時期をお知らせください。金額は「先に金額だけ見る」からご確認いただけます。</div>';
       return;
     }
     S.slots = {};
     r.slots.forEach(function (s) { S.slots[s.date] = s; });
     renderCals(r.slots);
-  }).catch(function () { $('msg4').textContent = '空いている日を読み込めませんでした。時間をおいてお試しください。'; });
+  }).catch(function () { $('msg4').textContent = '計測可能日を読み込めませんでした。時間をおいてお試しください。'; });
 }
 
 function renderCals(slots) {
@@ -449,7 +466,7 @@ function renderCals(slots) {
 function monthHtml(y, m) {
   var pad = function (n) { return ('0' + n).slice(-2); };
   var start = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
-  var h = '<div class="cal"><div class="calhead">' + y + '年' + (m + 1) + '月<span>金色の日が空いています</span></div><table class="m"><tr>' +
+  var h = '<div class="cal"><div class="calhead">' + y + '年' + (m + 1) + '月<span>金色の日が計測可能日です</span></div><table class="m"><tr>' +
     '<th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th></tr><tr>';
   for (var i = 0; i < start; i++) h += '<td></td>';
   for (var d = 1; d <= days; d++) {
@@ -488,13 +505,19 @@ function pickDay(td) {
 
 $('toForm').addEventListener('click', function () {
   if (!S.date || !S.slot) return;
+  $('msg4').textContent = '';
+  $('chosen').textContent = 'ご希望日：' + S.dateText + ' ' + (S.slot === 'am' ? '午前' : '午後');
+  if (S.menu) goContact(); else show(2);
+});
+
+function goContact() {
   var v = S.v, k = S.menu === 'koguchi';
   var tax = k ? yen(v.koguchi.tax) : yen(v.standard.lowTax) + '〜' + yen(v.standard.highTax);
   var net = k ? yen(v.koguchi.price) : yen(v.standard.low) + '〜' + yen(v.standard.high);
   $('preRecap').innerHTML = '<dt>メニュー</dt><dd>' + S.menuName + '</dd><dt>金額の目安</dt><dd>税込 ' + tax + '（税抜 ' + net + '）・交通費込み</dd>' +
     '<dt>ご希望日</dt><dd>' + S.dateText + ' ' + (S.slot === 'am' ? '午前' : '午後') + '（仮のお押さえ）</dd>';
   show(5);
-});
+}
 
 // 5 ご連絡先
 document.querySelectorAll('input[name=kind]').forEach(function (r) {
@@ -521,7 +544,10 @@ $('submit').addEventListener('click', function () {
   if (!d.agreePrivacy) { $('msg5').textContent = '個人情報の取り扱いへのご同意をお願いします。'; return; }
   busy($('p5'), true);
   post(d).then(function (r) {
-    if (!r.ok) { $('msg5').textContent = r.message; return; }
+    if (!r.ok) {
+      if (r.message.indexOf('別の日時') >= 0) { show(4); loadSlots(); $('msg4').textContent = r.message; return; }   // 先に埋まったときは選び直す
+      $('msg5').textContent = r.message; return;
+    }
     $('recap').innerHTML = '<dt>受付番号</dt><dd>' + r.receipt + '（お控えください）</dd><dt>ご希望日</dt><dd>' + S.dateText + ' ' + r.slot + '</dd>' +
       '<dt>メニュー</dt><dd>' + r.menu + '</dd><dt>金額の目安</dt><dd>税込 ' + r.taxText + '（税抜 ' + r.priceText + '）・交通費込み</dd>';
     show(6);
