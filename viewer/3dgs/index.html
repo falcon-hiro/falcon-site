@@ -63,7 +63,12 @@ try {
     integerBasedSort: false, splatSortDistanceMapPrecision: 20, sceneRevealMode: GS.SceneRevealMode.Instant
   });
   viewer.camera.near = 0.004; viewer.camera.updateProjectionMatrix();
-  await viewer.addSplatScene('data/road3.splat', { format: GS.SceneFormat.Splat, showLoadingUI: false, progressiveLoad: false, splatAlphaRemovalThreshold: 5 });
+  // ⚠️ GitHub Pages は .splat を gzip 圧縮して送る→部品が Content-Length（圧縮後の大きさ）で終わりを判断して止まる。
+  //    先に自分で全部受け取り、ブラウザ内のデータ（blob）として渡す。
+  const sres = await fetch('data/road3.splat');
+  if (!sres.ok) throw new Error('splat ' + sres.status);
+  const surl = URL.createObjectURL(new Blob([await sres.arrayBuffer()]));
+  await viewer.addSplatScene(surl, { format: GS.SceneFormat.Splat, showLoadingUI: false, progressiveLoad: false, splatAlphaRemovalThreshold: 5 });
   document.getElementById('load').remove(); viewer.start(); applyFilter();
   const V3 = viewer.camera.position.constructor, cam = viewer.camera, U = new V3(...UP).normalize();
   let last = null;
