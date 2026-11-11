@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3DGSビューワー（見本）｜株式会社ファルコン</title>
+<meta name="description" content="360°カメラで歩きながら撮影した動画から作った、道路の3D Gaussian Splatting（3DGS）の見本です。">
+<style>
+html,body{margin:0;height:100%;background:#10151c;color:#e8edf3;font-family:'Noto Sans JP',"Yu Gothic UI","Meiryo",sans-serif;overflow:hidden}
+#view{position:absolute;inset:0}
+#top{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:10px 12px;pointer-events:none}
+#info{pointer-events:auto;max-width:560px;background:rgba(10,20,35,.72);padding:8px 12px;border-radius:8px;font-size:13px;line-height:1.7}
+#info b{font-size:15px;color:#fff}
+#info small{color:#c9d3df}
+#back{pointer-events:auto;white-space:nowrap;background:#c9a84c;color:#1f3a5f;text-decoration:none;font-weight:700;padding:7px 14px;border-radius:6px;font-size:13px}
+#load{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.65);padding:12px 20px;border-radius:8px;text-align:center;line-height:1.8}
+#hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);background:rgba(10,20,35,.72);padding:6px 12px;border-radius:6px;font-size:12px;white-space:nowrap}
+body.sky{background:linear-gradient(to bottom,#8fb8de 0%,#b9d3ea 45%,#dfe9f2 70%,#e8edf1 100%)}
+@media (max-width:600px){#info{font-size:12px}#hint{white-space:normal;width:calc(100% - 40px);text-align:center}}
+</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js","@mkkellogg/gaussian-splats-3d":"./lib/gaussian-splats-3d.module.js"}}</script>
+</head>
+<body class="sky">
+<svg width="0" height="0" style="position:absolute">
+<filter id="opq" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="table" tableValues="0 0.55 0.9 1"/></feComponentTransfer></filter>
+</svg>
+<div id="view"></div>
+<div id="top">
+  <div id="info"><b>3D Gaussian Splatting の見本（道路）</b><br>
+  360°カメラを持って歩きながら撮影した動画から作りました（当社の試験撮影）。<br>
+  <small>人と車は処理の段階で取り除いています（取り除けずに残っている所もあります）。写真に写っていない部分は周りの色で補っています。見た目を確かめるためのデータで、寸法の計測には使えません。</small></div>
+  <a id="back" href="/#services">← ホームへ</a>
+</div>
+<div id="load">読み込み中…<br><small id="prog">データ 約50MB（通信環境により数十秒かかります）</small></div>
+<div id="hint">ドラッグ＝回す／右ドラッグ・2本指＝移動／ホイール・ピンチ＝近づく</div>
+<script type="module">
+// 3DGS＝当社の試験撮影（道路）をホームページ用に軽くしたもの
+const realDpr = window.devicePixelRatio || 1;
+Object.defineProperty(window, 'devicePixelRatio', { get: () => Math.min(2, Math.max(1, realDpr)) });
+const view = document.getElementById('view');
+const prog = document.getElementById('prog');
+const applyFilter = () => { const c = view.querySelector('canvas'); if (c) c.style.filter = 'url(#opq)'; };
+try {
+  const GS = await import('@mkkellogg/gaussian-splats-3d');
+  const THREE = await import('three');
+  const meta = await (await fetch('data/road3_ground.json')).json();
+  const mbuf = await (await fetch('data/road3_ground.bin')).arrayBuffer();
+  const V = meta.vertices, T = meta.triangles;
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(mbuf, 0, V * 3), 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(new Uint16Array(mbuf, V * 12, V * 2), 2, true));
+  geo.setIndex(new THREE.BufferAttribute(new Uint32Array(mbuf, V * 16, T * 3), 1));
+  const otex = await new THREE.TextureLoader().loadAsync('data/' + meta.texture);
+  otex.flipY = false; otex.colorSpace = THREE.SRGBColorSpace; otex.anisotropy = 8; otex.needsUpdate = true;
+  const groundScene = new THREE.Scene();
+  groundScene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: otex, side: THREE.DoubleSide })));
+  prog.textContent = '3Dの粒を読み込んでいます…';
+  const UP = [0.0859, -0.9953, 0.045];
+  const viewer = new GS.Viewer({
+    threeScene: groundScene, rootElement: view, cameraUp: UP,
+    initialCameraPosition: [0.792, -2.051, 9.101], initialCameraLookAt: [-0.008, -0.002, -0.052],
+    sharedMemoryForWorkers: false, gpuAcceleratedSort: false, sphericalHarmonicsDegree: 0,
+    integerBasedSort: false, splatSortDistanceMapPrecision: 20, sceneRevealMode: GS.SceneRevealMode.Instant
+  });
+  viewer.camera.near = 0.004; viewer.camera.updateProjectionMatrix();
+  await viewer.addSplatScene('data/road3.splat', { format: GS.SceneFormat.Splat, showLoadingUI: false, progressiveLoad: false, splatAlphaRemovalThreshold: 5 });
+  document.getElementById('load').remove(); viewer.start(); applyFilter();
+  const V3 = viewer.camera.position.constructor, cam = viewer.camera, U = new V3(...UP).normalize();
+  let last = null;
+  const tick = () => {   // 地平線より上＝空の色／下＝路面に近い灰色（データのない所を白いもやに見せない）
+    const f = new V3(); cam.getWorldDirection(f); const d = f.clone().addScaledVector(U, -f.dot(U)); let yf = 0.5;
+    if (d.lengthSq() > 1e-8) { d.normalize().applyQuaternion(cam.quaternion.clone().invert()); yf = (1 - cam.projectionMatrix.elements[5] * d.y / Math.max(1e-6, -d.z)) / 2; }
+    const p = Math.round(yf * 1000) / 10;
+    if (p !== last) { last = p; document.body.style.background = `linear-gradient(to bottom, #8fb8de ${p - 60}%, #dfe9f2 ${p}%, #cbd3da ${p + 5}%, #a0a6ac ${p + 14}%, #787c81 ${p + 30}%, #5d6165 ${p + 70}%)`; }
+    requestAnimationFrame(tick);
+  };
+  tick();
+  const lp = cam.position.clone(), ld = new V3(); cam.getWorldDirection(ld);
+  const loop = () => {
+    const p = cam.position, d = new V3(); cam.getWorldDirection(d);
+    if (p.distanceTo(lp) > 0.02 || d.dot(ld) < 0.99939) { lp.copy(p); ld.copy(d); viewer.runSplatSort(true); }
+    requestAnimationFrame(loop);
+  };
+  loop();
+} catch (e) {
+  document.getElementById('load').innerHTML = '表示できませんでした。<br><small>パソコンの最新のChrome・Edgeでお試しください。</small>';
+  console.error(e);
+}
+</script>
+</body>
+</html>

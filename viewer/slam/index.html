@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>点群ビューワー（見本）｜株式会社ファルコン</title>
+<meta name="description" content="ハンディ型のSLAM計測機を持って屋外の道路を歩き、計測した点群の見本です。写真の色・分類の色・高さの色で表示を切り替えられます。">
+<style>
+html,body{margin:0;height:100%;background:#10151c;color:#e8edf3;font-family:'Noto Sans JP',"Yu Gothic UI","Meiryo",sans-serif;overflow:hidden}
+body{background:radial-gradient(ellipse at 50% 35%,#24303f 0%,#151b24 60%,#0d1117 100%)}
+#view{position:absolute;inset:0}
+#view canvas{display:block;touch-action:none}
+#top{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:10px 12px;pointer-events:none}
+#info{pointer-events:auto;max-width:560px;background:rgba(10,20,35,.72);padding:8px 12px;border-radius:8px;font-size:13px;line-height:1.7}
+#info b{font-size:15px;color:#fff}
+#info small{color:#c9d3df}
+#back{pointer-events:auto;white-space:nowrap;background:#c9a84c;color:#1f3a5f;text-decoration:none;font-weight:700;padding:7px 14px;border-radius:6px;font-size:13px}
+#panel{position:absolute;left:12px;bottom:44px;background:rgba(10,20,35,.78);padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.5;max-width:calc(100% - 48px)}
+#panel .row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:3px 0}
+#panel .lab{color:#c9d3df;min-width:4.5em}
+#panel button{font:inherit;color:#e8edf3;background:#263446;border:1px solid #3b4d63;border-radius:5px;padding:3px 9px;cursor:pointer}
+#panel button.on{background:#c9a84c;color:#1f3a5f;border-color:#c9a84c;font-weight:700}
+#panel input[type=range]{width:120px;accent-color:#c9a84c}
+#legend{display:none;flex-wrap:wrap;gap:3px 10px;margin-top:4px;max-width:330px}
+#legend span{white-space:nowrap}
+#legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+#hbar{display:none;margin-top:4px}
+#hbar div{height:8px;width:220px;border-radius:3px;background:linear-gradient(to right,#3b4cc0,#2fa7d8,#5ccf6a,#f2d64b,#e8613c,#b4153a)}
+#hbar small{display:flex;justify-content:space-between;width:220px;color:#c9d3df}
+#load{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.65);padding:12px 20px;border-radius:8px;text-align:center;line-height:1.8}
+#hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);background:rgba(10,20,35,.72);padding:6px 12px;border-radius:6px;font-size:12px;white-space:nowrap}
+@media (max-width:600px){#info{font-size:12px}#hint{white-space:normal;width:calc(100% - 40px);text-align:center;bottom:8px}#panel{bottom:64px;left:8px}}
+</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script>
+</head>
+<body>
+<div id="view"></div>
+<div id="top">
+  <div id="info"><b>SLAM計測で取った点群の見本（屋外の道路）</b><br>
+  ハンディ型のSLAM計測機（持ち歩いて周囲を3次元で記録する機器）を持ち、屋外の道路を約15分歩いて計測しました（当社の試験計測）。<br>
+  <small>駐車中の車は処理の段階で取り除いています（取り除けずに残っている所もあります）。車の下は計測できないため、その部分の地面は暗く見えます。表示している範囲の点（約5,270万点）を、ホームページで見ていただくために約309万点まで間引いています。見た目を確かめるための見本です。</small></div>
+  <a id="back" href="/#services">← ホームへ</a>
+</div>
+<div id="panel" hidden>
+  <div class="row"><span class="lab">色</span><button data-c="rgb" class="on">写真の色</button><button data-c="cls">分類の色</button><button data-c="h">高さの色</button></div>
+  <div id="legend"></div>
+  <div id="hbar"><span style="color:#c9d3df">表示範囲でいちばん低い地面を0とした高さ（目安）</span><div></div><small><span>0m</span><span>5m</span><span>10m</span><span>15m以上</span></small></div>
+  <div class="row"><span class="lab">視点</span><button data-v="all">全体</button><button data-v="top">真上</button><button data-v="street">道路に立つ</button></div>
+  <div class="row"><span class="lab">表示</span><button id="trajBtn" class="on">歩いた道すじ</button></div>
+  <div class="row"><span class="lab">点の大きさ</span><input id="psize" type="range" min="0.4" max="3" step="0.1" value="1"></div>
+</div>
+<div id="load">読み込み中…<br><small id="prog">データ 約31MB（通信環境により数十秒かかります）</small></div>
+<div id="hint">ドラッグ＝回す／右ドラッグ・2本指＝移動／ホイール・ピンチ＝近づく／ダブルクリック＝そこを中心に</div>
+<script type="module">
+// 点群＝当社の試験計測。車両を除いたあと、道路の中心から両側15mで切り、ノイズを除き、6cm升目に1点へ間引いたもの
+import * as THREE from 'three';
+import { OrbitControls } from './lib/OrbitControls.js';
+const prog = document.getElementById('prog');
+try {
+  const meta = await (await fetch('data/road_pc.json')).json();
+  const N = meta.count, total = N * 10;
+  const res = await fetch('data/road_pc.bin');
+  if (!res.ok) throw new Error('bin ' + res.status);
+  const buf = new Uint8Array(total); let got = 0;
+  const reader = res.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read(); if (done) break;
+    if (got + value.length > total) throw new Error('size');
+    buf.set(value, got); got += value.length;
+    prog.textContent = `点群を読み込んでいます… ${Math.min(100, Math.floor(got / total * 100))}%`;
+  }
+  if (got !== total) throw new Error('short ' + got);
+  const B0 = meta.bmin, B1 = meta.bmax, gz = meta.ground_z_p05;
+  const ctr = new THREE.Vector3((B0[0] + B1[0]) / 2, (B0[1] + B1[1]) / 2, gz);
+  const pos = new Uint16Array(buf.buffer, 0, N * 3);
+  const rgb = new Uint8Array(buf.buffer, N * 6, N * 3);
+  const cls = new Uint8Array(buf.buffer, N * 9, N);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.outputColorSpace = THREE.LinearSRGBColorSpace;   // 点の色（写真の色）をそのまま出す
+  document.getElementById('view').appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  const FOV = 55;
+  const camera = new THREE.PerspectiveCamera(FOV, innerWidth / innerHeight, 0.05, 3000);
+  camera.up.set(0, 0, 1);
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3, true));
+  const colRGB = new THREE.BufferAttribute(rgb, 3, true);
+  geo.setAttribute('color', colRGB);
+  geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0.5, 0.5, 0.5), 0.9);
+  geo.boundingBox = new THREE.Box3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 1, 1));
+  const BASE = 0.075 / Math.tan(THREE.MathUtils.degToRad(FOV / 2));   // 約7.5cm角の点
+  const mat = new THREE.PointsMaterial({ size: BASE, vertexColors: true, sizeAttenuation: true });
+  const pts = new THREE.Points(geo, mat);
+  pts.scale.set(B1[0] - B0[0], B1[1] - B0[1], B1[2] - B0[2]);
+  pts.position.set(B0[0] - ctr.x, B0[1] - ctr.y, B0[2] - ctr.z);
+  scene.add(pts);
+
+  // 歩いた道すじ（計測機の通った線）
+  const tj = await (await fetch('data/road_traj.json')).json();
+  const tv = tj.xyz.map(p => new THREE.Vector3(p[0] - ctr.x, p[1] - ctr.y, p[2] - ctr.z));
+  const curve = new THREE.CatmullRomCurve3(tv);
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, tv.length * 2, 0.12, 6, false),
+    new THREE.MeshBasicMaterial({ color: 0xf0c040 }));
+  scene.add(tube);
+
+  // 色の切り替え（分類・高さは初めて押したときに作る）
+  const CL = { 2: ['地面', [181, 143, 95]], 6: ['建物', [224, 122, 95]], 3: ['低い植物', [124, 207, 90]], 5: ['樹木', [46, 139, 62]],
+    15: ['柱・ポール', [242, 193, 78]], 16: ['電線', [79, 195, 247]], 26: ['ガードレール', [199, 125, 255]], 1: ['その他', [154, 163, 173]] };
+  let colCls = null, colH = null;
+  const makeCls = () => { const a = new Uint8Array(N * 3); for (let i = 0; i < N; i++) { const c = (CL[cls[i]] || CL[1])[1]; a[i * 3] = c[0]; a[i * 3 + 1] = c[1]; a[i * 3 + 2] = c[2]; } return new THREE.BufferAttribute(a, 3, true); };
+  const RAMP = [[59, 76, 192], [47, 167, 216], [92, 207, 106], [242, 214, 75], [232, 97, 60], [180, 21, 58]];
+  const makeH = () => {
+    const a = new Uint8Array(N * 3), zr = B1[2] - B0[2];
+    for (let i = 0; i < N; i++) {
+      const z = B0[2] + pos[i * 3 + 2] / 65535 * zr; let t = Math.max(0, Math.min(1, (z - gz) / 15)) * (RAMP.length - 1);
+      const k = Math.min(RAMP.length - 2, Math.floor(t)), f = t - k, c0 = RAMP[k], c1 = RAMP[k + 1];
+      a[i * 3] = c0[0] + (c1[0] - c0[0]) * f; a[i * 3 + 1] = c0[1] + (c1[1] - c0[1]) * f; a[i * 3 + 2] = c0[2] + (c1[2] - c0[2]) * f;
+    }
+    return new THREE.BufferAttribute(a, 3, true);
+  };
+  const legend = document.getElementById('legend');
+  legend.innerHTML = Object.values(CL).map(([n, c]) => `<span><i style="background:rgb(${c})"></i>${n}</span>`).join('');
+  document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', x === b));
+    const m = b.dataset.c;
+    if (m === 'cls') { colCls ||= makeCls(); geo.setAttribute('color', colCls); }
+    else if (m === 'h') { colH ||= makeH(); geo.setAttribute('color', colH); }
+    else geo.setAttribute('color', colRGB);
+    legend.style.display = m === 'cls' ? 'flex' : 'none';
+    document.getElementById('hbar').style.display = m === 'h' ? 'block' : 'none';
+  });
+  const tb = document.getElementById('trajBtn');
+  tb.onclick = () => { tube.visible = !tube.visible; tb.classList.toggle('on', tube.visible); };
+  // 道すじは近くで見ても細く見えるよう、カメラが近いときは自動で薄くする
+  tube.material.transparent = true;
+  const ps = document.getElementById('psize');
+  ps.oninput = () => { mat.size = BASE * parseFloat(ps.value); };
+
+  // 視点
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = 0.12;
+  controls.maxPolarAngle = Math.PI * 0.495; controls.minDistance = 0.5; controls.maxDistance = 900;
+  controls.screenSpacePanning = false;
+  const dir = new THREE.Vector2(0.8929, -0.4503), nrm = new THREE.Vector2(-dir.y, dir.x);
+  const cc = new THREE.Vector3(31.4 - ctr.x, -20.6 - ctr.y, 0);   // 道路の中心
+  // 道路の長さ（約330m）が画面の横幅に収まる距離
+  const fitD = (L, W) => { const tv2 = Math.tan(THREE.MathUtils.degToRad(FOV / 2)), th = tv2 * camera.aspect;
+    return Math.max(L / 2 / th, W / 2 / tv2) * 1.05; };
+  const VIEWS = {
+    all: () => { if (camera.aspect < 0.9) {   // スマホの縦画面＝道路を端から見通す
+        const D = 190; return [new THREE.Vector3(cc.x - dir.x * D * 0.72 - nrm.x * D * 0.3, cc.y - dir.y * D * 0.72 - nrm.y * D * 0.3, D * 0.42), cc.clone()]; }
+      const D = fitD(300, 70), a = THREE.MathUtils.degToRad(38);
+      return [new THREE.Vector3(cc.x - nrm.x * D * Math.cos(a) - dir.x * D * 0.12, cc.y - nrm.y * D * Math.cos(a) - dir.y * D * 0.12, D * Math.sin(a)), cc.clone()]; },
+    top: () => [new THREE.Vector3(cc.x - nrm.x * 0.5, cc.y - nrm.y * 0.5, fitD(330, 45)), cc.clone()],
+    street: () => { const i = Math.floor(tv.length * 0.18), p = tv[i], q = tv[i + 12];
+      const f = new THREE.Vector3(q.x - p.x, q.y - p.y, 0).normalize();
+      return [new THREE.Vector3(p.x, p.y, p.z + 0.45), new THREE.Vector3(p.x + f.x * 12, p.y + f.y * 12, p.z + 0.1)]; }
+  };
+  let anim = null;
+  const go = (to, tgt, ms = 900) => { anim = { p0: camera.position.clone(), t0: controls.target.clone(), p1: to, t1: tgt, s: performance.now(), ms }; };
+  const setTube = v => { tube.visible = v; tb.classList.toggle('on', v); };
+  document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => {
+    const [p, t] = VIEWS[b.dataset.v](); go(p, t);
+    setTube(b.dataset.v !== 'street');   // 道路に立つときは道すじの線が目の前を遮るので消す
+  });
+  { const [p, t] = VIEWS.all(); camera.position.copy(p); controls.target.copy(t); controls.update(); }
+  { const v = (new URLSearchParams(location.search).get('cam') || '').split(',').map(Number);   // ?cam=x,y,z,tx,ty,tz（視点を指定して開く）
+    if (v.length === 6 && v.every(Number.isFinite)) { camera.position.set(v[0], v[1], v[2]); controls.target.set(v[3], v[4], v[5]); controls.update(); setTube(false); } }
+
+  // ダブルクリック＝そこを中心に
+  const ray = new THREE.Raycaster(); ray.params.Points.threshold = 0.2;
+  renderer.domElement.addEventListener('dblclick', e => {
+    const m = new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    ray.setFromCamera(m, camera); const hit = ray.intersectObject(pts)[0];
+    if (hit) { const off = camera.position.clone().sub(controls.target); const t = hit.point.clone();
+      const d = Math.min(off.length(), 40); go(t.clone().add(off.setLength(d)), t, 700); }
+  });
+
+  addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+  document.getElementById('load').remove();
+  document.getElementById('panel').hidden = false;
+  const ease = x => x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+  renderer.setAnimationLoop(() => {
+    if (anim) { const k = Math.min(1, (performance.now() - anim.s) / anim.ms), e = ease(k);
+      camera.position.lerpVectors(anim.p0, anim.p1, e); controls.target.lerpVectors(anim.t0, anim.t1, e); if (k >= 1) anim = null; }
+    controls.update();
+    tube.material.opacity = Math.max(0.15, Math.min(1, (camera.position.z - 1) / 15));
+    renderer.render(scene, camera);
+  });
+} catch (e) {
+  document.getElementById('load').innerHTML = '表示できませんでした。<br><small>パソコンの最新のChrome・Edgeでお試しください。</small>';
+  console.error(e);
+}
+</script>
+</body>
+</html>
