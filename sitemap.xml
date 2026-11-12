@@ -7,4 +7,11 @@
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
+  <!-- 2026-11-12 追加：床版取替の4Dシミュレーター（試作版）の紹介ページ -->
+  <url>
+    <loc>https://az-falcon.com/apps/shoban-4d/</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
 </urlset>

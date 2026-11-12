@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>床版架替 4Dシミュレーター（試作版）｜株式会社ファルコン</title>
+<meta name="description" content="地図で橋を選び、工種ごとの重機を選ぶと、橋の床版を取り替える工事の流れ（交通規制・足場・撤去・架設・舗装）を3Dで再生できる、説明用のシミュレーターです。ブラウザでそのまま動きます。日数・能力・寸法は目安です。">
+<link rel="canonical" href="https://az-falcon.com/apps/shoban-4d/">
+<style>
+:root{--navy:#1f3a5f;--navy2:#2c4a70;--gold:#c9a84c;--gold-l:#e8d5a0;--white:#f8f6f1;--dark:#0b1626;--text:#1a2838;--sub:#4a5a6e;--mist:#edf1f7;--line:#d5dce6}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:"Yu Gothic UI","Yu Gothic","Hiragino Sans","Meiryo",sans-serif;background:var(--white);color:var(--text);line-height:1.8;font-size:16px}
+a{color:var(--navy)}
+.top{background:var(--navy);color:#fff;border-bottom:3px solid var(--gold)}
+.top .in{max-width:1080px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+.top img{width:40px;height:40px;border-radius:8px;background:#fff}
+.top b{font-size:16px;letter-spacing:.06em}
+.top a{margin-left:auto;background:var(--gold);color:var(--navy);text-decoration:none;font-weight:700;padding:7px 14px;border-radius:6px;font-size:13px;white-space:nowrap}
+.hero{background:linear-gradient(135deg,#16233f 0%,var(--navy) 55%,var(--navy2) 100%);color:#fff}
+.hero .in{max-width:1080px;margin:0 auto;padding:44px 16px 48px}
+.hero .k{color:var(--gold);letter-spacing:.24em;font-size:13px}
+.hero h1{font-size:clamp(26px,4.6vw,42px);line-height:1.35;margin:10px 0 6px;letter-spacing:.04em}
+.hero h1 small{font-size:.5em;color:var(--gold-l);font-weight:500;margin-left:.5em;white-space:nowrap}
+.hero p{color:#dfe6f0;max-width:780px}
+.btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+.btn{display:inline-block;text-decoration:none;font-weight:700;border-radius:8px;padding:12px 22px;font-size:16px}
+.btn.g{background:var(--gold);color:var(--navy)}
+.btn.l{border:1px solid #9fb2cc;color:#fff}
+main{max-width:1080px;margin:0 auto;padding:8px 16px 56px}
+section{margin-top:40px;break-inside:avoid}
+h2{font-size:22px;color:var(--navy);border-left:6px solid var(--gold);padding-left:12px;line-height:1.4;margin-bottom:14px}
+.lead{color:var(--sub);margin-bottom:12px}
+video{width:100%;height:auto;display:block;border-radius:10px;background:#0d1117;box-shadow:0 8px 28px rgba(11,22,38,.18)}
+.cap{font-size:13px;color:var(--sub);margin-top:8px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;list-style:none}
+.steps li{background:#fff;border:1px solid var(--line);border-top:4px solid var(--navy);border-radius:10px;padding:14px 16px}
+.steps .n{display:inline-block;background:var(--navy);color:#fff;border-radius:50%;width:30px;height:30px;line-height:30px;text-align:center;font-weight:700;margin-right:8px}
+.steps b{font-size:16px;color:var(--navy)}
+.steps p{font-size:14px;color:var(--sub);margin-top:6px}
+.note{background:#fff7e0;border:1px solid #e6d59a;border-radius:10px;padding:16px 18px}
+.note ul{padding-left:1.3em}
+.note li{margin:4px 0;font-size:14.5px}
+.env{background:var(--mist);border-radius:10px;padding:14px 18px;font-size:14.5px}
+.cta{background:var(--navy);color:#fff;border-radius:12px;padding:22px 20px;text-align:center}
+.cta p{color:#dfe6f0;margin-bottom:14px}
+footer{background:var(--dark);color:#aab4c6;font-size:12.5px;text-align:center;padding:18px 16px;line-height:1.9}
+footer a{color:var(--gold-l)}
+@media (max-width:600px){.top b{font-size:14px}.btn{width:100%;text-align:center}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <img src="/images/logo-emblem-nav-01.webp" alt="株式会社ファルコンのエンブレム" width="40" height="40">
+  <b>株式会社ファルコン</b>
+  <a href="/">← ホームへ</a>
+</div></header>
+
+<div class="hero"><div class="in">
+  <div class="k">4D SIMULATOR</div>
+  <h1>床版架替 4Dシミュレーター<small>試作版（2026年11月公開）</small></h1>
+  <p style="font-size:13px;color:#c9d6e8;margin-bottom:8px">床版架替（しょうばんかけかえ）／4D＝3Dに時間（工事の進み方）を加えたもの</p>
+  <p>地図で橋を選び、工種ごとに使う重機を選ぶと、橋の床版（しょうばん＝車が走る床の板）を取り替える工事の流れを、3Dで順番に再生できます。交通規制から、足場、撤去、新しい床版の架設、舗装までを、説明のための絵として見ることができます。</p>
+  <div class="btns">
+    <a class="btn g" href="app/">シミュレーターを開く（無料・登録なし）</a>
+    <a class="btn l" href="#movie">紹介動画を見る（約1分）</a>
+  </div>
+  <p lang="en" style="font-size:12.5px;color:#aebcd0;margin-top:18px;max-width:780px">Bridge Deck Replacement 4D Simulator (Prototype) — Pick a bridge on the map, choose the equipment for each work stage, and replay the deck replacement sequence in 3D. For explanation only; not for actual construction planning.</p>
+</div></div>
+
+<main>
+<section id="movie">
+  <h2>紹介動画（約1分）</h2>
+  <p class="lead">場所を選ぶところから、動画を書き出すところまでの操作の流れです。この動画では、地図を使わずに見本の橋（40m）で進めています。画面の右に映る注意書きは、地図で橋を選んだ場合の説明です。音はありません。</p>
+  <video controls playsinline preload="metadata" poster="/videos/shoban4d_demo_20261112.jpg" width="1280" height="720">
+    <source src="/videos/shoban4d_demo_20261112.mp4" type="video/mp4">
+  </video>
+  <p class="cap">当社のソフトの画面を録画したものです（生成AIの映像ではありません）。橋は見本（架空の橋・40m）で、実在の橋の工事計画を示すものではありません。地図：© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</p>
+</section>
+
+<section>
+  <h2>使い方</h2>
+  <ol class="steps">
+    <li><span class="n">1</span><b>地図で橋を選ぶ</b><p>地図の上で橋の両端をクリックすると、地図上のおよその長さと向きを読み取ります。地図なしで、見本の橋（40m）から始めることもできます。</p></li>
+    <li><span class="n">2</span><b>工種ごとに重機を選ぶ</b><p>撤去のクレーン、運搬車、床版を架ける機械、舗装の機械などを、工種ごとに切り替えられます。幅・径間（けいかん＝橋脚と橋脚の間）の数・車線の数なども直せます。</p></li>
+    <li><span class="n">3</span><b>工事の流れを再生する</b><p>交通規制、足場、舗装の切削、床版の切断と撤去、新しい床版の架設、舗装、規制の解除までを、3Dで順番に再生します。</p></li>
+    <li><span class="n">4</span><b>動画・説明資料を書き出す</b><p>再生している画面をそのまま動画にしたり、場面ごとの絵が入ったA4の説明資料を作ったりできます。書き出した動画・資料も目安で、実際の工事計画を示すものではありません。</p></li>
+  </ol>
+</section>
+
+<section>
+  <h2>高画質の動画の見本</h2>
+  <p class="lead">質感と光を計算して書き出した動画の見本です（見本の橋・架空の条件）。この見本は当社の作業で作ったものです。ブラウザ版からは作れません（ご相談ください）。</p>
+  <video controls playsinline preload="metadata" poster="/videos/shoban4d_blender_sample_20261111.jpg" width="1280" height="720">
+    <source src="/videos/shoban4d_blender_sample_20261111.mp4" type="video/mp4">
+  </video>
+  <p class="cap">当社のソフトで作った3Dの絵です（生成AIの映像ではありません）。日数は目安です。音はありません。</p>
+</section>
+
+<section>
+  <h2 id="terms">ご利用にあたって</h2>
+  <div class="note"><ul>
+    <li><b>説明のための簡易シミュレーションです。</b>日数・重機の能力・寸法は目安で、実際の施工計画・設計・安全の検討には使えません。</li>
+    <li>本ツールは無料・現状のまま提供します。位置・高さ・寸法は正確さを確かめたものではありません。</li>
+    <li>本ツールの利用または利用できないことで生じた損害について、当社は、故意または重大な過失がある場合を除き、責任を負いません。地図等の外部サービスの都合で、予告なく表示できなくなる、または提供を終えることがあります。</li>
+    <li>重機と資材は一般的な外形で描いています。実在のメーカーの製品を再現したものではありません。</li>
+    <li>地図の上の橋を選べますが、表示される場所は操作の例で、実在の橋の工事計画や状態を示すものではありません。</li>
+    <li>保存した動画・資料を配るときは、中に入っている注意書きと出典の表示を消さないでください。</li>
+  </ul></div>
+  <h3 style="font-size:16px;color:var(--navy);margin:18px 0 8px">通信について</h3>
+  <div class="env">重機・寸法などの条件は、お使いの端末の中だけで処理します。当社は受け取らず、保存もしません。選んだ場所は、地図と建物データを取り寄せるため、その付近の範囲が次の提供元に送られます。<br>
+  地図・航空写真・標高・建物データの表示と、プログラム部品の読み込みのため、お使いのブラウザから国土地理院、OpenStreetMap、Overpass APIの公開サーバー、jsDelivr、unpkgへ直接通信します。このとき、IPアドレス、ブラウザの種類、表示中の地図の範囲が各提供元に送られます。このページ自体の配信元（GitHub Pages）にも、IPアドレスとブラウザの種類が届きます。</div>
+  <h3 style="font-size:16px;color:var(--navy);margin:18px 0 8px">出典</h3>
+  <div class="env">3Dの背景の航空写真と地形は、国土地理院の<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル</a>（全国最新写真・標高タイル（基盤地図情報数値標高モデル））を加工して作成しています。<br>
+  地図：地理院タイル（全国最新写真・標準地図）／© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors。建物と橋の読み取り：© OpenStreetMap contributors（Overpass API）。<br>
+  プログラム部品：three.js、Leaflet（それぞれの配布条件に従って使っています）。</div>
+</section>
+
+<section>
+  <h2>動く環境</h2>
+  <div class="env">パソコンのブラウザ（Google Chrome・Microsoft Edge の新しい版）でお使いください。3Dを表示するため、スマートフォンでは動きが重くなることがあります。地図のデータを配るサーバーが混んでいるときは、「橋の上を1回クリック」での読み取りに時間がかかることがあります。そのときは「橋の両端を2回クリック」をお使いください。</div>
+</section>
+
+<section>
+  <div class="cta">
+    <p>ご担当の現場の説明用の絵として使いたい、高画質の動画にしたい、といったご相談を承ります。内容を伺ったうえでお返事します。</p>
+    <a class="btn g" href="/#contact">ご相談・お問い合わせ</a>
+  </div>
+</section>
+</main>
+
+<footer>
+  株式会社ファルコン｜見えないを見える化する会社<br>
+  <a href="/">az-falcon.com</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>床版架替 4Dシミュレーター</title>
+<meta name="description" content="地図で橋を選び、工種ごとの重機を選ぶと、橋の床版取替工事の流れ（規制・足場・撤去・架設・舗装）を3Dで再生できる説明用のシミュレーターです。日数・能力・寸法は目安です。">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<style>
+:root{--navy:#1b2a4a;--navy2:#24365c;--gold:#c9a227;--bg:#f4f5f7;--card:#fff;--ink:#1d2433;--sub:#5b6577;--line:#d9dde4;--ok:#1f8a4c;--ng:#c0392b;--warn:#c27a00}
+*{box-sizing:border-box}[hidden]{display:none!important}html,body{margin:0;height:100%;font-family:"Yu Gothic UI","Yu Gothic","Meiryo",sans-serif;color:var(--ink);background:var(--bg);font-size:14px}
+header{height:48px;background:var(--navy);color:#fff;display:flex;align-items:center;gap:14px;padding:0 14px;border-bottom:3px solid var(--gold)}
+header h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.04em;white-space:nowrap}header h1 small{color:var(--gold);font-weight:400;margin-left:6px}
+.tab{background:transparent;color:#cfd6e4;border:0;border-bottom:3px solid transparent;height:45px;padding:0 12px;font:inherit;cursor:pointer;margin-top:3px}
+.tab.on{color:#fff;border-bottom-color:var(--gold);font-weight:700}
+.sp{flex:1}.hb{background:var(--navy2);color:#fff;border:1px solid #3c4f78;border-radius:6px;padding:5px 10px;font:inherit;cursor:pointer}
+main{position:absolute;top:48px;left:0;right:0;bottom:0}
+#mapPane{position:absolute;inset:0;display:flex}#map{flex:1}
+.side{width:340px;background:var(--card);border-left:1px solid var(--line);padding:14px;overflow:auto}
+.side h2{font-size:15px;margin:2px 0 8px;color:var(--navy)}.muted{color:var(--sub);font-size:12.5px}
+.btn{display:inline-block;background:var(--navy);color:#fff;border:0;border-radius:7px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer}
+.btn.gold{background:var(--gold);color:#1b2a4a}.btn.line{background:#fff;color:var(--navy);border:1px solid var(--navy)}.btn:disabled{opacity:.5}
+.row{display:flex;gap:6px;margin:6px 0}.row input[type=text]{flex:1;padding:7px;border:1px solid var(--line);border-radius:6px;font:inherit}
+.box{background:#f7f8fa;border:1px solid var(--line);border-radius:8px;padding:10px;margin:10px 0;line-height:1.6}
+#simPane{position:absolute;inset:0;display:grid;grid-template-columns:380px 1fr;grid-template-rows:1fr 74px}
+#left{grid-row:1 / span 2;background:var(--card);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.stabs{display:flex;border-bottom:1px solid var(--line)}.stab{flex:1;background:#fff;border:0;border-bottom:3px solid transparent;padding:9px 4px;font:inherit;cursor:pointer;color:var(--sub)}
+.stab.on{color:var(--navy);border-bottom-color:var(--gold);font-weight:700}
+.pane{flex:1;overflow:auto;padding:10px 12px;min-height:0}
+.ph{border:1px solid var(--line);border-left:6px solid var(--c);border-radius:7px;margin:0 0 7px;padding:6px 8px;background:#fff}
+.phh{display:flex;gap:6px;align-items:baseline;cursor:pointer}.phh .no{font-weight:700;color:var(--sub);width:20px}.phh .nm{font-weight:700;flex:1}.phh .sd{font-size:11.5px;color:var(--navy);background:#eef1f7;border-radius:4px;padding:0 5px}.phh .dy{font-size:12px;color:var(--sub);width:34px;text-align:right}
+.slot{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub);margin:4px 0 0 26px}.slot select{flex:1;font:inherit;font-size:12.5px;padding:3px}
+.same{font-size:11.5px;color:#98a1b1;margin:2px 0 0 26px}
+.chk{font-size:11.5px;margin:5px 0 0 26px;line-height:1.5}.chk .ok{color:var(--ok)}.chk .ng{color:var(--ng)}.chk .warn{color:var(--warn)}.kari{color:#98a1b1}
+#view{position:relative;overflow:hidden;background:#c4d8ec}#view canvas{display:block}
+#hud{position:absolute;left:14px;top:12px;background:rgba(27,42,74,.86);color:#fff;border-left:6px solid var(--gold);border-radius:6px;padding:8px 14px;max-width:70%;pointer-events:none}
+#hudPhase{font-size:19px;font-weight:700}#hudSide{font-size:13px;color:var(--gold);margin-left:8px}#hudDay{font-size:13px;margin-top:2px}#hudMach{font-size:12px;color:#cfd6e4}
+#cams{position:absolute;right:12px;top:12px;display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+#cams button,#cams label{background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:6px;padding:5px 9px;font:inherit;font-size:12.5px;cursor:pointer}
+#bar{grid-column:2;background:var(--navy);display:flex;align-items:center;gap:10px;padding:0 14px;color:#fff}
+#bar .tl{flex:1;display:flex;flex-direction:column;gap:4px}#strip{display:flex;height:10px;border-radius:4px;overflow:hidden}
+#seek{width:100%;accent-color:var(--gold)}#bar select{font:inherit;padding:4px;border-radius:5px}#tnow{font-size:12px;color:#cfd6e4;width:120px;text-align:right}
+#playBtn{background:var(--gold);color:var(--navy);border:0;border-radius:7px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;width:118px}
+.form{display:grid;grid-template-columns:1fr 120px;gap:6px 8px;align-items:center;font-size:13px}.form input,.form select{font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:5px;width:100%}
+.form .k{color:var(--sub)}.form .kari::after{content:"仮";font-size:10px;background:#fff3cd;color:#8a6d00;border-radius:3px;padding:0 3px;margin-left:4px}
+#libList{display:flex;flex-direction:column;gap:3px;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:7px;padding:4px}
+.li{display:flex;align-items:center;gap:6px;text-align:left;background:#fff;border:0;border-radius:5px;padding:5px;font:inherit;font-size:12.5px;cursor:pointer}
+.li:hover{background:#f1f3f7}.li.on{background:#e8edf7;outline:1px solid var(--navy)}.li small{margin-left:auto;color:#98a1b1;white-space:nowrap}
+.cid{color:#fff;border-radius:4px;padding:0 5px;font-size:11px;font-weight:700;white-space:nowrap}
+#pv{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:8px}
+#livBox{display:grid;grid-template-columns:auto 1fr;gap:5px 8px;align-items:center;font-size:12.5px;margin-top:6px}#livBox select,#livBox input{font:inherit;font-size:12.5px}
+#livBox.locked{opacity:.45;pointer-events:none}
+.pp{border:1px solid var(--line);border-radius:7px;padding:6px;margin:6px 0;display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px}.pp b{grid-column:1/3}.pp label{display:flex;flex-direction:column;color:var(--sub)}.pp input,.pp select{font:inherit;font-size:12px}
+.pp button{grid-column:1/3;background:#fff;border:1px solid var(--ng);color:var(--ng);border-radius:5px;cursor:pointer}
+h3{font-size:13.5px;margin:12px 0 6px;color:var(--navy)}
+.note{font-size:11.5px;color:var(--sub);line-height:1.6}
+#pubNote{position:absolute;top:48px;left:0;right:0;height:28px;line-height:28px;background:#fff7e0;color:#5a4300;border-bottom:1px solid #e6d59a;font-size:12.5px;padding:0 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.web main{top:76px}a.hb{text-decoration:none}
+@media (max-width:900px){#simPane{grid-template-columns:1fr;grid-template-rows:45vh 1fr 74px}#left{grid-row:2}#view{grid-row:1}#bar{grid-column:1}.side{width:100%}#mapPane{flex-direction:column}#map{height:60vh}}
+</style>
+</head>
+<body>
+<script>document.body.classList.add('web')</script>
+<header>
+  <h1>床版架替 4Dシミュレーター<small>試作版</small></h1>
+  <button class="tab" data-tab="map">① 場所を選ぶ</button>
+  <button class="tab" data-tab="sim">② 工程を組む・再生する</button>
+  <span class="sp"></span>
+  <label style="color:#cfd6e4;font-size:13px">出力の種類 <select id="outMode" class="hb"><option value="gyosha">工事関係者との打合せ用（重機・目安）</option><option value="yakusho">役所・住民説明向け（やさしい説明）</option></select></label>
+  <button class="hb" id="saveBtn">計画を保存</button>
+  <label class="hb">計画を開く<input type="file" id="loadFile" accept=".json" hidden></label>
+  <a class="hb" href="../">← 紹介ページへ</a>
+</header>
+<div id="pubNote">⚠️ 説明用の簡易シミュレーションです。日数・重機の能力・寸法は目安で、実際の施工計画・設計・安全の検討には使えません。<a href="../#terms">ご利用にあたって</a>（株式会社ファルコン）</div>
+<main>
+  <section id="mapPane">
+    <div id="map"></div>
+    <aside class="side">
+      <h2>橋を選ぶ</h2>
+      
+      <p class="muted">地図を動かして、橋を探してください（マウスのホイールで拡大・縮小）。</p>
+      <div class="box" style="font-size:13px">
+        <label><input type="radio" name="pickmode" value="auto" checked> 橋の上を1回クリック（地図データから自動で読む）</label><br>
+        <label><input type="radio" name="pickmode" value="two"> 橋の両端を2回クリック（自分で指定）</label>
+      </div>
+      <p class="muted" id="mapMsg">橋の上をクリックしてください。地図のデータ（OpenStreetMap）から橋の両端を読み取ります。</p>
+      <p class="note">3Dでは、国土地理院の標高（地形）と航空写真、OpenStreetMapの建物・電柱も表示します（建物の高さは階数からの目安）。</p>
+      <div class="box" id="siteInfo">まだ選ばれていません。</div>
+      <button class="btn gold" id="build3d">3Dで工程を作る →</button>
+      <button class="btn line" id="sample" style="margin-top:8px">地図なしで見本の橋（40m）を開く</button>
+      <p class="note" style="margin-top:14px">航空写真：国土地理院の地理院タイル。橋の読み取り：OpenStreetMap（© OpenStreetMap contributors）。寸法・高さ・径間数は次の画面の「設定」で直せます。</p>
+      <p class="note">3Dの背景は、国土地理院の地理院タイル（全国最新写真・標高タイル）を加工して作成しています。建物・橋の読み取り：© OpenStreetMap contributors。<br>重機・寸法などの条件は、お使いの端末の中だけで処理します。当社は受け取らず、保存もしません。選んだ場所は、地図と建物データを取り寄せるため、その付近の範囲が次の提供元に送られます。地図・航空写真・標高・建物データの表示と、プログラム部品の読み込みのため、お使いのブラウザから国土地理院、OpenStreetMap、Overpass APIの公開サーバー、jsDelivr、unpkgへ直接通信します（IPアドレス、ブラウザの種類、表示中の地図の範囲が各提供元に送られます）。地図上の橋を選んでも、実在の橋の工事計画や状態を示すものではありません。くわしくは <a href="../#terms">ご利用にあたって</a>。</p>
+    </aside>
+  </section>
+
+  <section id="simPane" hidden>
+    <div id="left">
+      <div class="stabs">
+        <button class="stab" data-s="kotei">工程と重機</button><button class="stab" data-s="settei">設定</button><button class="stab" data-s="lib">部品</button><button class="stab" data-s="exp">書き出し</button>
+      </div>
+      <div class="pane" id="koteiPane">
+        <div class="muted" style="margin-bottom:6px">工程名を押すとその場面へ移動します。重機は工程ごとに選べます。<span id="totalDays"></span></div>
+        <div id="phaseList"></div>
+        <h3>重機の色・模様（工程の重機すべて）</h3>
+        <select id="mLivPreset" style="width:100%;font:inherit"></select>
+        <p class="note">実在メーカーの塗装・ロゴはまねていません（形は一般的な外形）。交通規制の車両・資材は一般的な色で描いています。</p>
+      </div>
+      <div class="pane" id="setteiPane" hidden>
+        <h3 style="margin-top:2px">路面の高さ（現況の地形に合わせる）</h3>
+        <div class="form" style="grid-template-columns:1fr 92px 30px 30px">
+          <span class="k">合わせ方</span><select id="p_zMode" style="grid-column:2 / 5"><option value="auto">地形（国土地理院の標高）から自動</option><option value="manual">始点・終点の標高を手入力</option></select>
+          <span class="k"><b style="color:#1f8a4c">始点</b>の路面の標高（m）</span><input id="p_zStart" type="number" step="0.01" placeholder="自動"><button class="hb" id="zA_up" title="10cm上げる" style="background:#fff;color:#1b2a4a;padding:2px">▲</button><button class="hb" id="zA_dn" title="10cm下げる" style="background:#fff;color:#1b2a4a;padding:2px">▼</button>
+          <span class="k"><b style="color:#c0392b">終点</b>の路面の標高（m）</span><input id="p_zEnd" type="number" step="0.01" placeholder="自動"><button class="hb" id="zB_up" title="10cm上げる" style="background:#fff;color:#1b2a4a;padding:2px">▲</button><button class="hb" id="zB_dn" title="10cm下げる" style="background:#fff;color:#1b2a4a;padding:2px">▼</button>
+        </div>
+        <div class="row"><button class="btn line" id="zAutoBtn" style="flex:1;padding:7px">地形から自動で合わせる</button><button class="btn" id="zManualBtn" style="flex:1;padding:7px">入力した高さで合わせる</button></div>
+        <p class="note">始点＝地図で最初に読んだ側（3Dの緑の札）、終点＝反対側（赤の札）。▲▼は10cmずつ動かします（手入力に切り替わります）。両方を同じだけ動かすと橋全体が上下し、片方だけ動かすと勾配が変わります。<br>自動のときは、橋の端から5m外側の地盤の標高を使います（国土地理院 5mメッシュ。誤差があるため、現況と合わないときは手入力で調整してください）。</p>
+        <h3>橋と工事の条件</h3>
+        <div class="form">
+          <span class="k">車の速さ（再生×1のとき）</span><select id="p_carKmh"><option value="10">10 km/h（とてもゆっくり）</option><option value="20">20 km/h（ゆっくり）</option><option value="30">30 km/h</option><option value="40">40 km/h</option><option value="60">60 km/h</option></select>
+          <span class="k">車線数</span><select id="p_lanes"><option value="2">2車線</option><option value="1">1車線（施工は全面通行止め）</option></select>
+          <span class="k">橋長（m）</span><input id="p_L" type="number" step="0.1">
+          <span class="k">全幅（m）</span><input id="p_W" type="number" step="0.1">
+          <span class="k">径間数</span><input id="p_spans" type="number" step="1">
+          <span class="k">主桁の本数</span><input id="p_girders" type="number" step="1">
+          <span class="k">路面の地上高（m）</span><input id="p_H" type="number" step="0.5">
+          <span class="k kari">PC床版の幅（橋軸方向 m）</span><input id="p_panelW" type="number" step="0.1">
+          <span class="k">PC床版の厚さ（m）</span><input id="p_panelT" type="number" step="0.01">
+          <span class="k kari">撤去ブロックの長さ（m）</span><input id="p_blockLen" type="number" step="0.1">
+          <span class="k kari">1日の架設枚数</span><input id="p_perDay" type="number" step="1">
+          <span class="k">規制の方法</span><select id="p_method"><option value="half">片側交互通行（半断面施工）</option><option value="full">全面通行止め</option></select>
+          <span class="k">ずれ止めの溶接</span><select id="p_studOrder"><option value="after">架設の後（間詰めとまとめて）</option><option value="before">架設の前（桁上面処理で）</option></select>
+          <span class="k">高欄の種類（工事前・完成後とも）</span><select id="p_railType"><option value="wall">壁高欄（コンクリート）</option><option value="steel">鋼製高欄</option></select>
+          <span class="k">遮音壁</span><select id="p_soundWall"><option value="none">なし</option><option value="both">両側</option><option value="left">左側だけ</option><option value="right">右側だけ</option></select>
+          <span class="k">地形・建物・電柱</span><select id="p_terrain"><option value="true">表示する</option><option value="false">表示しない</option></select>
+        </div>
+        <button class="btn line" id="useTerrainH" style="margin-top:8px;width:100%">路面の地上高を地形（標高）から決める</button>
+        <button class="btn" id="applyBtn" style="margin-top:10px;width:100%">この条件で作り直す</button>
+        <p class="note">「仮」の値は出典を確認できていない目安です。日数・クレーンの能力は目安で、施工計画には使えません。</p>
+        <p class="note" id="groundNote"></p>
+      </div>
+      <div class="pane" id="libPane" hidden>
+        <div class="row"><select id="libCat" style="flex:1;font:inherit"></select><input type="text" id="libQ" placeholder="名前で探す" style="width:110px"></div>
+        <div class="muted">重機・架設資材 <b id="libCount"></b>（寸法は目安）</div>
+        <div id="libList"></div>
+        <div id="pv"></div>
+        <div style="font-weight:700;margin-top:6px" id="pvName">部品を選ぶと、ここに形が出ます</div>
+        <div class="note" id="pvInfo"></div>
+        <div id="livBox">
+          <span>色の組み合わせ</span><select id="livPreset"></select>
+          <span>車体の色</span><input type="color" id="livBody">
+          <span>差し色</span><input type="color" id="livAcc">
+          <span>模様</span><select id="livPat"></select>
+          <span>社名の文字</span><input type="text" id="livText" maxlength="12">
+        </div>
+        <p class="note" id="livLockNote" hidden>交通規制・保安の資材は、一般的な色（赤白・黄黒など）に固定しています。</p>
+        <button class="btn gold" id="placeBtn" style="width:100%;margin-top:8px">この場所に置く（画面の中心）</button>
+        <h3>置いた部品</h3>
+        <div id="placed"></div>
+      </div>
+      <div class="pane" id="expPane" hidden>
+        <h3>説明資料（印刷用・A4）</h3>
+        <button class="btn gold" id="reportBtn" style="width:100%">説明資料を作る（上の「出力の種類」に合わせる）</button>
+        <p class="note">役所・住民説明向け＝場面ごとの絵・やさしい説明・車の通り方・日数の目安。工事関係者との打合せ用（目安）＝使う重機・日数・数量・クレーンの能力の目安（仮）。</p>
+        <h3>画面をそのまま動画にする（すぐ見られる）</h3>
+        <button class="btn" id="recBtn" style="width:100%">● 動画を録る（WebM）</button>
+        <p class="note">最初から最後まで再生しながら録画し、終わるとダウンロードされます。工程名と日数の文字が入ります。速さは下の再生速度に従います。</p>
+        
+        <p class="note" id="expMsg"></p>
+        <h3>もっときれいな動画にしたいとき</h3><p class="note">質感と光を計算した高画質の動画（紹介ページの見本）は、当社の作業で作ります。この画面からは作れません。ご希望の橋・条件での作成は <a href="https://az-falcon.com/#contact">お問い合わせ</a> からご相談ください。</p>
+      </div>
+    </div>
+    <div id="view">
+      <div id="hud"><div><span id="hudPhase"></span><span id="hudSide"></span></div><div id="hudDay"></div><div id="hudMach"></div></div>
+      <div id="cams"><button data-cam="all">全体</button><button data-cam="side">横から</button><button data-cam="top">真上</button><button data-cam="low">運転者の目線</button><label><input type="checkbox" id="follow" checked> 作業を追う</label></div>
+    </div>
+    <div id="bar">
+      <button id="playBtn">▶ 再生</button>
+      <div class="tl"><div id="strip"></div><input type="range" id="seek" min="0" max="1000" value="0"></div>
+      <select id="speed"><option value="1">×1</option><option value="2">×2</option><option value="4" selected>×4</option><option value="8">×8</option><option value="16">×16</option></select>
+      <span id="tnow"></span>
+    </div>
+  </section>
+</main>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
