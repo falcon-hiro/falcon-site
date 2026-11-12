@@ -28,6 +28,8 @@ body{background:radial-gradient(ellipse at 50% 35%,#24303f 0%,#151b24 60%,#0d111
 #hbar div{height:8px;width:220px;border-radius:3px;background:linear-gradient(to right,#3b4cc0,#2fa7d8,#5ccf6a,#f2d64b,#e8613c,#b4153a)}
 #hbar small{display:flex;justify-content:space-between;width:220px;color:#c9d3df}
 #load{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.65);padding:12px 20px;border-radius:8px;text-align:center;line-height:1.8}
+#more{position:absolute;right:12px;bottom:44px;background:rgba(10,20,35,.78);padding:5px 10px;border-radius:6px;font-size:12px;color:#f0dcaa}
+@media (max-width:600px){#more{bottom:auto;top:auto;right:8px;left:auto;bottom:64px;max-width:45%}}
 #hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);background:rgba(10,20,35,.72);padding:6px 12px;border-radius:6px;font-size:12px;white-space:nowrap}
 @media (max-width:600px){#info{font-size:12px}#hint{white-space:normal;width:calc(100% - 40px);text-align:center;bottom:8px}#panel{bottom:64px;left:8px}}
 </style>
@@ -49,7 +51,8 @@ body{background:radial-gradient(ellipse at 50% 35%,#24303f 0%,#151b24 60%,#0d111
   <div class="row"><span class="lab">表示</span><button id="trajBtn" class="on">歩いた道すじ</button></div>
   <div class="row"><span class="lab">点の大きさ</span><input id="psize" type="range" min="0.4" max="3" step="0.1" value="1"></div>
 </div>
-<div id="load">読み込み中…<br><small id="prog">データ 約31MB（通信環境により数十秒かかります）</small></div>
+<div id="load">読み込み中…<br><small id="prog">通信量 約15MB（届いた分から順に表示します）</small></div>
+<div id="more" hidden></div>
 <div id="hint">ドラッグ＝回す／右ドラッグ・2本指＝移動／ホイール・ピンチ＝近づく／ダブルクリック＝そこを中心に</div>
 <script type="module">
 // 点群＝当社の試験計測。車両を除いたあと、道路の中心から両側15mで切り、ノイズを除き、6cm升目に1点へ間引いたもの
@@ -57,24 +60,13 @@ import * as THREE from 'three';
 import { OrbitControls } from './lib/OrbitControls.js';
 const prog = document.getElementById('prog');
 try {
-  const meta = await (await fetch('data/road_pc.json')).json();
-  const N = meta.count, total = N * 10;
-  const res = await fetch('data/road_pc.bin');
-  if (!res.ok) throw new Error('bin ' + res.status);
-  const buf = new Uint8Array(total); let got = 0;
-  const reader = res.body.getReader();
-  for (;;) {
-    const { done, value } = await reader.read(); if (done) break;
-    if (got + value.length > total) throw new Error('size');
-    buf.set(value, got); got += value.length;
-    prog.textContent = `点群を読み込んでいます… ${Math.min(100, Math.floor(got / total * 100))}%`;
-  }
-  if (got !== total) throw new Error('short ' + got);
+  // データ＝25万点ずつの塊（どの塊も全体に散らばった間引き版）。届いた塊から表示し、だんだん密になる。
+  // 塊の中身：位置の差分 int16×3（1cm単位）・色 r,g,b・分類（web_pc_pack2.py で作成）
+  const meta = await (await fetch('data/road_pc2.json')).json();
+  const N = meta.count, U = meta.unit_m, CH = meta.chunks;
   const B0 = meta.bmin, B1 = meta.bmax, gz = meta.ground_z_p05;
   const ctr = new THREE.Vector3((B0[0] + B1[0]) / 2, (B0[1] + B1[1]) / 2, gz);
-  const pos = new Uint16Array(buf.buffer, 0, N * 3);
-  const rgb = new Uint8Array(buf.buffer, N * 6, N * 3);
-  const cls = new Uint8Array(buf.buffer, N * 9, N);
+  const pos = new Uint16Array(N * 3), rgb = new Uint8Array(N * 3), ccl = new Uint8Array(N * 3), chh = new Uint8Array(N * 3);
 
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
@@ -87,15 +79,18 @@ try {
   camera.up.set(0, 0, 1);
 
   const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3, true));
-  const colRGB = new THREE.BufferAttribute(rgb, 3, true);
+  const aPos = new THREE.BufferAttribute(pos, 3, false);
+  const colRGB = new THREE.BufferAttribute(rgb, 3, true), colCls = new THREE.BufferAttribute(ccl, 3, true), colH = new THREE.BufferAttribute(chh, 3, true);
+  geo.setAttribute('position', aPos);
   geo.setAttribute('color', colRGB);
-  geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0.5, 0.5, 0.5), 0.9);
-  geo.boundingBox = new THREE.Box3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 1, 1));
+  geo.setDrawRange(0, 0);
+  const ext = new THREE.Vector3((B1[0] - B0[0]) / U, (B1[1] - B0[1]) / U, (B1[2] - B0[2]) / U);
+  geo.boundingBox = new THREE.Box3(new THREE.Vector3(0, 0, 0), ext.clone());
+  geo.boundingSphere = new THREE.Sphere(ext.clone().multiplyScalar(0.5), ext.length() * 0.55);
   const BASE = 0.075 / Math.tan(THREE.MathUtils.degToRad(FOV / 2));   // 約7.5cm角の点
   const mat = new THREE.PointsMaterial({ size: BASE, vertexColors: true, sizeAttenuation: true });
   const pts = new THREE.Points(geo, mat);
-  pts.scale.set(B1[0] - B0[0], B1[1] - B0[1], B1[2] - B0[2]);
+  pts.scale.set(U, U, U);
   pts.position.set(B0[0] - ctr.x, B0[1] - ctr.y, B0[2] - ctr.z);
   scene.add(pts);
 
@@ -107,29 +102,34 @@ try {
     new THREE.MeshBasicMaterial({ color: 0xf0c040 }));
   scene.add(tube);
 
-  // 色の切り替え（分類・高さは初めて押したときに作る）
+  // 色（写真・分類・高さ）は塊が届くたびに3通りとも作っておく＝切り替えは一瞬
   const CL = { 2: ['地面', [181, 143, 95]], 6: ['建物', [224, 122, 95]], 3: ['低い植物', [124, 207, 90]], 5: ['樹木', [46, 139, 62]],
     15: ['柱・ポール', [242, 193, 78]], 16: ['電線', [79, 195, 247]], 26: ['ガードレール', [199, 125, 255]], 1: ['その他', [154, 163, 173]] };
-  let colCls = null, colH = null;
-  const makeCls = () => { const a = new Uint8Array(N * 3); for (let i = 0; i < N; i++) { const c = (CL[cls[i]] || CL[1])[1]; a[i * 3] = c[0]; a[i * 3 + 1] = c[1]; a[i * 3 + 2] = c[2]; } return new THREE.BufferAttribute(a, 3, true); };
   const RAMP = [[59, 76, 192], [47, 167, 216], [92, 207, 106], [242, 214, 75], [232, 97, 60], [180, 21, 58]];
-  const makeH = () => {
-    const a = new Uint8Array(N * 3), zr = B1[2] - B0[2];
-    for (let i = 0; i < N; i++) {
-      const z = B0[2] + pos[i * 3 + 2] / 65535 * zr; let t = Math.max(0, Math.min(1, (z - gz) / 15)) * (RAMP.length - 1);
+  const buf = new Uint8Array(CH.reduce((a, n) => a + n * 10, 0));
+  let loaded = 0;
+  const decode = (base, n, off) => {
+    const dx = new Int16Array(buf.buffer, off, n), dy = new Int16Array(buf.buffer, off + 2 * n, n), dz = new Int16Array(buf.buffer, off + 4 * n, n);
+    const r = off + 6 * n, g = off + 7 * n, bl = off + 8 * n, kc = off + 9 * n;
+    let x = 0, y = 0, z = 0;
+    for (let i = 0; i < n; i++) {
+      x += dx[i]; y += dy[i]; z += dz[i];
+      const j = (base + i) * 3; pos[j] = x; pos[j + 1] = y; pos[j + 2] = z;
+      rgb[j] = buf[r + i]; rgb[j + 1] = buf[g + i]; rgb[j + 2] = buf[bl + i];
+      const c = (CL[buf[kc + i]] || CL[1])[1]; ccl[j] = c[0]; ccl[j + 1] = c[1]; ccl[j + 2] = c[2];
+      let t = Math.max(0, Math.min(1, (B0[2] + z * U - gz) / 15)) * (RAMP.length - 1);
       const k = Math.min(RAMP.length - 2, Math.floor(t)), f = t - k, c0 = RAMP[k], c1 = RAMP[k + 1];
-      a[i * 3] = c0[0] + (c1[0] - c0[0]) * f; a[i * 3 + 1] = c0[1] + (c1[1] - c0[1]) * f; a[i * 3 + 2] = c0[2] + (c1[2] - c0[2]) * f;
+      chh[j] = c0[0] + (c1[0] - c0[0]) * f; chh[j + 1] = c0[1] + (c1[1] - c0[1]) * f; chh[j + 2] = c0[2] + (c1[2] - c0[2]) * f;
     }
-    return new THREE.BufferAttribute(a, 3, true);
+    for (const a of [aPos, colRGB, colCls, colH]) { a.addUpdateRange(base * 3, n * 3); a.needsUpdate = true; }
+    loaded = base + n; geo.setDrawRange(0, loaded);
   };
   const legend = document.getElementById('legend');
   legend.innerHTML = Object.values(CL).map(([n, c]) => `<span><i style="background:rgb(${c})"></i>${n}</span>`).join('');
   document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
     document.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', x === b));
     const m = b.dataset.c;
-    if (m === 'cls') { colCls ||= makeCls(); geo.setAttribute('color', colCls); }
-    else if (m === 'h') { colH ||= makeH(); geo.setAttribute('color', colH); }
-    else geo.setAttribute('color', colRGB);
+    geo.setAttribute('color', m === 'cls' ? colCls : m === 'h' ? colH : colRGB);
     legend.style.display = m === 'cls' ? 'flex' : 'none';
     document.getElementById('hbar').style.display = m === 'h' ? 'block' : 'none';
   });
@@ -181,8 +181,6 @@ try {
   });
 
   addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
-  document.getElementById('load').remove();
-  document.getElementById('panel').hidden = false;
   const ease = x => x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
   renderer.setAnimationLoop(() => {
     if (anim) { const k = Math.min(1, (performance.now() - anim.s) / anim.ms), e = ease(k);
@@ -191,8 +189,28 @@ try {
     tube.material.opacity = Math.max(0.15, Math.min(1, (camera.position.z - 1) / 15));
     renderer.render(scene, camera);
   });
+
+  // 読み込み（⚠️ サーバーが gzip で送っても、届いた中身の量で数える）
+  const res = await fetch('data/road_pc2.bin');
+  if (!res.ok) throw new Error('bin ' + res.status);
+  const reader = res.body.getReader();
+  const load = document.getElementById('load'), more = document.getElementById('more');
+  let got = 0, ci = 0, off = 0, base = 0;
+  for (;;) {
+    const { done, value } = await reader.read(); if (done) break;
+    if (got + value.length > buf.length) throw new Error('size');
+    buf.set(value, got); got += value.length;
+    while (ci < CH.length && off + CH[ci] * 10 <= got) { decode(base, CH[ci], off); off += CH[ci] * 10; base += CH[ci]; ci++; }
+    const pct = Math.floor(got / buf.length * 100);
+    if (ci > 0 && load.isConnected) { load.remove(); document.getElementById('panel').hidden = false; more.hidden = false; }
+    if (load.isConnected) prog.textContent = `点群を読み込んでいます… ${pct}%`;
+    else more.textContent = `残りの点を読み込み中… ${pct}%（届いた分から表示しています）`;
+  }
+  if (ci !== CH.length) throw new Error('short ' + got);
+  more.remove();
 } catch (e) {
-  document.getElementById('load').innerHTML = '表示できませんでした。<br><small>パソコンの最新のChrome・Edgeでお試しください。</small>';
+  const el = document.getElementById('load') || document.getElementById('more');
+  if (el) { el.hidden = false; el.innerHTML = '表示できませんでした。<br><small>パソコンの最新のChrome・Edgeでお試しください。</small>'; }
   console.error(e);
 }
 </script>

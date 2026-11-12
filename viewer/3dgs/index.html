@@ -14,6 +14,7 @@ html,body{margin:0;height:100%;background:#10151c;color:#e8edf3;font-family:'Not
 #info small{color:#c9d3df}
 #back{pointer-events:auto;white-space:nowrap;background:#c9a84c;color:#1f3a5f;text-decoration:none;font-weight:700;padding:7px 14px;border-radius:6px;font-size:13px}
 #load{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.65);padding:12px 20px;border-radius:8px;text-align:center;line-height:1.8}
+#more{position:absolute;right:12px;bottom:44px;background:rgba(10,20,35,.78);color:#f0dcaa;padding:5px 10px;border-radius:6px;font-size:12px}
 #hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);background:rgba(10,20,35,.72);padding:6px 12px;border-radius:6px;font-size:12px;white-space:nowrap}
 body.sky{background:linear-gradient(to bottom,#8fb8de 0%,#b9d3ea 45%,#dfe9f2 70%,#e8edf1 100%)}
 @media (max-width:600px){#info{font-size:12px}#hint{white-space:normal;width:calc(100% - 40px);text-align:center}}
@@ -31,7 +32,8 @@ body.sky{background:linear-gradient(to bottom,#8fb8de 0%,#b9d3ea 45%,#dfe9f2 70%
   <small>人と車は処理の段階で取り除いています（取り除けずに残っている所もあります）。写真に写っていない部分は周りの色で補っています。見た目を確かめるためのデータで、寸法の計測には使えません。</small></div>
   <a id="back" href="/#services">← ホームへ</a>
 </div>
-<div id="load">読み込み中…<br><small id="prog">データ 約50MB（通信環境により数十秒かかります）</small></div>
+<div id="load">読み込み中…<br><small id="prog">通信量 約22MB（見た目に効く部分から先に表示します）</small></div>
+<div id="more" hidden></div>
 <div id="hint">ドラッグ＝回す／右ドラッグ・2本指＝移動／ホイール・ピンチ＝近づく</div>
 <script type="module">
 // 3DGS＝当社の試験撮影（道路）をホームページ用に軽くしたもの
@@ -43,17 +45,11 @@ const applyFilter = () => { const c = view.querySelector('canvas'); if (c) c.sty
 try {
   const GS = await import('@mkkellogg/gaussian-splats-3d');
   const THREE = await import('three');
-  const meta = await (await fetch('data/road3_ground.json')).json();
-  const mbuf = await (await fetch('data/road3_ground.bin')).arrayBuffer();
-  const V = meta.vertices, T = meta.triangles;
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(mbuf, 0, V * 3), 3));
-  geo.setAttribute('uv', new THREE.BufferAttribute(new Uint16Array(mbuf, V * 12, V * 2), 2, true));
-  geo.setIndex(new THREE.BufferAttribute(new Uint32Array(mbuf, V * 16, T * 3), 1));
-  const otex = await new THREE.TextureLoader().loadAsync('data/' + meta.texture);
-  otex.flipY = false; otex.colorSpace = THREE.SRGBColorSpace; otex.anisotropy = 8; otex.needsUpdate = true;
+  // ⚠️ GitHub Pages はデータを gzip 圧縮して送る→部品が Content-Length（圧縮後の大きさ）で終わりを判断して止まる。
+  //    先に自分で全部受け取り、ブラウザ内のデータ（blob）として渡す。
+  const fetchBuf = async u => { const r = await fetch(u); if (!r.ok) throw new Error(u + ' ' + r.status); return r.arrayBuffer(); };
+  const blobUrl = async u => URL.createObjectURL(new Blob([await fetchBuf(u)]));
   const groundScene = new THREE.Scene();
-  groundScene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: otex, side: THREE.DoubleSide })));
   prog.textContent = '3Dの粒を読み込んでいます…';
   const UP = [0.0859, -0.9953, 0.045];
   const viewer = new GS.Viewer({
@@ -63,13 +59,11 @@ try {
     integerBasedSort: false, splatSortDistanceMapPrecision: 20, sceneRevealMode: GS.SceneRevealMode.Instant
   });
   viewer.camera.near = 0.004; viewer.camera.updateProjectionMatrix();
-  // ⚠️ GitHub Pages は .splat を gzip 圧縮して送る→部品が Content-Length（圧縮後の大きさ）で終わりを判断して止まる。
-  //    先に自分で全部受け取り、ブラウザ内のデータ（blob）として渡す。
-  const sres = await fetch('data/road3.splat');
-  if (!sres.ok) throw new Error('splat ' + sres.status);
-  const surl = URL.createObjectURL(new Blob([await sres.arrayBuffer()]));
-  await viewer.addSplatScene(surl, { format: GS.SceneFormat.Splat, showLoadingUI: false, progressiveLoad: false, splatAlphaRemovalThreshold: 5 });
+  // 粒は2つに分けてある（web_keiryo2_3dgs.py）：a＝見た目に効く約20万個（先に出す）／b＝残り約60万個
+  const SOPT = { format: GS.SceneFormat.KSplat, showLoadingUI: false, progressiveLoad: false, splatAlphaRemovalThreshold: 5 };
+  await viewer.addSplatScene(await blobUrl('data/road3_a.ksplat'), SOPT);
   document.getElementById('load').remove(); viewer.start(); applyFilter();
+  const more = document.getElementById('more'); more.hidden = false; more.textContent = '地面を読み込み中…';
   const V3 = viewer.camera.position.constructor, cam = viewer.camera, U = new V3(...UP).normalize();
   let last = null;
   const tick = () => {   // 地平線より上＝空の色／下＝路面に近い灰色（データのない所を白いもやに見せない）
@@ -87,8 +81,37 @@ try {
     requestAnimationFrame(loop);
   };
   loop();
+
+  // 地面の板＝規則格子。高さ（uint16）と「使うマス」の印から、位置・地図の貼り方・三角形を作り直す
+  const gm = await (await fetch('data/road3g.json')).json();
+  const [gb, otex] = await Promise.all([fetchBuf('data/road3g.bin'), new THREE.TextureLoader().loadAsync('data/' + gm.texture)]);
+  const Ni = gm.Ni, Nj = gm.Nj, H16 = new Uint16Array(gb, 0, Ni * Nj), bits = new Uint8Array(gb, Ni * Nj * 2);
+  const P = new Float32Array(Ni * Nj * 3), UV = new Float32Array(Ni * Nj * 2), hs = (gm.hmax - gm.hmin) / 65535;
+  for (let i = 0; i < Ni; i++) for (let j = 0; j < Nj; j++) {
+    const k = i * Nj + j, h = gm.hmin + H16[k] * hs;
+    for (let c = 0; c < 3; c++) P[k * 3 + c] = gm.O[c] + i * gm.A[c] + j * gm.B[c] + h * gm.n[c];
+    UV[k * 2] = gm.u0 + i * gm.du; UV[k * 2 + 1] = gm.v0 + j * gm.dv;
+  }
+  const IDX = new Uint32Array(gm.cells * 6); let t = 0;
+  for (let i = 0; i < Ni - 1; i++) for (let j = 0; j < Nj - 1; j++) {
+    const c = i * (Nj - 1) + j; if (!((bits[c >> 3] >> (c & 7)) & 1)) continue;
+    const a = i * Nj + j, b = a + Nj; IDX[t++] = a; IDX[t++] = b; IDX[t++] = a + 1; IDX[t++] = a + 1; IDX[t++] = b; IDX[t++] = b + 1;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(P, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(UV, 2));
+  geo.setIndex(new THREE.BufferAttribute(IDX, 1));
+  otex.flipY = false; otex.colorSpace = THREE.SRGBColorSpace; otex.anisotropy = 8; otex.needsUpdate = true;
+  groundScene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: otex, side: THREE.DoubleSide })));
+
+  // 残りの粒
+  more.textContent = '残りの粒を読み込み中…（届くと細かい所まで出ます）';
+  await viewer.addSplatScene(await blobUrl('data/road3_b.ksplat'), SOPT);
+  viewer.runSplatSort(true);
+  more.remove();
 } catch (e) {
-  document.getElementById('load').innerHTML = '表示できませんでした。<br><small>パソコンの最新のChrome・Edgeでお試しください。</small>';
+  const el = document.getElementById('load') || document.getElementById('more');
+  if (el) { el.hidden = false; el.innerHTML = '表示できませんでした。<br><small>パソコンの最新のChrome・Edgeでお試しください。</small>'; }
   console.error(e);
 }
 </script>
