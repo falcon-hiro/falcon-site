@@ -105,20 +105,27 @@ footer a{color:var(--gold-l)}
     <li>本ツールの利用または利用できないことで生じた損害について、当社は、故意または重大な過失がある場合を除き、責任を負いません。地図等の外部サービスの都合で、予告なく表示できなくなる、または提供を終えることがあります。</li>
     <li>重機と資材は一般的な外形で描いています。実在のメーカーの製品を再現したものではありません。</li>
     <li>地図の上の橋を選べますが、表示される場所は操作の例で、実在の橋の工事計画や状態を示すものではありません。</li>
+    <li><b>背景の建物は、説明用の表現です。</b>国土交通省 PLATEAU の3D都市モデルを当社が加工して表示したもの、空中写真から当社のソフトが自動で推定した簡略な箱、または OpenStreetMap の建物のいずれかで、どれを使ったかは画面の注記に表示します。位置・形・高さは目安です。測量の成果ではなく、寸法・位置の根拠には使えません。</li>
+    <li>空中写真から推定した箱は、実際の建物と形や高さが異なります。実際には無い箱ができたり、建物を拾えなかったりします。高い建物は低く出る傾向があります。国土地理院・国土交通省が作成・確認したものではありません。</li>
+    <li>PLATEAU の建物データは、配信元の都合で読み込めないことがあります。そのときは、空中写真からの推定か OpenStreetMap の建物に切り替わります。</li>
     <li>保存した動画・資料を配るときは、中に入っている注意書きと出典の表示を消さないでください。</li>
   </ul></div>
   <h3 style="font-size:16px;color:var(--navy);margin:18px 0 8px">通信について</h3>
-  <div class="env">重機・寸法などの条件は、お使いの端末の中だけで処理します。当社は受け取らず、保存もしません。選んだ場所は、地図と建物データを取り寄せるため、その付近の範囲が次の提供元に送られます。<br>
-  地図・航空写真・標高・建物データの表示と、プログラム部品の読み込みのため、お使いのブラウザから国土地理院、OpenStreetMap、Overpass APIの公開サーバー、jsDelivr、unpkgへ直接通信します。このとき、IPアドレス、ブラウザの種類、表示中の地図の範囲が各提供元に送られます。このページ自体の配信元（GitHub Pages）にも、IPアドレスとブラウザの種類が届きます。</div>
+  <div class="env">重機・寸法などの条件と、空中写真からの建物の推定は、お使いの端末の中だけで処理します（推定は、表示のために読み込んだ航空写真を端末の中で解析するもので、そのために写真を追加で読むことはなく、写真や結果を当社へ送ることもありません）。当社は受け取らず、保存もしません。選んだ場所は、地図と建物データを取り寄せるため、その付近の範囲が次の提供元に送られます。<br>
+  地図・航空写真・標高・建物データの表示と、プログラム部品の読み込みのため、お使いのブラウザから国土地理院、国土交通省 PLATEAU のデータカタログ（api.plateauview.mlit.go.jp）と配信サーバー（assets.cms.plateau.reearth.io）、OpenStreetMap、Overpass APIの公開サーバー、jsDelivr、unpkgへ直接通信します。このとき、IPアドレス、ブラウザの種類、表示中の地図の範囲が各提供元に送られます。このページ自体の配信元（GitHub Pages）にも、IPアドレスとブラウザの種類が届きます。</div>
   <h3 style="font-size:16px;color:var(--navy);margin:18px 0 8px">出典</h3>
-  <div class="env">3Dの背景の航空写真と地形は、国土地理院の<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル</a>（全国最新写真・標高タイル（基盤地図情報数値標高モデル））を加工して作成しています。<br>
-  地図：地理院タイル（全国最新写真・標準地図）／© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors。建物と橋の読み取り：© OpenStreetMap contributors（Overpass API）。<br>
-  プログラム部品：three.js、Leaflet（それぞれの配布条件に従って使っています）。</div>
+  <div class="env">3Dの背景の航空写真と地形は、国土地理院の<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル</a>（全国最新写真（シームレス）・標高タイル（基盤地図情報数値標高モデル））を加工して作成しています。<br>
+  地図：地理院タイル（全国最新写真（シームレス）・標準地図）／© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors。建物と橋の読み取り：© OpenStreetMap contributors（Overpass API）。<br>
+  背景の建物（PLATEAU のある地域）：出典：国土交通省 <a href="https://www.mlit.go.jp/plateau/" target="_blank" rel="noopener">PLATEAUウェブサイト</a>（https://www.mlit.go.jp/plateau/）の3D都市モデル（建築物モデル）を当社が加工して表示。市区町村の名前と年度は、画面の注記に表示します（取得できた場合）。<br>
+  背景の建物（推定）：地理院タイル（全国最新写真（シームレス））を加工して当社が作成した推定の形です。建物の推定の学習と統計に、3D都市モデル（Project PLATEAU）仙台市のデータと、地理院タイル（全国最新写真（シームレス））を利用しています。推定した建物は説明用の表現で、測量の成果ではなく、寸法・位置の根拠には使えません。<br>
+  全国最新写真（シームレス）には GRUS画像（© Axelspace）を含む場合があります。<br>
+  プログラム部品：three.js、Leaflet、ONNX Runtime Web © Microsoft Corporation（<a href="https://github.com/microsoft/onnxruntime/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>）（それぞれの配布条件に従って使っています）。</div>
 </section>
 
 <section>
   <h2>動く環境</h2>
-  <div class="env">パソコンのブラウザ（Google Chrome・Microsoft Edge の新しい版）でお使いください。3Dを表示するため、スマートフォンでは動きが重くなることがあります。地図のデータを配るサーバーが混んでいるときは、「橋の上を1回クリック」での読み取りに時間がかかることがあります。そのときは「橋の両端を2回クリック」をお使いください。</div>
+  <div class="env">パソコンのブラウザ（Google Chrome・Microsoft Edge の新しい版）でお使いください。3Dを表示するため、スマートフォンでは動きが重くなることがあります。地図のデータを配るサーバーが混んでいるときは、「橋の上を1回クリック」での読み取りに時間がかかることがあります。そのときは「橋の両端を2回クリック」をお使いください。<br>
+  空中写真からの建物の推定は、PLATEAU の建物データが無い地域で、パソコンでは自動で行います（範囲が広い場所などでは行わず、OpenStreetMap の建物を使います。理由は画面に表示します。初回に約10MBの部品を読み込みます。当社のパソコンでは数秒〜10秒ほどでした。端末や回線によっては、さらに時間がかかります）。スマートフォンなどでは自動では行いません。「設定」の「建物のデータ」で「空中写真から推定」を選ぶと試せます（時間がかかります）。</div>
 </section>
 
 <section>

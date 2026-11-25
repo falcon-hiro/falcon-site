@@ -28,6 +28,7 @@ let CHECKS = {};                    // クレーンの能力の目安
 let TRAFFIC = 'normal';             // いまの通行のしかた
 S.out = 'gyosha';                   // 出力の種類：gyosha＝工事関係者との打合せ用（目安）／yakusho＝役所・住民説明向け
 const WEB = document.body.classList.contains('web');   // HP用（ブラウザだけで動く版）
+const TEST = new URLSearchParams(location.search).get('test') || '';   // 確認用：?test=noplateau（PLATEAU が読めない場合）／?test=noplateau,nophoto（推定もできない場合）のふるまいを見る
 const TRAFFIC_TEXT = { normal: '通行：いつもどおり2車線で通れます', alt: '通行：片側交互通行（仮設信号で交互に通れます）', closed: '通行：全面通行止め（迂回路をご利用ください）' };
 const PH = {};                      // key_side → phase
 
@@ -839,6 +840,7 @@ function buildGround(Lb) {
   const myRoot = root, site = S.site;
   const notes = [];
   const note = s => { notes.push(s); $('groundNote').textContent = notes.join('／'); };
+  note.prog = t => { $('groundNote').textContent = notes.concat(t ? [t] : []).join('／'); };   // 途中経過（次の note で消える）
   Promise.all([groundTexture(site.lat, site.lon, radius), S.P.terrain ? demGrid(site.lat, site.lon, radius).catch(() => null) : Promise.resolve(null)]).then(([r, dem]) => {
     if (root !== myRoot) return;
     const tex = new THREE.CanvasTexture(r.canvas); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
@@ -870,7 +872,7 @@ function buildGround(Lb) {
     const gm = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95 }); gm.color.setScalar(1.3); gm.envMapIntensity = 0.3; gm.name = 'photo';   // 写真は明るさの調整（トーン）で暗く見えるので持ち上げる
     const m = new THREE.Mesh(geo, gm);
     m.rotation.x = -Math.PI / 2; m.position.set(r.offX, -0.02, r.offZ); m.receiveShadow = true;
-    groundGroup.add(m); note('写真：地理院タイル（全国最新写真）z' + r.z);
+    groundGroup.add(m); note('写真：地理院タイル（全国最新写真（シームレス））z' + r.z);
     if (S.P.terrain) backgroundObjects(site, Math.min(radius, 260), r, elevAt, base, note, myRoot);
   }).catch(e => { $('groundNote').textContent = '地面の写真を読めませんでした（' + e.message + '）'; });
 }
@@ -919,19 +921,66 @@ async function overpass0(q) {
   throw err;
 }
 // 背景の建物と電柱（建物は OpenStreetMap の箱。電柱も OpenStreetMap）
-
+// 建物は、PLATEAU（国土交通省の3D都市モデル）→ 空中写真からの推定 → OpenStreetMap の箱、の順に試す。読めない・無い・できないときは次へ進む（自動でやり直さない）
 async function backgroundObjects(site, radius, r, elevAt, base, note, myRoot) {
-  let pl = null;
+  let pl = null, est = null;                             // pl＝PLATEAU を使った／est＝空中写真から推定した箱を使った
   G.bldg = { src: 'osm' };
-  
+  const mode = S.P.bldg || 'plateau';                    // plateau＝自動／plateau2＝屋根の形つき／photo＝空中写真から推定／osm
+  const say = t => { if (root === myRoot) { $('mapMsg').textContent = t; if (note.prog) note.prog(t); } };
+  if (mode !== 'osm' && mode !== 'photo' && mode !== 'photoweb' && elevAt) {
+    try {
+      if (TEST.includes('noplateau')) throw new Error('確認用の指定で、読み込みを止めています');
+      const lod = mode === 'plateau2' ? 2 : 1;
+      const mod = await import('./plateau.js');
+      pl = await cached(`plateau|${site.lat}|${site.lon}|${radius}|${lod}`, () => mod.plateauBuildings({ lat: site.lat, lon: site.lon, radius, lod, elevAt, onProgress: say }));
+      if (root !== myRoot) return;
+      if (pl) {
+        const pm = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.02 }); pm.name = 'plateau_bldg';
+        const mesh = new THREE.Mesh(pl.geometry, pm); mesh.position.y = -base - 0.15; mesh.castShadow = mesh.receiveShadow = true;
+        groundGroup.add(mesh);
+        G.bldg = { src: 'plateau', city: pl.city, year: pl.year, lod: pl.lod };
+        note(`建物 ${pl.count}棟：3D都市モデル（${['国土交通省 Project PLATEAU', [pl.city, pl.year ? pl.year + '年度' : '', '建築物 LOD' + pl.lod].filter(Boolean).join('・')].join('／')}）を当社が加工して表示。作成時点の資料による概略の形で、現況と異なる場合があります${WEB ? '' : `（高さ合わせ＝建物の足元と地形の差 ${fmt(pl.geoid, 1)}m を引いた・ばらつき ${fmt(pl.spread, 1)}m・${pl.tiles}タイル ${fmt(pl.mb, 1)}MB）`}`);
+      } else note('この場所には PLATEAU の建物データがありません');
+    } catch (e) { pl = null; if (root === myRoot) note('PLATEAU の建物を読めませんでした（' + e.message + '）'); }
+  }
+  if (!pl && mode !== 'osm' && elevAt) {
+    try {
+      let ph = null;
+      
+      if (!ph) {                                           // ブラウザの中で推定する（読み込み済みの地面の写真を使う。追加の写真は読まない）
+        if (TEST.includes('nophoto')) throw new Error('確認用の指定で、推定を止めています');
+        const mod = await import('./photo_bldg.js');
+        if (mode === 'plateau' && !mod.canAuto()) throw new Error('この端末では自動では行いません。「設定」の「建物のデータ」で「空中写真から推定」を選ぶと試せます');
+        if (r.z !== 18) throw new Error('範囲が広い場所では使えません');
+        ph = await cached(`photobldg|web|${site.lat}|${site.lon}|${radius}`, () => mod.photoBuildings({ canvas: r.canvas, mpp: r.mpp, cx: r.canvas.width / 2 - r.offX / r.mpp, cy: r.canvas.height / 2 - r.offZ / r.mpp, radius, onProgress: say }));
+      }
+      if (root !== myRoot) return;
+      const ax = Math.cos(site.theta), ay = Math.sin(site.theta);
+      const onRoad = (e, s) => { const u = e * ax - s * ay, v = e * ay + s * ax; return Math.abs(u) < S.P.L / 2 + 75 && Math.abs(v) < S.P.W / 2 + 3; };   // 橋と取付道路の上には箱を立てない
+      const colors = [0xd9d4ca, 0xc9c4ba, 0xe4e0d8, 0xbfc5cc, 0xd2c3ad]; let nb = 0;
+      for (const b of ph.buildings) {
+        const ce = b.poly.reduce((a, p) => a + p[0], 0) / b.poly.length, cs = b.poly.reduce((a, p) => a + p[1], 0) / b.poly.length;
+        if (onRoad(ce, cs)) continue;
+        const shape = new THREE.Shape(b.poly.map(p => new THREE.Vector2(p[0] - ce, -(p[1] - cs))));
+        const m = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: clamp(b.h, 3, 120), bevelEnabled: false }), M.mat(colors[nb % colors.length]));
+        m.rotation.x = -Math.PI / 2; m.position.set(ce, ((elevAt(ce, cs) ?? base) - base) - 0.3, cs); m.castShadow = m.receiveShadow = true;
+        groundGroup.add(m); nb++;
+      }
+      if (nb) { est = ph; G.bldg = { src: 'photo', backend: ph.backend || 'pc', ms: ph.ms || 0 }; note(`建物 ${nb}棟：空中写真（国土地理院 地理院タイル）から当社のソフトが自動で推定した簡略な箱。国土地理院が作成したものではありません。位置・形・高さは目安で、実際の建物とは異なります（計測・設計には使えません）`); }
+      else note('空中写真から建物を読み取れませんでした');
+    } catch (e) { if (root === myRoot) note('空中写真からの推定は行いませんでした（' + e.message + '）'); }
+  }
   if (root !== myRoot) return;
-  osmObjects(site, radius, r, elevAt, base, !pl).then(n => { if (root === myRoot) note(pl ? `電柱など ${n.p}本（OpenStreetMap）` : `建物 ${n.b}棟・電柱など ${n.p}本（OpenStreetMap・形と高さは目安）`); }).catch(e => note((pl ? '電柱' : '建物・電柱') + 'を読めませんでした'));
+  say('');
+  const own = !!pl || !!est;                               // 建物を別のデータで置いた → OpenStreetMap からは電柱だけ
+  osmObjects(site, radius, r, elevAt, base, !own).then(n => { if (root === myRoot) note(own ? `電柱など ${n.p}本（OpenStreetMap）` : `建物 ${n.b}棟・電柱など ${n.p}本（OpenStreetMap・形と高さは目安）`); }).catch(e => note((own ? '電柱' : '建物・電柱') + 'を読めませんでした'));
 }
 // 書き出し物（録画・A4資料）に入れる出典の1行
 function creditLine() {
   let b = '建物：© OpenStreetMap contributors';
-  
-  return '背景の航空写真・地形：国土地理院の地理院タイル（全国最新写真・標高タイル）を加工して作成／' + b;
+  if (G && G.bldg && G.bldg.src === 'plateau') b = `建物：国土交通省 PLATEAUウェブサイト（https://www.mlit.go.jp/plateau/）の3D都市モデル${G.bldg.city ? '（' + G.bldg.city + '）' : ''}を当社が加工して表示／電柱：© OpenStreetMap contributors`;
+  if (G && G.bldg && G.bldg.src === 'photo') b = '建物：地理院タイル（全国最新写真（シームレス））を加工して当社が作成した推定の形（国土地理院が作成したものではありません。測量の成果ではなく、寸法・位置の根拠には使えません）／電柱：© OpenStreetMap contributors';
+  return '背景の航空写真・地形：国土地理院の地理院タイル（全国最新写真（シームレス）・標高タイル）を加工して作成／' + b;
 }
 // OpenStreetMap の建物（高さは階数×3.2m、無ければ7m）と電柱
 async function osmObjects(site, radius, r, elevAt, base, withBld = true) {

@@ -91,12 +91,12 @@ body.web main{top:76px}a.hb{text-decoration:none}
         <label><input type="radio" name="pickmode" value="two"> 橋の両端を2回クリック（自分で指定）</label>
       </div>
       <p class="muted" id="mapMsg">橋の上をクリックしてください。地図のデータ（OpenStreetMap）から橋の両端を読み取ります。</p>
-      <p class="note">3Dでは、国土地理院の標高（地形）と航空写真、OpenStreetMapの建物・電柱も表示します（建物の高さは階数からの目安）。</p>
+      <p class="note">3Dでは、国土地理院の標高（地形）と航空写真、背景の建物（PLATEAUの3D都市モデル／空中写真からの推定／OpenStreetMapのいずれか。位置・形・高さは目安）、OpenStreetMapの電柱も表示します。</p>
       <div class="box" id="siteInfo">まだ選ばれていません。</div>
       <button class="btn gold" id="build3d">3Dで工程を作る →</button>
       <button class="btn line" id="sample" style="margin-top:8px">地図なしで見本の橋（40m）を開く</button>
       <p class="note" style="margin-top:14px">航空写真：国土地理院の地理院タイル。橋の読み取り：OpenStreetMap（© OpenStreetMap contributors）。寸法・高さ・径間数は次の画面の「設定」で直せます。</p>
-      <p class="note">3Dの背景は、国土地理院の地理院タイル（全国最新写真・標高タイル）を加工して作成しています。建物・橋の読み取り：© OpenStreetMap contributors。<br>重機・寸法などの条件は、お使いの端末の中だけで処理します。当社は受け取らず、保存もしません。選んだ場所は、地図と建物データを取り寄せるため、その付近の範囲が次の提供元に送られます。地図・航空写真・標高・建物データの表示と、プログラム部品の読み込みのため、お使いのブラウザから国土地理院、OpenStreetMap、Overpass APIの公開サーバー、jsDelivr、unpkgへ直接通信します（IPアドレス、ブラウザの種類、表示中の地図の範囲が各提供元に送られます）。地図上の橋を選んでも、実在の橋の工事計画や状態を示すものではありません。くわしくは <a href="../#terms">ご利用にあたって</a>。</p>
+      <p class="note">3Dの背景は、国土地理院の地理院タイル（全国最新写真（シームレス）・標高タイル）を加工して作成しています。背景の建物は、国土交通省 PLATEAU の3D都市モデルがある地域ではそれを当社が加工して表示し、無い地域では、空中写真から当社のソフトが推定した簡略な箱（対応する端末のみ）か、OpenStreetMap の建物を使います。推定した建物は説明用の表現で、位置・形・高さは目安です（国土地理院が作成したものではありません）。橋の読み取り：© OpenStreetMap contributors。<br>重機・寸法などの条件と、空中写真からの建物の推定は、お使いの端末の中だけで処理します。当社は受け取らず、保存もしません。選んだ場所は、地図と建物データを取り寄せるため、その付近の範囲が次の提供元に送られます。地図・航空写真・標高・建物データの表示と、プログラム部品の読み込みのため、お使いのブラウザから国土地理院、国土交通省 PLATEAU のデータカタログ（api.plateauview.mlit.go.jp）と配信サーバー（assets.cms.plateau.reearth.io）、OpenStreetMap、Overpass APIの公開サーバー、jsDelivr、unpkgへ直接通信します（IPアドレス、ブラウザの種類、表示中の地図の範囲が各提供元に送られます）。地図上の橋を選んでも、実在の橋の工事計画や状態を示すものではありません。くわしくは <a href="../#terms">ご利用にあたって</a>。</p>
     </aside>
   </section>
 
@@ -139,7 +139,7 @@ body.web main{top:76px}a.hb{text-decoration:none}
           <span class="k">高欄の種類（工事前・完成後とも）</span><select id="p_railType"><option value="wall">壁高欄（コンクリート）</option><option value="steel">鋼製高欄</option></select>
           <span class="k">遮音壁</span><select id="p_soundWall"><option value="none">なし</option><option value="both">両側</option><option value="left">左側だけ</option><option value="right">右側だけ</option></select>
           <span class="k">地形・建物・電柱</span><select id="p_terrain"><option value="true">表示する</option><option value="false">表示しない</option></select>
-          
+          <span class="k">建物のデータ</span><select id="p_bldg"><option value="plateau">自動（PLATEAU＝国交省の3D都市モデル → 無い地域は空中写真から推定 → OpenStreetMap）</option><option value="photo">空中写真から推定（箱・位置と高さは目安）</option><option value="osm">OpenStreetMap（箱・高さは目安）</option></select>
         </div>
         <button class="btn line" id="useTerrainH" style="margin-top:8px;width:100%">路面の地上高を地形（標高）から決める</button>
         <button class="btn" id="applyBtn" style="margin-top:10px;width:100%">この条件で作り直す</button>
