@@ -1,4 +1,4 @@
-// 床版架替 4Dシミュレーター（株式会社ファルコン）— 画面と3Dの本体
+// 床版取替 4Dシミュレーター（株式会社ファルコン）— 画面と3Dの本体
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
@@ -871,7 +871,7 @@ function buildGround(Lb) {
     const m = new THREE.Mesh(geo, gm);
     m.rotation.x = -Math.PI / 2; m.position.set(r.offX, -0.02, r.offZ); m.receiveShadow = true;
     groundGroup.add(m); note('写真：地理院タイル（全国最新写真）z' + r.z);
-    if (S.P.terrain) osmObjects(site, Math.min(radius, 260), r, elevAt, base).then(n => { if (root === myRoot) note(`建物 ${n.b}棟・電柱など ${n.p}本（OpenStreetMap・形と高さは目安）`); }).catch(e => note('建物・電柱を読めませんでした'));
+    if (S.P.terrain) backgroundObjects(site, Math.min(radius, 260), r, elevAt, base, note, myRoot);
   }).catch(e => { $('groundNote').textContent = '地面の写真を読めませんでした（' + e.message + '）'; });
 }
 // 国土地理院の標高タイル（DEM5A→DEM10B の順に使う）
@@ -918,9 +918,24 @@ async function overpass0(q) {
   }
   throw err;
 }
+// 背景の建物と電柱（建物は OpenStreetMap の箱。電柱も OpenStreetMap）
+
+async function backgroundObjects(site, radius, r, elevAt, base, note, myRoot) {
+  let pl = null;
+  G.bldg = { src: 'osm' };
+  
+  if (root !== myRoot) return;
+  osmObjects(site, radius, r, elevAt, base, !pl).then(n => { if (root === myRoot) note(pl ? `電柱など ${n.p}本（OpenStreetMap）` : `建物 ${n.b}棟・電柱など ${n.p}本（OpenStreetMap・形と高さは目安）`); }).catch(e => note((pl ? '電柱' : '建物・電柱') + 'を読めませんでした'));
+}
+// 書き出し物（録画・A4資料）に入れる出典の1行
+function creditLine() {
+  let b = '建物：© OpenStreetMap contributors';
+  
+  return '背景の航空写真・地形：国土地理院の地理院タイル（全国最新写真・標高タイル）を加工して作成／' + b;
+}
 // OpenStreetMap の建物（高さは階数×3.2m、無ければ7m）と電柱
-async function osmObjects(site, radius, r, elevAt, base) {
-  const q = `[out:json][timeout:25];(way["building"](around:${radius},${site.lat},${site.lon});node["power"~"pole|tower"](around:${radius},${site.lat},${site.lon});node["man_made"="utility_pole"](around:${radius},${site.lat},${site.lon}););out geom;`;
+async function osmObjects(site, radius, r, elevAt, base, withBld = true) {
+  const q = `[out:json][timeout:25];(${withBld ? `way["building"](around:${radius},${site.lat},${site.lon});` : ''}node["power"~"pole|tower"](around:${radius},${site.lat},${site.lon});node["man_made"="utility_pole"](around:${radius},${site.lat},${site.lon}););out geom;`;
   const j = await overpass(q);
   const n = 2 ** r.z;
   const toES = (lat, lon) => { const px = (lon + 180) / 360 * n * 256, lr = lat * Math.PI / 180; const py = (1 - Math.log(Math.tan(lr) + 1 / Math.cos(lr)) / Math.PI) / 2 * n * 256; return { e: (px - r.px) * r.mpp, s: (py - r.py) * r.mpp }; };
@@ -1057,7 +1072,7 @@ function startRec() {
   const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m));
   const mr = new MediaRecorder(st, { mimeType: mime, videoBitsPerSecond: 8e6 }); const chunks = [];
   mr.ondataavailable = e => e.data.size && chunks.push(e.data);
-  mr.onstop = () => { const b = new Blob(chunks, { type: 'video/webm' }); dl(b, `床版架替_4D_${stamp()}.webm`); $('recBtn').textContent = '● 動画を録る（WebM）'; };
+  mr.onstop = () => { const b = new Blob(chunks, { type: 'video/webm' }); dl(b, `床版取替_4D_${stamp()}.webm`); $('recBtn').textContent = '● 動画を録る（WebM）'; };
   REC = { c, ctx, mr }; S.t = 0; S.playing = true; mr.start(500); $('recBtn').textContent = '■ 録画中（終わると保存）';
 }
 function stopRec() { if (!REC) return; REC.mr.stop(); REC = null; }
@@ -1074,7 +1089,7 @@ function drawRec() {
   ctx.fillStyle = '#d7deea'; ctx.font = `${17 * s}px "Yu Gothic","Meiryo",sans-serif`; ctx.fillText(l3, 42 * s, 118 * s, bw - 40 * s);
   ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.font = `${15 * s}px "Yu Gothic",sans-serif`; ctx.fillStyle = 'rgba(11,22,38,0.55)'; ctx.fillRect(0, c.height - (S.site ? 52 : 30) * s, c.width, (S.site ? 52 : 30) * s);
   ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillText('説明用の簡易シミュレーション（日数・重機の能力・寸法は目安。実際の施工計画・設計・安全の検討には使えません）　株式会社ファルコン', 24 * s, c.height - (S.site ? 32 : 10) * s);
-  if (S.site) ctx.fillText('背景の航空写真・地形：国土地理院の地理院タイル（全国最新写真・標高タイル）を加工して作成／建物：© OpenStreetMap contributors', 24 * s, c.height - 10 * s);
+  if (S.site) ctx.fillText(creditLine(), 24 * s, c.height - 10 * s, c.width - 48 * s);
 }
 
 // ───── Blender用の書き出し（GLB＋工程表JSON）─────
@@ -1109,7 +1124,7 @@ async function bakeGLB(speed, fps) {
   saved.forEach(x => { x.o.position.copy(x.p); x.o.quaternion.copy(x.q); x.o.scale.copy(x.s); x.o.visible = x.v; });
   applyState(was);
   const meta = {
-    title: '橋梁床版架替 4D施工シミュレーション', made: new Date().toISOString(), fps, frames: n, speed,
+    title: '橋梁床版取替 4D施工シミュレーション', made: new Date().toISOString(), fps, frames: n, speed,
     site: S.site, params: S.P,
     camera: { pos: camera.position.toArray(), target: controls.target.toArray(), fov: camera.fov },
     out: S.out,
@@ -1123,7 +1138,7 @@ async function exportForBlender(mode) {
   $('expBtn').disabled = $('expBtn2').disabled = true;
   try {
     const { glb, meta } = await bakeGLB(speed, fps);
-    const name = `床版架替_4D_${stamp()}`;
+    const name = `床版取替_4D_${stamp()}`;
     if (mode === 'download') { dl(glb, name + '.glb'); dl(new Blob([JSON.stringify(meta, null, 1)], { type: 'application/json' }), name + '.json'); $('expMsg').textContent = `書き出しました（${(glb.size / 1e6).toFixed(1)}MB・動き${meta.tracks}本）`; return; }
     $('expMsg').textContent = 'フォルダへ保存中…';
     let r = await fetch(`/api/save?dir=${encodeURIComponent(name)}&file=scene.glb`, { method: 'POST', body: glb }); if (!r.ok) throw new Error('保存できません（serve.py で起動してください）');
@@ -1182,10 +1197,10 @@ figure{margin:0;border:1px solid #c8ced8;border-radius:4px;overflow:hidden}figur
 ${yak ? `<div class="box">この資料は、工事の流れを3Dの絵でわかりやすくお伝えするためのものです。実際の日程・規制の時間帯・迂回路は、別途お知らせいたします。</div>` : ''}
 <h2>${yak ? '工事の流れ（場面ごと）' : '主な場面'}</h2><div class="grid">${shots.map(s => `<figure><img src="${s.img}"><figcaption><b>${esc(s.p.name)}</b> ${SIDE_LABEL(s.p.side)}<br>${esc(yak ? (K.PLAIN[s.p.key] || '') : K.PHASES[s.p.key].slots.map(sl => K.MACHINES[sel(s.p.key, sl.k)].name).join('・'))}<br><small>${esc(s.traffic)}</small></figcaption></figure>`).join('')}</div>
 <h2>工程の一覧</h2>${table}${qty}
-<p class="note">※この資料は説明用の簡易シミュレーションから作ったもので、実際の施工計画・設計・安全の検討には使えません。日数・寸法・重機の能力は目安（仮の値を含む）です。${yak ? '' : '施工計画・積算には、メーカーの性能表と現地の条件で確認した値を使ってください。'}図の重機・資材は一般的な形の簡易モデルで、特定のメーカーの製品を示すものではありません。${site ? '<br>背景の航空写真・地形：国土地理院の地理院タイル（全国最新写真・標高タイル）を加工して作成／建物：© OpenStreetMap contributors' : ''}<br>${WEB ? '株式会社ファルコンの「床版架替 4Dシミュレーター（試作版）」で作成' : '株式会社ファルコン　作成'} ${new Date().toLocaleDateString('ja-JP')}</p>
+<p class="note">※この資料は説明用の簡易シミュレーションから作ったもので、実際の施工計画・設計・安全の検討には使えません。日数・寸法・重機の能力は目安（仮の値を含む）です。${yak ? '' : '施工計画・積算には、メーカーの性能表と現地の条件で確認した値を使ってください。'}図の重機・資材は一般的な形の簡易モデルで、特定のメーカーの製品を示すものではありません。${site ? '<br>' + esc(creditLine()) : ''}<br>${WEB ? '株式会社ファルコンの「床版取替 4Dシミュレーター（試作版）」で作成' : '株式会社ファルコン　作成'} ${new Date().toLocaleDateString('ja-JP')}</p>
 </body></html>`;
   const blob = new Blob([html], { type: 'text/html' });
-  const name = `${yak ? '説明資料_役所向け' : '打合せ用資料_目安'}_床版架替_${stamp()}.html`;
+  const name = `${yak ? '説明資料_役所向け' : '打合せ用資料_目安'}_床版取替_${stamp()}.html`;
   try { const r = await fetch(`/api/save?dir=${encodeURIComponent('資料_' + stamp())}&file=${encodeURIComponent(name)}`, { method: 'POST', body: blob }); const j = await r.json(); $('expMsg').textContent = '✅ 説明資料を保存しました：' + j.path; }
   catch (e) { dl(blob, name); $('expMsg').textContent = '説明資料をダウンロードしました：' + name; }
   window.open(URL.createObjectURL(blob), '_blank');
@@ -1271,8 +1286,8 @@ function renderPlaced() {
 }
 
 // ───── 設定フォーム ─────
-const FIELDS = ['L', 'W', 'spans', 'girders', 'H', 'panelW', 'panelT', 'blockLen', 'perDay', 'method', 'studOrder', 'railType', 'soundWall', 'terrain', 'zMode', 'zStart', 'zEnd', 'carKmh', 'lanes'];
-const STRF = ['method', 'studOrder', 'railType', 'soundWall', 'zMode'];
+const FIELDS = ['L', 'W', 'spans', 'girders', 'H', 'panelW', 'panelT', 'blockLen', 'perDay', 'method', 'studOrder', 'railType', 'soundWall', 'terrain', 'bldg', 'zMode', 'zStart', 'zEnd', 'carKmh', 'lanes'];
+const STRF = ['method', 'studOrder', 'railType', 'soundWall', 'zMode', 'bldg'];
 const NULLF = ['zStart', 'zEnd'];
 function fillForm() { FIELDS.forEach(f => { const el = $('p_' + f); if (el) el.value = (S.P[f] === null || S.P[f] === undefined) ? '' : String(S.P[f]); }); }
 function readForm() {
@@ -1350,7 +1365,7 @@ function drawSite() {
 }
 
 // ───── 保存・読込 ─────
-function saveProject() { dl(new Blob([JSON.stringify({ app: 'shoban-bim', v: 1, site: S.site, P: S.P, mach: S.mach, liv: S.liv, parts: S.parts }, null, 1)], { type: 'application/json' }), `床版架替_計画_${stamp()}.json`); }
+function saveProject() { dl(new Blob([JSON.stringify({ app: 'shoban-bim', v: 1, site: S.site, P: S.P, mach: S.mach, liv: S.liv, parts: S.parts }, null, 1)], { type: 'application/json' }), `床版取替_計画_${stamp()}.json`); }
 function loadProject(file) { file.text().then(tx => { const j = JSON.parse(tx); Object.assign(S, { site: j.site, P: { ...K.DEFAULT_PARAMS, ...j.P }, mach: { ...K.defaultMachines(), ...j.mach }, liv: j.liv || null, parts: j.parts || [] }); save(); fillForm(); if (S.site && map) drawSite(); buildWorld(); camPreset('all'); }); }
 
 // ───── 起動 ─────

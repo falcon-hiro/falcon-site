@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>床版架替 4Dシミュレーター</title>
+<title>床版取替 4Dシミュレーター</title>
 <meta name="description" content="地図で橋を選び、工種ごとの重機を選ぶと、橋の床版取替工事の流れ（規制・足場・撤去・架設・舗装）を3Dで再生できる説明用のシミュレーターです。日数・能力・寸法は目安です。">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -69,7 +69,7 @@ body.web main{top:76px}a.hb{text-decoration:none}
 <body>
 <script>document.body.classList.add('web')</script>
 <header>
-  <h1>床版架替 4Dシミュレーター<small>試作版</small></h1>
+  <h1>床版取替 4Dシミュレーター<small>試作版</small></h1>
   <button class="tab" data-tab="map">① 場所を選ぶ</button>
   <button class="tab" data-tab="sim">② 工程を組む・再生する</button>
   <span class="sp"></span>
@@ -139,6 +139,7 @@ body.web main{top:76px}a.hb{text-decoration:none}
           <span class="k">高欄の種類（工事前・完成後とも）</span><select id="p_railType"><option value="wall">壁高欄（コンクリート）</option><option value="steel">鋼製高欄</option></select>
           <span class="k">遮音壁</span><select id="p_soundWall"><option value="none">なし</option><option value="both">両側</option><option value="left">左側だけ</option><option value="right">右側だけ</option></select>
           <span class="k">地形・建物・電柱</span><select id="p_terrain"><option value="true">表示する</option><option value="false">表示しない</option></select>
+          
         </div>
         <button class="btn line" id="useTerrainH" style="margin-top:8px;width:100%">路面の地上高を地形（標高）から決める</button>
         <button class="btn" id="applyBtn" style="margin-top:10px;width:100%">この条件で作り直す</button>

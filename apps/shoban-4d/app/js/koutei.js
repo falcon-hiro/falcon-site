@@ -76,7 +76,8 @@ export const DEFAULT_PARAMS = {
   studOrder: 'after', // before=桁上面処理で先に溶接／after=架設後に間詰めとまとめて溶接
   railType: 'wall', // 新しい高欄：wall=壁高欄（コンクリート）／steel=鋼製高欄
   soundWall: 'none', // 遮音壁：none／both／left／right（今ある物を外し、新しく付け直す）
-  terrain: true,    // 地形（国土地理院の標高）・建物・電柱（OpenStreetMap）を表示
+  terrain: true,    // 地形（国土地理院の標高）・建物・電柱を表示
+  bldg: 'osm',      // 建物のデータ（この版は OpenStreetMap）
   zMode: 'auto',    // 路面の高さの合わせ方：auto＝地形（標高）から自動／manual＝始点・終点の標高を手入力
   zStart: null,     // 始点（起点側）の路面の標高 m
   zEnd: null,       // 終点側の路面の標高 m
