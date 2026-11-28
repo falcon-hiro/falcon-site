@@ -195,7 +195,7 @@ nav {
   width: 100%; max-width: 1440px; margin: 0 auto;
   padding: 116px 120px 72px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 480px;
+  grid-template-columns: minmax(0, 760px);
   column-gap: 72px; align-items: center;
 }
 
@@ -289,55 +289,21 @@ nav {
 .hero-note p { font-size: 0.8125rem; line-height: 1.8; color: #33404f; }
 .hero-note p[lang="en"] { margin-top: 0.4rem; font-size: 0.72rem; line-height: 1.6; color: #5b6777; }
 
-/* 右のサービス枠（背景が透けて見える紺） */
-.hero-panel {
-  padding: 30px 32px 18px;
-  background: rgba(31,58,95,0.72);
-  border: 1px solid rgba(243,223,174,0.45); border-radius: 4px;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  color: #f4efe2;
+/* 2026-11-27 社長指示「同じような内容がいくつも表示されている。もう少しシンプルに」：
+   右のサービス枠（下のサービス欄と同じ一覧）は削除。
+   英語の本文（.en-txt）は、上の「English」を押したときだけ表示する（英語の見出しは常に表示）。 */
+html:not(.show-en) .en-txt { display: none !important; }
+
+.en-toggle {
+  margin-left: auto; margin-right: 1.6rem;
+  min-height: 36px; padding: 0 0.9rem;
+  background: #ffffff; color: #1f3a5f;
+  border: 1px solid #1f3a5f; border-radius: 18px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.95rem; font-weight: 600; letter-spacing: 0.06em;
+  cursor: pointer;
 }
-
-.hero-panel-head {
-  display: flex; align-items: center; gap: 18px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(217,185,110,0.4);
-}
-
-.hero-panel-head img {
-  width: 88px; height: 88px; flex-shrink: 0;
-  border-radius: 50%; background: #ffffff; object-fit: cover;
-}
-
-.hero-panel-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.2em;
-  color: #f6e6c2;
-}
-
-.hero-panel-lead {
-  margin-top: 0.4rem;
-  font-size: 1.3rem; font-weight: 500; line-height: 1.6;
-  color: #f4efe2;
-}
-
-.hero-panel-list { margin-top: 4px; list-style: none; }
-.hero-panel-list li { border-bottom: 1px solid rgba(217,185,110,0.22); }
-
-.hero-panel-list a {
-  display: flex; align-items: center; gap: 16px;
-  padding: 13px 2px;
-  color: #f4efe2; text-decoration: none;
-}
-
-.hero-panel-list a:hover .ja { text-decoration: underline; text-underline-offset: 4px; }
-.hero-panel-list .num { font-family: 'Space Mono', monospace; font-size: 0.75rem; color: #f0dcaa; }
-.hero-panel-list .txt { display: flex; flex-direction: column; flex-grow: 1; }
-.hero-panel-list .ja { font-size: 0.97rem; font-weight: 500; line-height: 1.5; }
-.hero-panel-list .en { font-family: 'Space Mono', monospace; font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(244,239,226,0.86); }
-.hero-panel-list .sub { margin-top: 3px; font-size: 0.72rem; line-height: 1.5; color: #f0dcaa; }
-.hero-panel-list svg { width: 18px; height: 18px; flex-shrink: 0; }
+.en-toggle[aria-pressed="true"] { background: #1f3a5f; color: #ffffff; font-family: 'Noto Sans JP', sans-serif; font-size: 0.78rem; }
 
 .hero-caption {
   position: absolute; right: 24px; bottom: 14px; z-index: 2;
@@ -704,22 +670,8 @@ section { padding: 7rem 4rem; }
   transform: translateY(-4px);
 }
 
-.work-thumb {
-  height: 160px;
-  background: linear-gradient(135deg, var(--green-deep), var(--green-mid));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 3rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.work-thumb::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(to bottom, transparent 50%, rgba(11,22,38,0.6));
-}
-
-.work-body { padding: 1.5rem; }
+/* 2026-11-27：各段の大きな絵の箱（.work-thumb）はやめ、番号つきの短い一覧にした */
+.work-body { padding: 1.3rem 1.5rem; }
 
 .work-cat {
   font-family: 'Space Mono', monospace;
@@ -787,6 +739,17 @@ section { padding: 7rem 4rem; }
   font-size: 0.95rem; font-weight: 400;
   color: var(--text-main); line-height: 1.6;
 }
+
+/* 2026-11-27 過去のお知らせは押すと開く */
+.news-more > summary {
+  padding: 1rem 2rem;
+  background: var(--white);
+  color: var(--green-mid);
+  font-size: 0.88rem; font-weight: 500; letter-spacing: 0.05em;
+  text-align: center;
+  cursor: pointer;
+}
+.news-more[open] > summary { border-bottom: 1px solid rgba(44,74,112,0.08); }
 
 /* ── CONTACT ── */
 .contact {
@@ -1012,7 +975,6 @@ html { scroll-padding-top: 76px; }
   .nav-links a { display: block; padding: 0.8rem 0; border-bottom: 1px solid #eee7d8; font-size: 0.9rem; }
   .nav-cta { margin-top: 1rem; }
   .hero-inner { grid-template-columns: 1fr; row-gap: 2.5rem; padding: 116px 2rem 72px; }
-  .hero-panel { max-width: 640px; }
   /* 登録の注記を説明文のすぐ下へ（「測量カンパニー」と同じ画面に入れる：法務F 2026-09-10） */
   .hero-note { order: 1; }
   .hero-cta { order: 2; }
@@ -1028,7 +990,8 @@ html { scroll-padding-top: 76px; }
   .hero { display: block; min-height: 0; }
   .hero-photo { height: 470px; object-position: 72% 50%; }
   .hero-veil { bottom: auto; height: 470px; background: linear-gradient(180deg, rgba(247,245,239,0.10) 0%, rgba(247,245,239,0) 26%, rgba(247,245,239,0) 50%, rgba(247,245,239,0.82) 86%, #f7f5ef 100%); }
-  .hero-inner { padding: 232px 20px 0; row-gap: 0; }
+  .hero-inner { padding: 232px 20px 40px; row-gap: 0; }
+  .en-toggle { margin-right: 10px; min-height: 34px; padding: 0 0.7rem; font-size: 0.85rem; }
   .hero-tag { font-size: 0.66rem; }
   .hero-title { margin-top: 1rem; font-size: 2.2rem; line-height: 1.38; letter-spacing: 0.01em; }
   .hero-desc { margin-top: 1rem; font-size: 0.875rem; line-height: 1.9; }
@@ -1039,17 +1002,6 @@ html { scroll-padding-top: 76px; }
   .hero-note { margin-top: 1.25rem; }
   .hero-note p { font-size: 0.78rem; }
   .hero-note p[lang="en"] { font-size: 0.66rem; }
-  .hero-panel {
-    max-width: none; margin: 26px -20px 0; padding: 22px 20px 8px;
-    border: 0; border-top: 1px solid rgba(217,185,110,0.4); border-radius: 0;
-    background: #22406a;
-    -webkit-backdrop-filter: none; backdrop-filter: none;
-  }
-  .hero-panel-head { gap: 14px; padding-bottom: 14px; }
-  .hero-panel-head img { width: 60px; height: 60px; }
-  .hero-panel-label { font-size: 0.66rem; }
-  .hero-panel-lead { font-size: 0.9rem; }
-  .hero-panel-list .ja { font-size: 0.9rem; }
   .hero-sub { font-size: 1.05rem; }
   .hero-caption { top: 70px; right: 10px; bottom: auto; max-width: 250px; }
 }
@@ -1067,6 +1019,7 @@ html { scroll-padding-top: 76px; }
       <span class="en">Falcon Co., Ltd.</span>
     </span>
   </a>
+  <button class="en-toggle" id="en-toggle" type="button" aria-pressed="false" title="英語の説明を表示します / Show English text" lang="en">English</button>
   <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="メニューを開く">
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
   </button>
@@ -1106,29 +1059,14 @@ html { scroll-padding-top: 76px; }
       </ul>
       <div class="hero-note">
         <p>※ 測量法に基づく測量業者登録は申請中です（2026年9月18日申請）。測量業務は、測量業者登録の完了後にお引き受けいたします。</p>
-        <p lang="en">Our application for registration as a surveying business under the Survey Act was filed on 18 September 2026 and is pending. Surveying work under the Survey Act, which includes the preparation of maps, will be offered once the registration is complete.</p>
+        <p lang="en" class="en-txt">Our application for registration as a surveying business under the Survey Act was filed on 18 September 2026 and is pending. Surveying work under the Survey Act, which includes the preparation of maps, will be offered once the registration is complete.</p>
       </div>
     </div>
 
-    <aside class="hero-panel" aria-label="サービス一覧">
-      <div class="hero-panel-head">
-        <img src="images/message-emblem-01.jpg" alt="株式会社ファルコンのエンブレム" width="88" height="88" loading="lazy">
-        <div>
-          <p class="hero-panel-label">OUR SERVICES</p>
-          <p class="hero-panel-lead">3次元計測・測量・AI・映像を、<br>ひとつの窓口でご相談いただけます。</p>
-        </div>
-      </div>
-      <ul class="hero-panel-list">
-        <li><a href="#services"><span class="num">01</span><span class="txt"><span class="ja">SLAM・点群データ計測</span><span class="en">SLAM 3D Scanning</span><span class="sub">ハンディ型SLAMを導入。計測のご相談・お見積りを承ります</span></span><svg viewBox="0 0 24 24" fill="none" stroke="#f0dcaa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a></li>
-        <li><a href="#services"><span class="num">02</span><span class="txt"><span class="ja">3DGS・フォトリアル空間再現</span><span class="en">3D Gaussian Splatting</span></span><svg viewBox="0 0 24 24" fill="none" stroke="#f0dcaa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a></li>
-        <li><a href="#services"><span class="num">03</span><span class="txt"><span class="ja">土地・建物の測量</span><span class="en">Land &amp; Building Survey</span><span class="sub">測量業者登録の完了後にお引き受けします</span></span><svg viewBox="0 0 24 24" fill="none" stroke="#f0dcaa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a></li>
-        <li><a href="#services"><span class="num">04</span><span class="txt"><span class="ja">AI活用・業務効率化提案</span><span class="en">AI-Driven Workflow</span></span><svg viewBox="0 0 24 24" fill="none" stroke="#f0dcaa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a></li>
-        <li><a href="#services"><span class="num">05</span><span class="txt"><span class="ja">動画制作・Instagram運用代行</span><span class="en">Video &amp; Social Media</span></span><svg viewBox="0 0 24 24" fill="none" stroke="#f0dcaa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a></li>
-      </ul>
-    </aside>
+    <!-- 2026-11-27 右のサービス枠（下のサービス欄と同じ一覧）は削除した -->
   </div>
 
-  <p class="hero-caption">背景は生成AIで作成したイメージです（当社の計測データではありません）。<span lang="en">Background: AI-generated image, not our measurement data.</span></p>
+  <p class="hero-caption">背景は生成AIで作成したイメージです（当社の計測データではありません）。<span lang="en" class="en-txt">Background: AI-generated image, not our measurement data.</span></p>
 </section>
 
 <!-- SERVICES -->
@@ -1141,7 +1079,7 @@ html { scroll-padding-top: 76px; }
     <!-- 2026-08 追加: 和英リード -->
     <p class="service-desc" style="max-width:44rem;margin:0 auto 3rem;text-align:center;">
       3次元計測・測量・AI・映像を、ひとつの窓口でご相談いただけます。<br>
-      <span style="letter-spacing:0.04em;">3D measurement, surveying, AI and video &mdash; all from a single point of contact. Surveying work under the Survey Act, which includes the preparation of maps, will be offered once our registration as a surveying business is complete.</span>
+      <span lang="en" class="en-txt" style="letter-spacing:0.04em;">You can consult us on 3D measurement, surveying, AI and video through a single point of contact. Surveying work under the Survey Act, which includes the preparation of maps, will be offered once our registration as a surveying business is complete.</span>
     </p>
 
     <div class="services-grid">
@@ -1301,7 +1239,7 @@ html { scroll-padding-top: 76px; }
         <div class="service-title-en">Before &amp; After Illustrations</div>
         <div class="service-title-ja">完成イメージ制作（住民説明会・ご提案用）</div>
         <p class="service-desc">工事の前と後を、同じ角度の絵で比べられるようにします。道路の拡幅・歩道・街路樹・無電柱化（電線を地中に移すこと）など、完成後の姿を生成AIで描き、住民説明会や社内検討・ご提案の資料にお使いいただけます。図面だけでは伝わりにくい「できあがりの雰囲気」を共有するための説明用イメージで、設計や計測の結果ではありません。現地の写真は当社が撮影したものを使い、お預かりした資料の扱いは個別にご相談します。</p>
-        <p class="service-desc" lang="en">We create AI-generated before-and-after illustrations for public briefings and proposals &mdash; explanatory images only, not design or survey results.</p>
+        <p class="service-desc en-txt" lang="en">We create AI-generated before-and-after illustrations for public briefings and proposals &mdash; explanatory images only, not design or survey results.</p>
         <div class="service-tag-list">
           <span class="stag">生成AI</span>
           <span class="stag">住民説明</span>
@@ -1335,7 +1273,7 @@ html { scroll-padding-top: 76px; }
       </div>
       <div class="sample-modal__body">
         <div style="display:flex;flex-wrap:wrap;gap:1.2rem;">
-          <p class="service-desc" style="flex-basis:100%;margin:0;">※完成イメージです（生成AIにより作成。実在の場所・施工実績・計測結果ではありません）。見本は一例で、仕上がりは条件により異なります。<span lang="en"> Illustrative AI-generated images and video of a fictional location; not actual construction work or measurement results. Results vary by project.</span></p>
+          <p class="service-desc" style="flex-basis:100%;margin:0;">※完成イメージです（生成AIにより作成。実在の場所・施工実績・計測結果ではありません）。見本は一例で、仕上がりは条件により異なります。<span lang="en" class="en-txt"> Illustrative AI-generated images and video of a fictional location; not actual construction work or measurement results. Results vary by project.</span></p>
           <figure style="flex:1 1 300px;margin:0;">
             <img src="images/AIGEN_road_before_20261009.webp" loading="lazy" width="1200" height="670" alt="生成AIで作成した架空の道路の工事前イメージ" style="width:100%;height:auto;">
             <figcaption class="service-desc">工事前（架空の道路）／Before</figcaption>
@@ -1366,12 +1304,12 @@ html { scroll-padding-top: 76px; }
         <div class="service-title-ja" style="margin-bottom:1rem;">制作例1：架空の建設会社の採用動画（30秒）</div>
         <figure style="margin:0 0 2.2rem;max-width:720px;">
           <video src="videos/AIGEN_recruit_example_30s_20261009.mp4" poster="images/AIGEN_recruit_example_cover_20261009.jpg" controls muted playsinline preload="none" width="960" height="540" style="width:100%;height:auto;"></video>
-          <figcaption class="service-desc">※制作例です。映像は生成AIで作成した説明用イメージで、実在の会社・現場・施工実績ではありません。当社の求人ではありません。<span lang="en"> Production example: a recruiting video for a fictional construction company, made with generative AI. Not a job posting by Falcon.</span></figcaption>
+          <figcaption class="service-desc">※制作例です。映像は生成AIで作成した説明用イメージで、実在の会社・現場・施工実績ではありません。当社の求人ではありません。<span lang="en" class="en-txt"> Production example: a recruiting video for a fictional construction company, made with generative AI. Not a job posting by Falcon.</span></figcaption>
         </figure>
         <div class="service-title-ja" style="margin-bottom:1rem;">制作例2：当社紹介の縦型リール（10秒・Instagram向け）</div>
         <figure style="margin:0;max-width:320px;">
           <video src="videos/AIGEN_scan_reel_9x16_20261009.mp4" poster="images/AIGEN_scan_reel_cover_20261009.jpg" controls muted playsinline preload="none" width="540" height="960" style="width:100%;height:auto;" aria-label="生成AIによる説明用イメージ映像"></video>
-          <figcaption class="service-desc">※生成AIで作成したイメージ映像です。実際の計測データ・計測画面・作業の様子ではありません。車両・機材の形状・処理時間・計測範囲は実際と異なります。3Dデータの作成には計測後の解析処理が必要です。<span lang="en"> AI-generated illustrative video; not actual measurement data, software screens or field work. Vehicles, equipment, processing time and coverage differ from reality; 3D data requires post-survey processing.</span></figcaption>
+          <figcaption class="service-desc">※生成AIで作成したイメージ映像です。実際の計測データ・計測画面・作業の様子ではありません。車両・機材の形状・処理時間・計測範囲は実際と異なります。3Dデータの作成には計測後の解析処理が必要です。<span lang="en" class="en-txt"> AI-generated illustrative video; not actual measurement data, software screens or field work. Vehicles, equipment, processing time and coverage differ from reality; 3D data requires post-survey processing.</span></figcaption>
         </figure>
       </div>
     </dialog>
@@ -1382,14 +1320,14 @@ html { scroll-padding-top: 76px; }
         <div class="service-title-en" style="margin-bottom:0.3rem;">Free Consultation</div>
         <div class="service-title-ja" style="margin-bottom:0.8rem;">無料相談・現地のご相談</div>
         <p class="service-desc">「どの技術が合うのかわからない」という段階で構いません。ご連絡をいただいたあと、一度、お電話かZoomなどでお打ち合わせをお願いします。ご要望と現地の状況をうかがい、進め方と概算をお伝えします。ご相談だけでも費用はいただきません。</p>
-        <p class="service-desc" style="margin-top:0.6rem;">Not sure which method fits your project? Once you contact us, we&rsquo;d like to start with a meeting by phone or online, such as Zoom. Tell us the situation and we will suggest an approach and a rough estimate &mdash; consultation is free of charge.</p>
+        <p class="service-desc en-txt" lang="en" style="margin-top:0.6rem;">Not sure which method fits your project? Once you contact us, we&rsquo;d like to start with a meeting by phone or online, such as Zoom. Tell us the situation and we will suggest an approach and a rough estimate &mdash; consultation is free of charge.</p>
         <div class="service-tag-list">
           <span class="stag">無料相談</span>
           <span class="stag">東北中心／ご相談は全国</span>
         </div>
       </div>
       <div style="flex:0 0 auto;">
-        <a href="#contact" class="stag" style="display:inline-block;padding:0.9rem 2rem;background:var(--green-deep);color:var(--white);font-size:0.9rem;letter-spacing:0.12em;border-radius:2px;text-decoration:none;">ご相談はこちら / Contact</a>
+        <a href="#contact" class="stag" style="display:inline-block;padding:0.9rem 2rem;background:var(--green-deep);color:var(--white);font-size:0.9rem;letter-spacing:0.12em;border-radius:2px;text-decoration:none;">ご相談はこちら</a>
       </div>
     </div>
 
@@ -1409,7 +1347,7 @@ html { scroll-padding-top: 76px; }
           <div class="why-point-num">01</div>
           <div class="why-point-content">
             <h4>三次元計測を、外に投げずに回す体制</h4>
-            <p>SLAM（歩きながら周囲を三次元で記録していく計測方式）・3DGS（写真から実写のような三次元空間を再構成する技術）について、機材の導入から現場での運用、データ処理までを、外部に委託せず、代表者が一人で行います（ハンディ型の計測機器は、2026年9月に導入しました）。</p>
+            <p>SLAM（歩きながら周囲を三次元で記録していく計測方式）・3DGS（写真から実写のような三次元空間を再構成する技術）について、機材の導入から現場での運用、データ処理までを、外部に委託せず、代表者が一人で行います。</p>
           </div>
         </div>
         <div class="why-point fade-up">
@@ -1455,8 +1393,8 @@ html { scroll-padding-top: 76px; }
       <div style="flex:1 1 320px;min-width:260px;">
         <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:#e8d5a0;margin:0 0 0.5rem;">Drone Compliance Advisory</h4>
         <p style="margin:0;font-size:0.9rem;line-height:1.9;">ドローンの飛行許可・承認の申請や運用ルールについては、許認可申請を専門とする<a href="https://boundary.or.jp/" target="_blank" rel="noopener noreferrer" style="color:#bfd0e6;text-decoration:underline;text-underline-offset:3px;">バウンダリ行政書士法人</a>（東京・仙台・名古屋／代表社員 佐々木慎太郎）と顧問契約（ライトプラン）を締結し、専門家に相談できる体制を整えています。<span style="font-family:'Space Mono',monospace;font-size:0.78rem;color:#bfd0e6;white-space:nowrap;">2026.08</span></p>
-        <p style="margin:0.8rem 0 0;font-size:0.82rem;line-height:1.85;color:#bfd0e6;">For flight permissions and operating rules, we work under an advisory agreement (Light Plan) with Boundary Gyoseishoshi Lawyer Corporation (Tokyo / Sendai / Nagoya), a firm specialising in drone-related permit filings in Japan.</p>
-        <p style="margin:0.8rem 0 0;font-size:0.75rem;line-height:1.8;color:#bfd0e6;">※ 上記バッジは、同法人が顧問サービスのご利用者に交付している認証バッジです。／ The badge above is issued by the firm to users of its advisory service.</p>
+        <p class="en-txt" lang="en" style="margin:0.8rem 0 0;font-size:0.82rem;line-height:1.85;color:#bfd0e6;">For flight permissions and operating rules, we work under an advisory agreement (Light Plan) with Boundary Gyoseishoshi Lawyer Corporation (Tokyo / Sendai / Nagoya), a firm specialising in drone-related permit filings in Japan.</p>
+        <p style="margin:0.8rem 0 0;font-size:0.75rem;line-height:1.8;color:#bfd0e6;">※ 上記バッジは、同法人が顧問サービスのご利用者に交付している認証バッジです。<span class="en-txt" lang="en">／ The badge above is issued by the firm to users of its advisory service.</span></p>
       </div>
     </div>
   </div>
@@ -1474,7 +1412,7 @@ html { scroll-padding-top: 76px; }
         <div class="target-icon">🏗️</div>
         <div class="target-title-en">Construction</div>
         <div class="target-title-ja">建設・土木会社</div>
-        <p class="target-desc">施工前後の現況の記録、出来形の確認、土量の算出。3D点群データで現場管理をお手伝いします。測量業務は、測量業者登録の完了後にお引き受けいたします。</p>
+        <p class="target-desc">施工前後の現況の記録、出来形の確認、土量の算出。3D点群データで現場管理をお手伝いします。</p>
       </div>
       <div class="target-card fade-up">
         <div class="target-icon">🏭</div>
@@ -1492,9 +1430,11 @@ html { scroll-padding-top: 76px; }
         <div class="target-icon">🏛️</div>
         <div class="target-title-en">Government</div>
         <div class="target-title-ja">自治体・官公庁</div>
-        <p class="target-desc">公共インフラの維持管理、防災マップづくりの基礎となる三次元記録、都市計画のご検討の支援。測量業務（地図の調製を含みます）は、測量業者登録の完了後にお引き受けいたします。</p>
+        <p class="target-desc">公共インフラの維持管理、防災マップづくりの基礎となる三次元記録、都市計画のご検討の支援。</p>
       </div>
     </div>
+    <!-- 2026-11-27 各カードの注記2つを、4枚の下の1行にまとめた（法務F HOMU-20261127：同一視野の注記を残す） -->
+    <p class="target-desc" style="margin:1.6rem auto 0;max-width:46rem;text-align:center;font-size:0.82rem;">※ 上記のうち測量法上の測量にあたる業務は、測量業者登録の完了後にお引き受けいたします。<span class="en-txt" lang="en" style="display:block">Any of the above that falls under surveying as defined in the Survey Act will be offered once our registration as a surveying business is complete.</span></p>
   </div>
 </section>
 
@@ -1548,12 +1488,12 @@ html { scroll-padding-top: 76px; }
     <h2 class="section-title">How We Work</h2>
     <p class="section-title-ja">お引き受けの流れ</p>
 
-    <!-- 2026-08-15 追加: 和英リード（実績0件を先に明示する） -->
+    <!-- 2026-08-15 追加: 和英リード（実績0件を先に明示する）。2026-11-27 下の「掲載方針」の枠と重なる設立日の文はこちらに一本化 -->
     <p class="work-desc fade-up" style="max-width:46rem; margin:0 auto 3.4rem; text-align:center;">
-      当社は2026年5月に設立した会社で、掲載できる完了案件はまだありません。<br>
+      当社は2026年5月1日に設立した会社で、掲載できる完了案件はまだありません。<br>
       ご検討の材料として、お引き受けの流れと、各段階でお伝えする内容を先に公開します。
-      <span style="display:block; margin-top:1rem; font-size:0.82rem; line-height:1.9; letter-spacing:0.05em; color:var(--green-pale); opacity:0.75;">
-        Falcon was founded in May 2026 and has no completed projects to show yet.<br>
+      <span class="en-txt" lang="en" style="display:block; margin-top:1rem; font-size:0.82rem; line-height:1.9; letter-spacing:0.05em; color:var(--green-pale); opacity:0.75;">
+        Falcon was founded on 1 May 2026 and has no completed projects to show yet.<br>
         Instead, we set out here how a project runs with us, step by step.
       </span>
     </p>
@@ -1562,21 +1502,12 @@ html { scroll-padding-top: 76px; }
 
       <!-- STEP 01 -->
       <div class="work-card fade-up">
-        <div class="work-thumb">
-          <svg width="46" height="46" viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false">
-            <rect x="6" y="10" width="30" height="21" rx="3" stroke="var(--green-mist)" stroke-width="1.6"/>
-            <path d="M14 31 L14 38 L22 31" stroke="var(--green-mist)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
-            <circle cx="14" cy="20.5" r="1.7" fill="var(--gold-light)"/>
-            <circle cx="21" cy="20.5" r="1.7" fill="var(--gold-light)"/>
-            <circle cx="28" cy="20.5" r="1.7" fill="var(--gold-light)"/>
-          </svg>
-        </div>
         <div class="work-body">
           <div class="work-cat">Step 01</div>
           <div class="work-title">ご相談・お問い合わせ<span style="display:block; font-weight:300; color:var(--green-pale); opacity:0.8; margin-top:0.25rem;">Enquiry</span></div>
           <p class="work-desc">
             メールでご連絡ください。目的・場所・ご希望の時期をお聞かせいただければ、当社でお引き受けできる範囲と進め方をお返しします。「どの方法が合うのか分からない」という段階で構いません。
-            <span style="display:block; margin-top:0.7rem; font-size:0.8rem; line-height:1.85; color:var(--green-pale); opacity:0.75;">
+            <span class="en-txt" lang="en" style="display:block; margin-top:0.7rem; font-size:0.8rem; line-height:1.85; color:var(--green-pale); opacity:0.75;">
               Tell us the purpose, the location and your preferred timing by e-mail. We reply with what we can do and how we would proceed.
             </span>
           </p>
@@ -1585,19 +1516,12 @@ html { scroll-padding-top: 76px; }
 
       <!-- STEP 02 -->
       <div class="work-card fade-up">
-        <div class="work-thumb">
-          <svg width="46" height="46" viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false">
-            <path d="M24 7c-5 0-9 4-9 9 0 6.6 9 16.5 9 16.5S33 22.6 33 16c0-5-4-9-9-9z" stroke="var(--green-mist)" stroke-width="1.6" stroke-linejoin="round"/>
-            <circle cx="24" cy="16" r="3.2" fill="var(--gold-light)"/>
-            <path d="M8 37 L24 42 L40 37" stroke="var(--green-mist)" stroke-width="1.4" stroke-linecap="round" opacity=".55"/>
-          </svg>
-        </div>
         <div class="work-body">
           <div class="work-cat">Step 02</div>
           <div class="work-title">現地の確認・お見積り<span style="display:block; font-weight:300; color:var(--green-pale); opacity:0.8; margin-top:0.25rem;">Site Check &amp; Quotation</span></div>
           <p class="work-desc">
             対象の広さ・障害物・立入の条件を確認します。近隣であれば現地でお会いし、遠方の場合は写真や図面をもとに整理します。そのうえで、作業内容・お渡しするもの・費用をお見積りとして書面でお示しします。
-            <span style="display:block; margin-top:0.7rem; font-size:0.8rem; line-height:1.85; color:var(--green-pale); opacity:0.75;">
+            <span class="en-txt" lang="en" style="display:block; margin-top:0.7rem; font-size:0.8rem; line-height:1.85; color:var(--green-pale); opacity:0.75;">
               We check the size, obstacles and access conditions of the site, then issue a written quotation covering the work, the deliverables and the cost.
             </span>
           </p>
@@ -1606,22 +1530,13 @@ html { scroll-padding-top: 76px; }
 
       <!-- STEP 03 -->
       <div class="work-card fade-up">
-        <div class="work-thumb">
-          <svg width="46" height="46" viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false">
-            <circle cx="24" cy="14" r="5" stroke="var(--green-mist)" stroke-width="1.6"/>
-            <circle cx="24" cy="14" r="1.8" fill="var(--gold-light)"/>
-            <path d="M24 19v6" stroke="var(--green-mist)" stroke-width="1.6" stroke-linecap="round"/>
-            <path d="M24 25 L12 41 M24 25 L36 41 M24 25 L24 41" stroke="var(--green-mist)" stroke-width="1.6" stroke-linecap="round"/>
-            <path d="M14 7 L19.5 11 M34 7 L28.5 11" stroke="var(--gold-light)" stroke-width="1.4" stroke-linecap="round" opacity=".85"/>
-          </svg>
-        </div>
         <div class="work-body">
           <div class="work-cat">Step 03</div>
           <div class="work-title">計測・撮影<span style="display:block; font-weight:300; color:var(--green-pale); opacity:0.8; margin-top:0.25rem;">Field Work</span></div>
           <p class="work-desc">
-            現地で計測・撮影を行います。建物の内部や設備は、歩きながら記録する三次元計測で対応します（機器は2026年9月に導入しました）。土地の測量を伴う業務は、測量業者登録の完了後にお引き受けいたします。
-            <span style="display:block; margin-top:0.7rem; font-size:0.8rem; line-height:1.85; color:var(--green-pale); opacity:0.75;">
-              Indoors we use handheld 3D scanning (the equipment was introduced in September 2026). Surveying work under the Survey Act, which includes the preparation of maps, will be offered once our registration as a surveying business is complete.
+            現地で計測・撮影を行います。建物の内部や設備は、歩きながら記録する三次元計測で対応します。
+            <span class="en-txt" lang="en" style="display:block; margin-top:0.7rem; font-size:0.8rem; line-height:1.85; color:var(--green-pale); opacity:0.75;">
+              We carry out the field work on site. Building interiors and equipment are recorded with handheld 3D scanning.
             </span>
           </p>
         </div>
@@ -1629,24 +1544,12 @@ html { scroll-padding-top: 76px; }
 
       <!-- STEP 04 -->
       <div class="work-card fade-up">
-        <div class="work-thumb">
-          <svg width="46" height="46" viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false">
-            <path d="M24 8 L38 16.5 v15 L24 40 L10 31.5 v-15 Z" stroke="var(--green-mist)" stroke-width="1.3" stroke-linejoin="round" opacity=".45"/>
-            <circle cx="24" cy="8" r="2.2" fill="var(--gold-light)"/>
-            <circle cx="38" cy="16.5" r="2" fill="var(--green-mist)"/>
-            <circle cx="38" cy="31.5" r="2" fill="var(--green-mist)"/>
-            <circle cx="24" cy="40" r="2.2" fill="var(--gold-light)"/>
-            <circle cx="10" cy="31.5" r="2" fill="var(--green-mist)"/>
-            <circle cx="10" cy="16.5" r="2" fill="var(--green-mist)"/>
-            <circle cx="24" cy="24" r="2.7" fill="var(--gold-light)"/>
-          </svg>
-        </div>
         <div class="work-body">
           <div class="work-cat">Step 04</div>
           <div class="work-title">データの処理<span style="display:block; font-weight:300; color:var(--green-pale); opacity:0.8; margin-top:0.25rem;">Data Processing</span></div>
           <p class="work-desc">
             取得したデータを、お使いになる形に整えます。点群データ（空間を無数の点の集まりとして記録したデータ）の整理、図面やオルソ画像（ゆがみを補正した真上からの画像）の作成、動画の編集まで対応します。
-            <span style="display:block; margin-top:0.7rem; font-size:0.8rem; line-height:1.85; color:var(--green-pale); opacity:0.75;">
+            <span class="en-txt" lang="en" style="display:block; margin-top:0.7rem; font-size:0.8rem; line-height:1.85; color:var(--green-pale); opacity:0.75;">
               The acquired data is processed into the form you will actually use &mdash; point clouds, drawings, orthophotos and edited video.
             </span>
           </p>
@@ -1655,19 +1558,12 @@ html { scroll-padding-top: 76px; }
 
       <!-- STEP 05 -->
       <div class="work-card fade-up">
-        <div class="work-thumb">
-          <svg width="46" height="46" viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false">
-            <path d="M13 7h15l7 7v27H13z" stroke="var(--green-mist)" stroke-width="1.6" stroke-linejoin="round"/>
-            <path d="M28 7v7h7" stroke="var(--green-mist)" stroke-width="1.4" stroke-linejoin="round"/>
-            <path d="M18 27 L22 31 L31 22" stroke="var(--gold-light)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
         <div class="work-body">
           <div class="work-cat">Step 05</div>
           <div class="work-title">成果物のご確認<span style="display:block; font-weight:300; color:var(--green-pale); opacity:0.8; margin-top:0.25rem;">Review</span></div>
           <p class="work-desc">
             仕上がりをご確認いただきます。見え方・範囲・記載内容にご要望があれば、この段階で調整します。どこまでを調整の範囲とするかは、お見積りの時点で書面に明記しておきます。
-            <span style="display:block; margin-top:0.7rem; font-size:0.8rem; line-height:1.85; color:var(--green-pale); opacity:0.75;">
+            <span class="en-txt" lang="en" style="display:block; margin-top:0.7rem; font-size:0.8rem; line-height:1.85; color:var(--green-pale); opacity:0.75;">
               You review the result. Adjustments are made at this stage; the scope of revision is stated in the quotation in advance.
             </span>
           </p>
@@ -1676,20 +1572,12 @@ html { scroll-padding-top: 76px; }
 
       <!-- STEP 06 -->
       <div class="work-card fade-up">
-        <div class="work-thumb">
-          <svg width="46" height="46" viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false">
-            <path d="M8 16.5 L24 9 L40 16.5 v15 L24 39 L8 31.5 Z" stroke="var(--green-mist)" stroke-width="1.5" stroke-linejoin="round"/>
-            <path d="M8 16.5 L24 24 L40 16.5 M24 24 v15" stroke="var(--green-mist)" stroke-width="1.3" opacity=".55" stroke-linejoin="round"/>
-            <circle cx="37" cy="35" r="6.2" fill="var(--gold-light)"/>
-            <path d="M34.2 35 L36.3 37.2 L40 33.3" stroke="var(--green-deep)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
         <div class="work-body">
           <div class="work-cat">Step 06</div>
           <div class="work-title">納品・その後のご相談<span style="display:block; font-weight:300; color:var(--green-pale); opacity:0.8; margin-top:0.25rem;">Delivery &amp; Follow-up</span></div>
           <p class="work-desc">
             データはオンライン、または記録媒体でお渡しします。お預かりしたデータと当社控えの保管期間は、契約の時点で取り決めます。納品後のご質問にもお答えします。
-            <span style="display:block; margin-top:0.7rem; font-size:0.8rem; line-height:1.85; color:var(--green-pale); opacity:0.75;">
+            <span class="en-txt" lang="en" style="display:block; margin-top:0.7rem; font-size:0.8rem; line-height:1.85; color:var(--green-pale); opacity:0.75;">
               Deliverables are handed over online or on physical media. Retention periods for your data and our own copies are agreed in the contract, and we stay available afterwards.
             </span>
           </p>
@@ -1702,20 +1590,16 @@ html { scroll-padding-top: 76px; }
     <div class="works-note fade-up" style="max-width:760px; margin:0 auto; padding:3.2rem 2rem; text-align:center; border:1px solid rgba(255,255,255,0.12); border-radius:4px;">
       <div class="work-cat" style="justify-content:center; text-align:center; margin-bottom:1rem;">Our Policy on Project Cases</div>
       <p style="font-size:1.02rem; line-height:2.1; letter-spacing:0.04em; margin-bottom:1.4rem;">
-        当社は<strong>2026年5月1日に設立</strong>いたしました。<br>
         実績は、案件の完了後、<strong>お客様から書面でご了解をいただいたものだけ</strong>を掲載します。<br>
         現場や所在地が特定される情報、お預かりした図面・データそのものは掲載しません。
       </p>
-      <p style="font-size:0.82rem; line-height:1.9; letter-spacing:0.06em; color:var(--green-pale); opacity:0.75;">
-        Falcon was founded on 1 May 2026.<br>
+      <p class="en-txt" lang="en" style="font-size:0.82rem; line-height:1.9; letter-spacing:0.06em; color:var(--green-pale); opacity:0.75;">
         Project cases are published only after completion and only with the client's written consent.<br>
         We do not publish anything that identifies a site, nor the drawings and data entrusted to us.
       </p>
     </div>
 
-    <div class="fade-up" style="text-align:center; margin-top:2.6rem;">
-      <a href="#contact" style="display:inline-block; padding:0.9rem 2.2rem; border:1px solid var(--gold); color:var(--gold-light); font-size:0.9rem; letter-spacing:0.12em; text-decoration:none; border-radius:2px;">ご相談はこちら / Contact us</a>
-    </div>
+    <!-- 2026-11-27 ここにあった「ご相談はこちら」ボタンは、サービス欄の無料相談の帯と重なるため削除 -->
 
   </div><!-- /section-inner ★これが欠落していた閉じタグです -->
 </section>
@@ -1736,13 +1620,16 @@ html { scroll-padding-top: 76px; }
       <div class="news-item">
         <div class="news-date">2026.09.19</div>
         <div class="news-cat">サービス</div>
-        <div class="news-title">ハンディ型のSLAM計測機器（歩きながら周囲を3次元で記録する機器）を導入しました。屋内・地下空間などの点群データ（空間を無数の点の集まりとして記録したデータ）の取得について、ご相談・お見積りを承ります。<span style="display:block; margin-top:0.5rem; font-size:0.85rem; opacity:0.7;">We have introduced a handheld SLAM scanner, a device that records its surroundings in 3D as the operator walks. We welcome enquiries and quotation requests for capturing point-cloud data (a record of a space as a dense set of points) in indoor and underground spaces.</span></div>
+        <div class="news-title">ハンディ型のSLAM計測機器（歩きながら周囲を3次元で記録する機器）を導入しました。屋内・地下空間などの点群データ（空間を無数の点の集まりとして記録したデータ）の取得について、ご相談・お見積りを承ります。<span class="en-txt" lang="en" style="display:block; margin-top:0.5rem; font-size:0.85rem; opacity:0.7;">We have introduced a handheld SLAM scanner, a device that records its surroundings in 3D as the operator walks. We welcome enquiries and quotation requests for capturing point-cloud data (a record of a space as a dense set of points) in indoor and underground spaces.</span></div>
       </div>
       <div class="news-item">
         <div class="news-date">2026.09.10</div>
         <div class="news-cat">訂正</div>
-        <div class="news-title">ホームページの記載を改めました。当社は測量法に基づく測量業者登録の申請中であり、登録の完了前に測量業務をお引き受けすることはありません。この点が正しく伝わるよう、(1) トップとお問い合わせ欄に登録が申請中である旨の注記を加え、(2) サービス紹介・対応業種・お引き受けの流れ・2026年5月1日付のお知らせ2件のうち、測量業務やドローン空撮を現在ご提供しているかのように読める表現を「ご相談を承る」旨に改め、(3) ドローン空撮のサービス紹介は、機体の登録手続が完了するまでの間、掲載を取りやめ（手続の完了後に、あらためてご案内いたします）、(4) 根拠をお示しできない表現（「最先端」「超高精細」「精密」「全国対応」）を事実に即した表現に改めました。これまでの表記により誤解を与えた可能性がありますことをお詫び申し上げます。登録が完了しましたら、あらためてお知らせいたします。<span style="display:block; margin-top:0.5rem; font-size:0.85rem; opacity:0.7;">Site wording revised. Our application for registration as a surveying business under the Survey Act has been filed and is pending, and we do not undertake surveying work before the registration is complete. We have added a note to that effect on the top page and the contact section; revised the service descriptions, industry pages, workflow and two news items dated 1 May 2026 so that they no longer read as if surveying or drone services were currently offered; withdrawn our aerial-imaging service listing until the aircraft registration is complete; and replaced wording we cannot substantiate ("cutting-edge", "ultra-high-definition", "precise", "nationwide coverage"). We apologise for any misunderstanding.</span></div>
+        <div class="news-title">ホームページの記載を改めました。当社は測量法に基づく測量業者登録の申請中であり、登録の完了前に測量業務をお引き受けすることはありません。この点が正しく伝わるよう、(1) トップとお問い合わせ欄に登録が申請中である旨の注記を加え、(2) サービス紹介・対応業種・お引き受けの流れ・2026年5月1日付のお知らせ2件のうち、測量業務やドローン空撮を現在ご提供しているかのように読める表現を「ご相談を承る」旨に改め、(3) ドローン空撮のサービス紹介は、機体の登録手続が完了するまでの間、掲載を取りやめ（手続の完了後に、あらためてご案内いたします）、(4) 根拠をお示しできない表現（「最先端」「超高精細」「精密」「全国対応」）を事実に即した表現に改めました。これまでの表記により誤解を与えた可能性がありますことをお詫び申し上げます。登録が完了しましたら、あらためてお知らせいたします。<span class="en-txt" lang="en" style="display:block; margin-top:0.5rem; font-size:0.85rem; opacity:0.7;">Site wording revised. Our application for registration as a surveying business under the Survey Act has been filed and is pending, and we do not undertake surveying work before the registration is complete. We have added a note to that effect on the top page and the contact section; revised the service descriptions, industry pages, workflow and two news items dated 1 May 2026 so that they no longer read as if surveying or drone services were currently offered; withdrawn our aerial-imaging service listing until the aircraft registration is complete; and replaced wording we cannot substantiate ("cutting-edge", "ultra-high-definition", "precise", "nationwide coverage"). We apologise for any misunderstanding.</span></div>
       </div>
+      <!-- 2026-11-27 新しい3件だけ表示し、それより前は「過去のお知らせ」を押すと開く -->
+      <details class="news-more">
+      <summary>過去のお知らせ（4件）</summary>
       <div class="news-item">
         <div class="news-date">2026.08.12</div>
         <div class="news-cat">お知らせ</div>
@@ -1763,6 +1650,7 @@ html { scroll-padding-top: 76px; }
         <div class="news-cat">お知らせ</div>
         <div class="news-title">ホームページを公開しました。お問い合わせはメールにて受付しております。</div>
       </div>
+      </details>
     </div>
   </div>
 </section>
@@ -1777,38 +1665,30 @@ html { scroll-padding-top: 76px; }
     <p class="contact-lead">
       サービスに関するご質問、お見積もり依頼、現地調査のご相談など、<br>
       まずはお気軽にメールにてご連絡ください。<br>
-      <em style="font-style:normal; opacity:0.7;">For inquiries, quotes, and consultations, please feel free to contact us.</em>
+      <em class="en-txt" lang="en" style="font-style:normal; opacity:0.7;">For inquiries, quotes, and consultations, please feel free to contact us.</em>
     </p>
 
     <div class="contact-mail-box">
       <span class="contact-mail-icon">✉</span>
       <a href="mailto:hiroshi_shoji@az-falcon.com" class="contact-mail">hiroshi_shoji@az-falcon.com</a>
     </div>
-    <p class="contact-note">※ 平日 9:00〜18:00 / Weekdays 9:00–18:00 JST</p>
-    <p class="contact-note" style="margin-top:0.8rem; max-width:680px; margin-left:auto; margin-right:auto; line-height:1.9; color:rgba(249,250,248,0.6);">※ 測量法に基づく測量業者登録は申請中です（2026年9月18日申請）。測量業務は、測量業者登録の完了後にお引き受けいたします。<br>Our application for registration as a surveying business under the Survey Act was filed on 18 September 2026 and is pending. Surveying work under the Survey Act, which includes the preparation of maps, will be offered once the registration is complete.</p>
+    <p class="contact-note">※ 平日 9:00〜18:00<span class="en-txt" lang="en"> / Weekdays 9:00–18:00 JST</span></p>
+    <p class="contact-note" style="margin-top:0.8rem; max-width:680px; margin-left:auto; margin-right:auto; line-height:1.9; color:rgba(249,250,248,0.6);">※ 測量法に基づく測量業者登録は申請中です（2026年9月18日申請）。測量業務は、測量業者登録の完了後にお引き受けいたします。<span class="en-txt" lang="en" style="display:block">Our application for registration as a surveying business under the Survey Act was filed on 18 September 2026 and is pending. Surveying work under the Survey Act, which includes the preparation of maps, will be offered once the registration is complete.</span></p>
 
     <!-- Googleフォーム -->
     <div style="margin-top: 3rem; max-width: 680px; margin-left: auto; margin-right: auto;">
       <div style="font-family:'Space Mono',monospace; font-size: 0.75rem; color:var(--gold); letter-spacing:0.2em; text-transform:uppercase; margin-bottom:1.2rem; text-align:left;">
         ✉ Online Form / オンラインお問い合わせフォーム
       </div>
-      <div style="border-radius:6px; overflow:hidden; border:1px solid rgba(201,168,76,0.25); background:rgba(255,255,255,0.97);">
-        <iframe
-          src="https://docs.google.com/forms/d/e/1FAIpQLSfVDZSo3zulL_ZbQzPZNI3ucXEyUDVFV7h4FDmyjftNzEMf3w/viewform?embedded=true"
-          width="100%"
-          height="949"
-          frameborder="0"
-          marginheight="0"
-          marginwidth="0"
-          style="display:block;">
-          読み込んでいます…
-        </iframe>
-      </div>
+      <!-- 2026-11-28 社長ご選択「フォームもボタンにしてから」：埋め込み（高さ949px）をやめ、同じGoogleフォームを別の画面で開くボタンにした -->
+      <p style="margin:0 0 1rem; font-size:0.88rem; line-height:1.9; color:rgba(249,250,248,0.75); text-align:left;">メールのほか、入力フォームからもご連絡いただけます。押すと、Googleフォームの画面が別に開きます。</p>
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLSfVDZSo3zulL_ZbQzPZNI3ucXEyUDVFV7h4FDmyjftNzEMf3w/viewform" target="_blank" rel="noopener noreferrer" style="display:inline-block; padding:0.95rem 2.2rem; background:var(--gold); color:#0b1626; font-size:0.95rem; font-weight:700; letter-spacing:0.08em; text-decoration:none; border-radius:2px;">入力フォームを開く <span aria-hidden="true">↗</span></a>
+      <p class="en-txt" lang="en" style="margin:0.8rem 0 0; font-size:0.8rem; color:rgba(249,250,248,0.6); text-align:left;">You can also contact us through our online form (Google Forms), which opens in a new window.</p>
     </div>
 
     <div class="contact-area">
       <span>🗾</span>
-      <span>東北中心／ご相談は全国 — Based in Sendai, Tohoku. Inquiries welcome from all over Japan.</span>
+      <span>東北中心／ご相談は全国<span class="en-txt" lang="en"> — Based in Sendai, Tohoku. Inquiries welcome from all over Japan.</span></span>
     </div>
 
     <!-- 所在地 -->
@@ -1822,7 +1702,7 @@ html { scroll-padding-top: 76px; }
             宮城県仙台市青葉区中央4丁目4番19号<br>
             アーバンネット仙台中央ビル2F　YUINOS内
           </div>
-          <div style="font-size: 0.85rem; color:rgba(249,250,248,0.45); margin-top:0.3rem;">
+          <div class="en-txt" lang="en" style="font-size: 0.85rem; color:rgba(249,250,248,0.45); margin-top:0.3rem;">
             Urbannet Sendai Chuo Bldg. 2F YUINOS, Chuo 4-4-19, Aoba-ku, Sendai, Miyagi 980-0021
           </div>
         </div>
@@ -1848,8 +1728,8 @@ html { scroll-padding-top: 76px; }
     <span class="en">Falcon Co., Ltd.</span>
   </div>
   <div class="footer-info">
-    <div class="footer-area">📍 仙台市・東北中心 / Sendai, Tohoku — Inquiries welcome from all over Japan</div>
-    <div class="footer-note">一部の画像・映像は生成AIにより作成したイメージです。<span lang="en"> Some images and videos on this site are AI-generated illustrations.</span></div>
+    <div class="footer-area">📍 仙台市・東北中心<span class="en-txt" lang="en"> / Sendai, Tohoku — Inquiries welcome from all over Japan</span></div>
+    <div class="footer-note">一部の画像・映像は生成AIにより作成したイメージです。<span lang="en" class="en-txt"> Some images and videos on this site are AI-generated illustrations.</span></div>
     <div class="footer-copy">© 2026 Falcon Co., Ltd. All Rights Reserved.</div>
   </div>
 </footer>
@@ -1972,6 +1852,25 @@ document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
   btn.addEventListener('click', () => setOpen(!nav.classList.contains('is-open')));
   nav.querySelectorAll('.nav-menu a').forEach(a => a.addEventListener('click', () => setOpen(false)));
   document.addEventListener('keydown', e => { if (e.key === 'Escape') setOpen(false); });
+})();
+
+// ── 英語の本文の表示・非表示（2026-11-27）。日本語以外の言語設定のブラウザでは最初から表示する ──
+(function () {
+  const btn = document.getElementById('en-toggle');
+  if (!btn) return;
+  const root = document.documentElement;
+  const KEY = 'falcon-show-en';
+  const set = (on, save) => {
+    root.classList.toggle('show-en', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.textContent = on ? '英語を隠す / Hide English' : 'English';
+    btn.setAttribute('lang', on ? 'ja' : 'en');
+    if (save) { try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) {} }
+  };
+  let on = !/^ja/i.test(navigator.language || 'ja');
+  try { const v = localStorage.getItem(KEY); if (v === '1' || v === '0') on = (v === '1'); } catch (e) {}
+  set(on, false);
+  btn.addEventListener('click', () => set(!root.classList.contains('show-en'), true));
 })();
 
 // ── 見本・制作例の画面（ダイアログ）2026-10-13 ──
